@@ -3,6 +3,12 @@
 ## Overview
 Generate optimized `CLAUDE.md` in project root from `.cursor/rules/*.mdc` files following Claude Code best practices.
 
+## Important Restrictions
+- **NO SCRIPTS**: Do not create, use, or suggest any scripts for this task
+- **Manual execution only**: All steps must be performed manually using available tools
+- **No automation**: Do not automate file reading, processing, or writing operations
+- **Direct tool usage**: Use file reading and writing tools directly to perform each step
+
 ## CLAUDE.md Best Practices
 - **Concise**: File prepended to every prompt; minimize token usage
 - **Declarative bullets**: Short bullet points, not narrative paragraphs
@@ -70,6 +76,7 @@ Generate optimized `CLAUDE.md` in project root from `.cursor/rules/*.mdc` files 
    - Confirm CLAUDE.md location
 
 ## Implementation Notes
+- **Manual process**: Execute all steps manually using file reading/writing tools; no scripts allowed
 - Use consistent heading levels: # for title, ## for categories, ### for files
 - Preserve all markdown formatting from source files
 - Maintain blank lines between sections for readability
@@ -78,6 +85,7 @@ Generate optimized `CLAUDE.md` in project root from `.cursor/rules/*.mdc` files 
 - Categories with zero files are omitted from output
 
 ## Checklist
+- [ ] No scripts created or used (manual execution only)
 - [ ] `.cursor/rules/` directory validated
 - [ ] All `.mdc` files collected and categorized
 - [ ] Frontmatter removed from all files
