@@ -7,6 +7,7 @@ Create a clear, critiqued plan in `./documents/whiteboard.md` with options analy
 - On <STOP> command, MUST stop the planning and MUST wait for user input.
 - MUST NOT write any code, test, or documentation during planning phase.
 - MUST use the user's query language for all conversation and the plan.
+- MUST NOT edit any files in the project except `./documents/whiteboard.md`.
 
 ## Steps
 1. **Read all docs in `./documents`**
@@ -21,12 +22,11 @@ Do not ask for insignificant information or information that can be easily found
    - Overview: What is happening now? Why did the task arise? What is happening around it?
    - Definition of Done: acceptance criteria (include "`./run check` without errors and notices")
    - Resolution options: Generate 3-5 implementation variants with pros/cons, short/long-term consequences, comparison and selection strategy, optimal option.
-6. **Critique the plan directly in `whiteboard.md`**
-7. **Rewrite the plan considering the critique**
-8. **Remove the old version and critique from the file**
-9. **Ask user to select the optimal variant and <STOP> for user input** Do not select optimal variant by yourself, ask user to select it!
-10. **Remove all other variants from the file**
-11. **<Stop>**
+6. **Critique the plan and resolution options directly in `whiteboard.md`**
+7. **Rewrite the plan and resolution options in `whiteboard.md` considering the critique**
+8. **Remove the old version and critique and resolution options from `whiteboard.md`**
+9. **Ask user to select the optimal resolution option and <STOP> for user input** Do not select optimal resolution option by yourself, ask user to select it!
+10. **<FULL_STOP>**
 
 ## Checklist
 - [ ] Language set according to user query language
