@@ -1,8 +1,10 @@
 ---
 description: How to write documentation
-globs: 
+globs:
 alwaysApply: false
 ---
+## HOW TO WRITE COMPACT DOCUMENTATION
+
 Following the rules:
 - Remove history: Remove history, updates, and changelog.
 - Use only english in all files.

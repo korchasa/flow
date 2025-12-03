@@ -1,9 +1,9 @@
 ---
 description: How to fix tests
-globs: 
+globs:
 alwaysApply: false
 ---
-### How to fix tests
+## HOW TO FIX TESTS
 1. Analyze errors: Review logs, error messages, and stack traces to identify the module or method where the failure occurs.
 2. Isolate tests: Run only the failing tests separately to minimize noise and focus on the specific scenario.
 3. Study tests: Examine the test code, comments, and descriptions to understand the expected behavior.

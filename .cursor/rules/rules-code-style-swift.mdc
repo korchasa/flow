@@ -3,9 +3,8 @@ description:
 globs:
 alwaysApply: true
 ---
-## Swift Code Style Rules
+## SWIFT CODE STYLE RULES
 
-### General
 - Always set access level (e.g., `public`, `private`) for every declaration.
 - Don't use implicitly unwrapped optionals (`!`).
 - Replace magic numbers with named constants.

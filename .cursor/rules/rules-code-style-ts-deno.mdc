@@ -1,9 +1,7 @@
 ---
 alwaysApply: true
 ---
-## Code Style Rules for Deno
-
-### MOST IMPORTANT RULES
+## CODE STYLE RULES FOR DENO
 - Use bare specifiers for dependencies defined in deno.json/imports
 - Avoid direct jsr:/npm:/https: imports in source code
 - Example: `import { assertEquals } from "@std/assert";` instead of `import { assertEquals } from "jsr:@std/assert";`

@@ -3,9 +3,8 @@ description: Strict rules for Proof-of-Concept (PoC) mode
 globs: []
 alwaysApply: true
 ---
-## Proof-of-Concept (PoC) mode
+## PROOF-OF-CONCEPT (PoC) MODE
 
-### General principles
 - PoC is created **only** to validate a limited set of hypotheses and risks, not as a foundation for a production system.
 - All participants must understand that PoC code **may be completely discarded**, and this is a normal, acceptable outcome.
 - PoC has a strict timebox and implementation volume limit; any changes beyond the approved scope are rejected.

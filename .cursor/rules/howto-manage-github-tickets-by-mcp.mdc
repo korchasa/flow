@@ -1,11 +1,11 @@
 ---
 description: How to manage tickets
-globs: 
+globs:
 alwaysApply: false
 ---
-# Instructions
+## HOW TO MANAGE GITHUB TICKETS BY MCP
 
-- All tickets must be written according to the GODS framework. 
+- All tickets must be written according to the GODS framework.
 - All tickets and messages must be in English.
 - To manipulate tickets, use tools:
     + add_issue_comment

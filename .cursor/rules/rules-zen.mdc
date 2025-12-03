@@ -3,7 +3,7 @@ description:
 globs:
 alwaysApply: true
 ---
-# Zen of Development
+## ZEN OF DEVELOPMENT
 
 1. **Write clean, focused code**
    Remove anything unnecessary.

@@ -3,7 +3,7 @@ description:
 globs:
 alwaysApply: true
 ---
-## DOCUMENTATION (directory `documents`)
+## DOCUMENTATION STRUCTURE AND RULES (directory `documents`)
 
 1. @documents/whiteboard.md:
 - Temporary notes

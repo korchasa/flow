@@ -26,12 +26,12 @@ Interactive process to create a custom command based on user needs through Q&A s
 4. **Generate the command content**
    - Write clear Overview section explaining purpose
    - Break down Steps with actionable instructions
-   - Add relevant checklists for verification
+   - Add relevant checklists for verification (use `- [ ] Item description` format)
    - Include examples if applicable
    - Use proper Markdown formatting
 
 5. **Create the command file**
-   - Suggest filename: `{command-name}.md`
+   - Suggest filename: `task-{command-name}.md`
    - Recommend location:
      - Project: `.cursor/commands/` for project-specific
      - Global: `~/.cursor/commands/` for personal use
@@ -67,11 +67,11 @@ Provide:
 User: "I need a command to help me write commit messages"
 
 Response:
-- Command name: `write-commit`
-- Location: `.cursor/commands/write-commit.md`
+- Command name: `task-write-commit`
+- Location: `.cursor/commands/task-write-commit.md`
 - Content includes:
   - Analyze git diff
   - Follow conventional commits format
   - Generate descriptive message
   - Include breaking changes if any
-- Usage: `/write-commit for the authentication refactor`
+- Usage: `/task-write-commit for the authentication refactor`

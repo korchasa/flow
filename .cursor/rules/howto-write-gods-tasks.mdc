@@ -1,10 +1,10 @@
 ---
-description: How to write GODS tasks
+description: How to write tasks using GODS framework
 alwaysApply: false
 ---
-# How to write tasks using GODS framework
+## HOW TO WRITE TASKS USING GODS FRAMEWORK
 
-## What is GODS?
+### What is GODS?
 
 The framework helps to formulate tasks in a way that avoids misunderstandings between the "client" and the "executor":
 - Helps to clearly articulate the goal, context, and criteria for task completion.
@@ -28,9 +28,9 @@ The framework helps to formulate tasks in a way that avoids misunderstandings be
 
 ---
 
-## Examples of Applying GODS
+### EXAMPLES OF APPLYING GODS
 
-### 1. Incidents (Platform team)
+#### 1. Incidents (Platform team)
 
 - **Goal:** Restore the CI/CD pipeline so that deployment delays do not exceed 1 hour.
 - **Overview:** Updated the Jenkins plugin → 5 builds with errors → version incompatible.
@@ -39,7 +39,7 @@ The framework helps to formulate tasks in a way that avoids misunderstandings be
 
 ---
 
-### 2. Operational Tasks (Platform team)
+#### 2. Operational Tasks (Platform team)
 
 - **Goal:** Update the monitoring system to reduce false positives.
 - **Overview:** Outdated rules → too many alerts.
@@ -48,7 +48,7 @@ The framework helps to formulate tasks in a way that avoids misunderstandings be
 
 ---
 
-### 3. Platform Development (Platform team)
+#### 3. Platform Development (Platform team)
 
 - **Goal:** Implement a predictive analytics module to prevent incidents.
 - **Overview:** Incident frequency has increased by 25%, no forecasting tools available.
@@ -57,7 +57,7 @@ The framework helps to formulate tasks in a way that avoids misunderstandings be
 
 ---
 
-### 4. Product Team Requests (Platform team)
+#### 4. Product Team Requests (Platform team)
 
 - **Goal:** Move the Alpha service to Docker to speed up deployment and simplify support.
 - **Overview:** Currently, Alpha runs on virtual machines, deployment takes a long time and causes errors during updates.

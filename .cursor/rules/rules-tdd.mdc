@@ -3,7 +3,7 @@ description:
 globs:
 alwaysApply: true
 ---
-## TDD Flow
+## TDD FLOW
 
 1. **Red**
    - Write a simple test for new behavior or to reproduce a bug.
@@ -22,7 +22,7 @@ alwaysApply: true
    - Run `deno fmt && deno lint && deno test` to make sure everything is correct.
    - Fix all problems, including lint errors and warnings.
 
-## Test Rules
+### Test Rules
 
 - Put tests in the same package as the code being tested. It's okay to test private methods.
 - Don't write code just to satisfy tests unless it fixes real issues.

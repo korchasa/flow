@@ -3,7 +3,7 @@ description:
 globs:
 alwaysApply: true
 ---
-## DOCUMENTATION STRUCTURE AND RULES
+## DOCUMENTATION STRUCTURE AND RULES (directory `documents`)
 
 ### Hierarchy and purpose
 

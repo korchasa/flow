@@ -1,9 +1,8 @@
 ---
 alwaysApply: true
 ---
-## Code Style Rules
+## CODE STYLE RULES FOR TYPESCRIPT STRICT MODE
 
-### MOST IMPORTANT RULES
 - NO FALLBACKS/HACKS WITHOUT EXPLICIT REQUEST. "FAIL FAST, FAIL CLEARLY."
 - USE TYPED CONSTANTS/ENUMS INSTEAD OF MAGIC NUMBERS/STRINGS
 - FUNCTIONS ≤100 LINES; BREAK COMPLEX LOGIC INTO HELPERS
@@ -41,7 +40,7 @@ export async function fetchData(
 }
 ```
 
-### Testing
+#### Testing
 - Don't change prod code to pass tests
 - Unit tests for pure functions
 - Integration tests for interactions
