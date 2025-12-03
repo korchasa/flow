@@ -1,8 +1,8 @@
 ---
-description: Create and edit issues using GODS framework
+description: How to write GODS tasks
 alwaysApply: false
 ---
-# Framework GODS: Clear and Precise Task Setting
+# How to write tasks using GODS framework
 
 ## What is GODS?
 
@@ -25,31 +25,6 @@ The framework helps to formulate tasks in a way that avoids misunderstandings be
 
 - **S — Solution:**
   How can the task be solved?
-
----
-
-## Where GODS Works Best
-
-The framework is applicable where:
-- The goal of the task is clear.
-- The context is clearly described.
-- There are measurable criteria for completion.
-- The executor is free to choose the solution.
-
-Ideal for:
-- Incidents.
-- Operational DevOps tasks.
-- Infrastructure development tasks.
-- Requests from product teams.
-- Business processes with clear outcomes.
-- Tool implementation.
-- Testing, change management, product launches.
-
-Ineffective for:
-- Innovative projects without clear outcomes.
-- Tasks with rapidly changing requirements.
-- Processes with a high degree of uncertainty, where flexible management is needed.
-- Projects where it is important to control intermediate stages, risks, and strategy adaptation.
 
 ---
 

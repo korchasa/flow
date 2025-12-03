@@ -13,8 +13,8 @@
   - `alpha-task-*.md` - Experimental task definitions.
 - `rules/` - Context rules and guides (19 rules total).
   - `rules-code-style-*.mdc` - Language-specific coding standards.
-  - `rules-*.mdc` - Core behavioral frameworks (autonomous, tdd, zen, gods, poc).
-  - `howto-*.mdc` - Practical workflow guides (9 guides).
+  - `rules-*.mdc` - Core behavioral frameworks (autonomous, tdd, zen, poc).
+  - `howto-*.mdc` - Practical workflow guides (10 guides).
   - `docs-schema-*.mdc` - Documentation templates.
   - `rule-design-style-guide.mdc` - Design principles.
   - `run-commands.mdc` - Command execution rules.

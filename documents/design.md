@@ -46,8 +46,8 @@
 - **Dependencies:** None.
 - **Key Files:**
   - `rules-code-style-*.mdc`: Language-specific coding standards (TypeScript, Swift, Fullstack).
-  - `rules-*.mdc`: Core behavioral frameworks (Autonomous, TDD, Zen, GODS, PoC).
-  - `howto-*.mdc`: Practical guides for workflows and tools (9 guides total).
+  - `rules-*.mdc`: Core behavioral frameworks (Autonomous, TDD, Zen, PoC).
+  - `howto-*.mdc`: Practical guides for workflows and tools (10 guides total).
   - `docs-schema-*.mdc`: Documentation templates and schemas.
   - `rule-design-style-guide.mdc`: Design principles and guidelines.
   - `run-commands.mdc`: Command execution rules.

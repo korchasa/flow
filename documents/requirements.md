@@ -44,7 +44,7 @@
 - **Description:** The system must provide guides for complex or situational tasks.
 - **Use case scenario:** User asks how to fix tests. Agent retrieves `howto-fix-tests.mdc` and follows the procedure.
 - **Acceptance criteria:**
-  - [x] Support for 9 how-to guides covering commit workflows, documentation, debugging, testing, Git operations, and GitHub management
+  - [x] Support for 10 how-to guides covering commit workflows, documentation, debugging, testing, Git operations, GitHub management, and GODS tasks
   - [x] Guides follow `howto-*` naming convention
   - [x] Each guide provides step-by-step instructions for specific scenarios
 
