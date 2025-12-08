@@ -19,8 +19,9 @@ alwaysApply: true
 - Union types over enums for simple cases
 - Pass all class dependencies via constructors or factory methods.
 - Pass dependencies for specific method calls via method parameters.
+- Prioritize pure functions for business logic; separate state mutation from logic.
+- Enforce immutability: use `readonly`, `Readonly<T>`, and `ReadonlyArray<T>`.
 - Avoid `any`; use `unknown` for truly unknown types
-- `readonly` for immutable data
 - Use utility types (`Partial`, `Pick`, etc.)
 - Don't use index files to import modules
 - Use a similar strong inline type style for parameter passing to methods and functions:
