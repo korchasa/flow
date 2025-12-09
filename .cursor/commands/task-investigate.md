@@ -3,7 +3,7 @@
 ## Overview
 Diagnose the root cause without production code modifications using BED-LLM and discrete-outcome experiments.
 
-## Steps
+## Todo List
 1. **Intake**
    - Briefly restate the problem
    - Read the project documentation in `./documents` directory

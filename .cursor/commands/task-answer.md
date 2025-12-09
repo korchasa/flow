@@ -3,7 +3,7 @@
 ## Overview
 Analyze and answer a user's question in Autonomous Mode by carefully reading documentation and inspecting the codebase, without modifying any project files.
 
-## Steps
+## Todo List
 1. **Understand the question**
    - Read all available docs in `./documents` (SRS, SDS, file structure, manuals, whiteboard) if they exist
    - Clarify and restate the user's question in a more precise and structured form

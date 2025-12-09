@@ -3,7 +3,7 @@
 ## Overview
 Assess all changes since the last commit for correctness, architecture, and proportionality to the task.
 
-## Steps
+## Todo List
 1. **Preparation**
    - Read the documentation in `./documents`
 

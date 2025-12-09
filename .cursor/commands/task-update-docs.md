@@ -3,7 +3,7 @@
 ## Overview
 Synchronize project documentation in `./documents` with the latest code changes using concise, high-information writing.
 
-## Steps
+## Todo List
 1. **Preparation**
    - Read all existing docs in `./documents`
    - Study all changes since the last commit (use `| cat` for git operations)

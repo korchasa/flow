@@ -3,7 +3,7 @@
 ## Overview
 Create a comprehensive `run.ts` script for project automation following the project's specification and documentation requirements.
 
-## Steps
+## Todo List
 1. **Read specifications**
    - Review project documentation and requirements
    - Understand the project's technology stack and build process

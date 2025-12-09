@@ -3,7 +3,7 @@
 ## Overview
 Diagnose and implement a minimal, safe, reproducible fix using BED-LLM with explicit user approval for experiments and fixes.
 
-## Steps
+## Todo List
 1. **Intake**
    - Briefly restate the problem
    - Read the project documentation in `./documents` directory

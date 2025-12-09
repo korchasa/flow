@@ -19,7 +19,7 @@ Generate optimized `CLAUDE.md` in project root from `.cursor/rules/*.mdc` files 
 - **Structured hierarchy**: Use headings (##, ###) for clear organization
 - **Imperative mood**: "Do X", "Use Y", "Follow Z"
 
-## Steps
+## Todo List
 1. **Validate input**
    - Check `.cursor/rules/` exists and contains `.mdc` files
    - If empty or missing, output error and stop

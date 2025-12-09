@@ -3,7 +3,7 @@
 ## Overview
 Execute a task in Autonomous Mode using strict TDD, keeping documentation updated and the project clean.
 
-## Steps
+## Todo List
 1. **Preparation**
    - Read all docs in `./documents`
    - Review the task in `./documents/whiteboard.md`

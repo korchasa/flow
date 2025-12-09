@@ -9,7 +9,7 @@ Create a clear, critiqued plan in `./documents/whiteboard.md` with options analy
 - MUST use the user's query language for all conversation and the plan.
 - MUST NOT edit any files in the project except `./documents/whiteboard.md`.
 
-## Steps
+## Todo List
 1. **Read all docs in `./documents`**
 2. **Analyze and restate the user query**
 If the user query contains an internal contradiction, tell the user about it and ask them to resolve it.

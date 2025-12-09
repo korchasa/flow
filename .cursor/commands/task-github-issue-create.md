@@ -3,7 +3,7 @@
 ## Overview
 Generate a high-quality issue describing the task/problem with clear DoD and option analysis, then create it on GitHub.
 
-## Steps
+## Todo List
 1. **Preparation**
    - Read `./documents`
    - Analyze and restate the user request

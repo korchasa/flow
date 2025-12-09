@@ -3,7 +3,7 @@
 ## Overview
 Interactive process to create a custom command based on user needs through Q&A session.
 
-## Steps
+## Todo List
 
 1. **Understand the use case**
    - Ask the user what task or workflow they want to automate

@@ -3,7 +3,7 @@
 ## Overview
 Guided flow to prepare, commit, and publish changes following Conventional Commits (strict) and repository rules.
 
-## Steps
+## Todo List
 1. **Pre-flight checks**
    - Run `./run check` if the project wasn’t checked since the last modification.
    - Review the current `./documents` tree (except `whiteboard.md`) and catalogue the facts that need reflection in the docs; inspect changes since the last commit (`GIT_PAGER=cat` or similar) to understand what must be captured.
