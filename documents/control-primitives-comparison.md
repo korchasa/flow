@@ -21,8 +21,8 @@ Automatically add stable "work agreements" and project norms (like README for ag
 
 * `AGENTS.md` (global project rules)
 * `subdir/AGENTS.md` (Rules for specific subdirectories)
-* `.cursor/rules/*/RULE.md` (with `alwaysApply: true`)
-* `.cursor/rules/*.mdc` (with `alwaysApply: true`) **Legacy!**
+* `.cursor/rules/*/RULE.md` with `alwaysApply: true`
+* `.cursor/rules/*.mdc` with `alwaysApply: true` **Legacy!**
 
 > TODO: Find out merge rules
 
@@ -161,20 +161,14 @@ Specify files that should not get into agent context, even if they are not exclu
 | Primitive | Scope/Area | Claude Code | Antigravity | Cursor | OpenAI Codex |
 |-----------|------------|-------------|-------------|--------|--------------|
 | **Persistent Instructions** | User | `~/.claude/CLAUDE.md` | `~/.gemini/GEMINI.md` | - | `~/.codex/AGENTS.md`<br>`~/.codex/AGENTS.override.md` |
-| | Project | `CLAUDE.md`<br>`.claude/rules/*.md` | `.agent/rules/*.md` | `AGENTS.md`<br>`.cursor/rules/*/RULE.md`<br>`.cursor/rules/*.mdc` | `AGENTS.md`<br>`AGENTS.override.md` |
+| | Project | `CLAUDE.md`<br>`.claude/rules/*.md` | `.agent/rules/*.md` | `AGENTS.md`<br>`.cursor/rules/*/RULE.md`<br>`.cursor/rules/*.mdc` with alwaysAply | `AGENTS.md`<br>`AGENTS.override.md` |
 | | Folder | `subdir/CLAUDE.md`<br>`CLAUDE.local.md` | - | `subdir/AGENTS.md` | `subdir/AGENTS.md`<br>`subdir/AGENTS.override.md` |
-| **Conditional Instructions** | User | - | - | - | - |
-| | Project | `.claude/rules/` (with paths) | - | `.cursor/rules/*.mdc` (with globs) | - |
-| | Folder | - | - | - | - |
-| **Custom Commands** | User | `~/.claude/commands/*.md` | `~/.gemini/antigravity/global_workflows/` | `~/.cursor/commands/*.md` | `~/.codex/prompts/*.md` |
+| **Conditional Instructions** | Project | `.claude/rules/` (with paths) | - | `.cursor/rules/*.mdc` (with globs) | - |
+| **Custom Commands** | User | `~/.claude/commands/*.md` | `~/.gemini/antigravity/global_workflows/global-workflow.md` | `~/.cursor/commands/*.md` | `~/.codex/prompts/*.md` |
 | | Project | `.claude/commands/*.md`<br>`.claude/commands/<namespace>/*.md` | `.agent/workflows/*.md` | `.cursor/commands/*.md` | - |
-| | Folder | - | - | - | - |
 | **Event Hooks** | User | `~/.claude/settings.json` | - | - | - |
 | | Project | `.claude/settings.json`<br>`.claude/settings.local.json` | - | - | - |
-| | Folder | - | - | - | - |
 | **MCP Integration** | User | `settings.json`<br>`managed-mcp.json` | Through settings | `~/.cursor/mcp.json` | `~/.codex/config.toml` |
 | | Project | `.mcp.json` | - | `.cursor/mcp.json` | - |
-| | Folder | - | - | - | - |
 | **Context Ignoring** | User | `.claude/settings.json` | - | - | - |
 | | Project | - | `.gitignore` | `.cursorignore` | `.gitignore` |
-| | Folder | - | - | - | - |
