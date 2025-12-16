@@ -49,8 +49,10 @@ Instructions included in context only under certain conditions. Allow to reduce 
 
 ### Cursor
 
-* `.cursor/rules/*.mdc` with `globs: src/api/**/*.ts`
-* `.cursor/rules/*.mdc` with `description: This rule provides standards for frontend components and API validation`
+* `.cursor/rules/*/RULE.md` with `globs: src/api/**/*.ts`
+* `.cursor/rules/*.mdc` with `globs: src/api/**/*.ts` **Legacy!**
+* `.cursor/rules/*/RULE.md` with `description: This rule provides standards for frontend components and API validation`
+* `.cursor/rules/*.mdc` with `description: This rule provides standards for frontend components and API validation` **Legacy!**
 
 ---
 
@@ -161,14 +163,14 @@ Specify files that should not get into agent context, even if they are not exclu
 | Primitive | Scope/Area | Claude Code | Antigravity | Cursor | OpenAI Codex |
 |-----------|------------|-------------|-------------|--------|--------------|
 | **Persistent Instructions** | User | `~/.claude/CLAUDE.md` | `~/.gemini/GEMINI.md` | - | `~/.codex/AGENTS.md`<br>`~/.codex/AGENTS.override.md` |
-| | Project | `CLAUDE.md`<br>`.claude/rules/*.md` | `.agent/rules/*.md` | `AGENTS.md`<br>`.cursor/rules/*/RULE.md`<br>`.cursor/rules/*.mdc` with alwaysAply | `AGENTS.md`<br>`AGENTS.override.md` |
+| | Project | `CLAUDE.md`<br>`.claude/rules/*.md` | `.agent/rules/*.md` | `AGENTS.md`<br>`.cursor/rules/*/RULE.md`<br>~~`.cursor/rules/*.mdc`~~ | `AGENTS.md`<br>`AGENTS.override.md` |
 | | Folder | `subdir/CLAUDE.md`<br>`CLAUDE.local.md` | - | `subdir/AGENTS.md` | `subdir/AGENTS.md`<br>`subdir/AGENTS.override.md` |
-| **Conditional Instructions** | Project | `.claude/rules/` (with paths) | - | `.cursor/rules/*.mdc` (with globs) | - |
+| **Conditional Instructions** | Project | `.claude/rules/*.md` | - | `.cursor/rules/*/RULE.md`<br>~~`.cursor/rules/*.mdc`~~| - |
 | **Custom Commands** | User | `~/.claude/commands/*.md` | `~/.gemini/antigravity/global_workflows/global-workflow.md` | `~/.cursor/commands/*.md` | `~/.codex/prompts/*.md` |
 | | Project | `.claude/commands/*.md`<br>`.claude/commands/<namespace>/*.md` | `.agent/workflows/*.md` | `.cursor/commands/*.md` | - |
 | **Event Hooks** | User | `~/.claude/settings.json` | - | - | - |
 | | Project | `.claude/settings.json`<br>`.claude/settings.local.json` | - | - | - |
-| **MCP Integration** | User | `settings.json`<br>`managed-mcp.json` | Through settings | `~/.cursor/mcp.json` | `~/.codex/config.toml` |
+| **MCP Integration** | User | `settings.json`<br>`managed-mcp.json` | - | `~/.cursor/mcp.json` | `~/.codex/config.toml` |
 | | Project | `.mcp.json` | - | `.cursor/mcp.json` | - |
 | **Context Ignoring** | User | `.claude/settings.json` | - | - | - |
 | | Project | - | `.gitignore` | `.cursorignore` | `.gitignore` |
