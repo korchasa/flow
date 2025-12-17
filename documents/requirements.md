@@ -11,7 +11,7 @@
   - **GODS:** Git Operations & Development Standards (framework).
 
 ## 2. General description
-- **System context:** A set of configuration files (`.md`, `.mdc`) located in the `.cursor` directory of a project, interpreted by the Cursor AI agent to guide development, enforce rules, and execute workflows.
+- **System context:** A set of configuration files (`.md`, RULE.md) located in the `.cursor` directory of a project, interpreted by the Cursor AI agent to guide development, enforce rules, and execute workflows.
 - **Assumptions and constraints:**
   - **Assumptions:** The user is using Cursor IDE. The project structure follows the defined conventions.
   - **Constraints:** functionality is limited by Cursor's rule capabilities and the agent's context window.
@@ -42,10 +42,10 @@
 
 ### 3.4 Automation & How-To (FR-4)
 - **Description:** The system must provide guides for complex or situational tasks.
-- **Use case scenario:** User asks how to fix tests. Agent retrieves `howto-fix-tests.mdc` and follows the procedure.
+- **Use case scenario:** User asks how to fix tests. Agent retrieves `howto-fix-tests/RULE.md` and follows the procedure.
 - **Acceptance criteria:**
   - [x] Support for 10 how-to guides covering commit workflows, documentation, debugging, testing, Git operations, GitHub management, and GODS tasks
-  - [x] Guides follow `howto-*` naming convention
+  - [x] Guides follow `howto-*/` directory naming convention with `RULE.md` files
   - [x] Each guide provides step-by-step instructions for specific scenarios
 
 ### 3.5 Project Maintenance (FR-5)
@@ -68,7 +68,7 @@
   - File System: Storage for rules, commands, and documentation.
   - Git: Version control operations.
   - MCP: Integration with external tools (GitHub, etc.).
-- **Protocols and data formats:** Markdown (`.md`, `.mdc`).
+- **Protocols and data formats:** Markdown (`.md`, RULE.md).
 - **UI/UX constraints:** Text-based chat interface.
 
 ## 6. Acceptance criteria

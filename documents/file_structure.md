@@ -11,17 +11,18 @@
 - `commands/` - Executable task workflows (14 commands).
   - `task-*.md` - Standard task definitions (analyze-error, commit, plan, review, etc.).
   - `alpha-task-*.md` - Experimental task definitions.
-- `rules/` - Context rules and guides (19 rules total).
-  - `rules-code-style-*.mdc` - Language-specific coding standards.
-  - `rules-*.mdc` - Core behavioral frameworks (autonomous, tdd, zen, poc).
-  - `howto-*.mdc` - Practical workflow guides (10 guides).
-  - `docs-schema-*.mdc` - Documentation templates.
-  - `rule-design-style-guide.mdc` - Design principles.
-  - `run-commands.mdc` - Command execution rules.
+- `rules/` - Context rules and guides (20 rules total).
+  - `rules-code-style-*/` - Language-specific coding standards (4 variants).
+  - `rules-*/` - Core behavioral frameworks (Autonomous, TDD, Zen, PoC).
+  - `howto-*/` - Practical workflow guides (10 guides).
+  - `docs-schema-*/` - Documentation templates (2 schemas).
+  - `rule-design-style-guide/` - Design principles and guidelines.
+  - `rules-run-commands/` - Command execution rules.
+  - `main-example/` - Core project rules and guidelines.
 
 ## File Organization Patterns
 - **Commands:** Named `task-<action>.md` or `alpha-task-<action>.md`. Stored in `.cursor/commands/`.
-- **Rules:** Named `rules-<topic>.mdc`, `howto-<topic>.mdc`, or `rule-<topic>.mdc`. Stored in `.cursor/rules/`.
+- **Rules:** Named `rules-<topic>/`, `howto-<topic>/`, or `rule-<topic>/`. Each directory contains `RULE.md` with YAML frontmatter.
 - **Scripts:** Named `run.ts` for Deno-based maintenance utilities. Root level.
 - **Docs:** Named according to SRS/SDS schema. Stored in `documents/`.
 

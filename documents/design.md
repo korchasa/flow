@@ -10,7 +10,7 @@
   graph TD
     User[User] -->|Chat Input| Cursor[Cursor IDE]
     Cursor -->|Reads| Commands[.cursor/commands/*.md]
-    Cursor -->|Reads| Rules[.cursor/rules/*.mdc]
+    Cursor -->|Reads| Rules[.cursor/rules/*/RULE.md]
     Cursor -->|Updates| Docs[documents/*.md]
     Cursor -->|Executes| Actions[Code/Git/MCP]
   ```
@@ -42,15 +42,16 @@
 
 ### 3.2 Context Rules (`.cursor/rules/`)
 - **Purpose:** Provide automatic context to the LLM for code generation, style, and behavior.
-- **Interfaces:** `.mdc` files loaded by Cursor based on file globs or context.
+- **Interfaces:** Directory-based `RULE.md` files with YAML frontmatter, loaded by Cursor based on file globs or context.
 - **Dependencies:** None.
-- **Key Files:**
-  - `rules-code-style-*.mdc`: Language-specific coding standards (TypeScript, Swift, Fullstack).
-  - `rules-*.mdc`: Core behavioral frameworks (Autonomous, TDD, Zen, PoC).
-  - `howto-*.mdc`: Practical guides for workflows and tools (10 guides total).
-  - `docs-schema-*.mdc`: Documentation templates and schemas.
-  - `rule-design-style-guide.mdc`: Design principles and guidelines.
-  - `run-commands.mdc`: Command execution rules.
+- **Key Directories:**
+  - `rules-code-style-*/`: Language-specific coding standards (TypeScript, Swift, Fullstack, Deno).
+  - `rules-*/`: Core behavioral frameworks (Autonomous, TDD, Zen, PoC).
+  - `howto-*/`: Practical guides for workflows and tools (10 guides total).
+  - `docs-schema-*/`: Documentation templates and schemas (RDS-SDS, Cline-bank).
+  - `rule-design-style-guide/`: Design principles and guidelines.
+  - `rules-run-commands/`: Command execution rules.
+  - `main-example/`: Core project rules and guidelines.
 
 ### 3.3 Project Documentation (`documents/`)
 - **Purpose:** Serve as the long-term memory of the project.
@@ -76,7 +77,7 @@
 ## 5. Algorithms and Logic
 - **Key algorithms:**
   - **Command Parsing:** Cursor detects `/` and matches against `.cursor/commands` filenames.
-  - **Rule Matching:** Cursor matches open files/context against `.mdc` globs.
+  - **Rule Matching:** Cursor matches open files/context against RULE.md globs.
 - **Business rules:**
   - All commands must start with `/task-`.
   - Documentation must be kept up-to-date with code changes.
