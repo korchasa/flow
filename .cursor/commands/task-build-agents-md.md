@@ -1,7 +1,7 @@
-# Build CLAUDE.md
+# Build AGENTS.md
 
 ## Overview
-Generate optimized `CLAUDE.md` in project root from `.cursor/rules/*.mdc` files following Claude Code best practices.
+Generate optimized `AGENTS.md` in project root from `.cursor/rules/*/RULE.md` files following best practices.
 
 ## Important Restrictions
 - **NO SCRIPTS**: Do not create, use, or suggest any scripts for this task
@@ -21,17 +21,16 @@ Generate optimized `CLAUDE.md` in project root from `.cursor/rules/*.mdc` files 
 
 ## Todo List
 1. **Validate input**
-   - Check `.cursor/rules/` exists and contains `.mdc` files
+   - Check `.cursor/rules/*/RULE.md` files exists
    - If empty or missing, output error and stop
 
 2. **Collect and categorize files**
-   - Read all `.mdc` files from `.cursor/rules/`
+   - Read all files by mask `.cursor/rules/*/RULE.md`
    - Categorize by prefix:
-     - `main.mdc` → Main section (first)
-     - `rules-*.mdc` → Rules section
-     - `howto-*.mdc` → How-To Guides section
-     - `docs-*.mdc` → Documentation Standards section
-     - `run-commands.mdc` → Commands section
+     - `main/RULE.md` → Main section (first)
+     - `rules-*/RULE.md` or `rule-*/RULE.md` → Rules section
+     - `howto-*/RULE.md` → How-To Guides section
+     - `docs-*/RULE.md` → Documentation Standards section
      - Others → Additional Rules section
    - Sort alphabetically within each category
 
@@ -40,40 +39,28 @@ Generate optimized `CLAUDE.md` in project root from `.cursor/rules/*.mdc` files 
    - Extract clean content
    - Preserve markdown structure and formatting
 
-4. **Build CLAUDE.md structure**
+4. **Build AGENTS.md structure**
    ```
-   # Project Instructions
-
-   [content from main.mdc if exists]
-
-   ## Rules
-   [content from rules-*.mdc files]
-
-   ## How-To Guides
-   [content from howto-*.mdc files]
-
-   ## Documentation Standards
-   [content from docs-*.mdc files]
-
-   ## Commands
-   [content from run-commands.mdc if exists]
-
-   ## Additional Rules
-   [content from other .mdc files]
+   [content from main/RULE.md if exists]
+   [content from docs-*/RULE.md files]
+   [content from rules-run-commands/RULE.md file]
+   [content from rules-*/RULE.md files]
+   [content from howto-*/RULE.md files]
+   [content from other RULE.md files]
    ```
    - Add section headers only if category has files
-   - Add `### [filename without extension]` as subsection header for each file
+   - Add `### [directory name]` as subsection header for each file (e.g., `### rules-zen`)
    - Separate files within section with blank line
 
-5. **Write CLAUDE.md**
-   - Save to project root: `./CLAUDE.md`
+5. **Write AGENTS.md**
+   - Save to project root: `./AGENTS.md`
    - Overwrite if exists
    - Ensure UTF-8 encoding, LF line breaks
 
 6. **Report completion**
    - List processed files by category
    - Show total file count
-   - Confirm CLAUDE.md location
+   - Confirm AGENTS.md location
 
 ## Implementation Notes
 - **Manual process**: Execute all steps manually using file reading/writing tools; no scripts allowed
@@ -81,13 +68,12 @@ Generate optimized `CLAUDE.md` in project root from `.cursor/rules/*.mdc` files 
 - Preserve all markdown formatting from source files
 - Maintain blank lines between sections for readability
 - Strip only frontmatter YAML blocks; keep all other content
-- If `main.mdc` missing, skip Main section (no error)
+- If `main/RULE.md` missing, skip Main section (no error)
 - Categories with zero files are omitted from output
 
 ## Checklist
 - [ ] No scripts created or used (manual execution only)
-- [ ] `.cursor/rules/` directory validated
-- [ ] All `.mdc` files collected and categorized
+- [ ] All `.cursor/rules/*/RULE.md` files validated
 - [ ] Frontmatter removed from all files
 - [ ] CLAUDE.md generated with proper structure
 - [ ] Section headers added for populated categories

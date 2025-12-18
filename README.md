@@ -20,18 +20,18 @@ Cursor supports custom commands that create reusable workflows launched with `/`
 
 Use these commands by typing `/task-*` in Cursor chat:
 
-- `/task-analyze-error` - Analyze errors and suggest fixes
 - `/task-answer` - Answer questions with context from codebase
+- `/task-build-agents-md` - Generate optimized AGENTS.md from rules files
 - `/task-check` - **Quick check**: run `./run check` + read-only error analysis without code modifications
-- `/task-investigate` - **Deep investigation**: root cause diagnosis with experiments in separate branches (hypothesis/*), without permanent changes
-- `/task-fix` - **Complete fix**: diagnosis + implementation of fixes with tests in branches (fix/*), requires confirmation before merge
 - `/task-commit` - Git commit workflow following Conventional Commits
 - `/task-create-command` - Create a new Cursor command
 - `/task-create-run-ts-script` - Create the `./run` maintenance script
+- `/task-do` - General task execution workflow
 - `/task-execute` - Execute and implement planned tasks
 - `/task-github-issue-create` - Create GitHub issues using GODS framework
+- `/task-investigate-autonomous` - **Deep investigation**: autonomous root cause diagnosis
+- `/task-investigate-step-by-step` - **Deep investigation**: user-controlled root cause diagnosis
 - `/task-plan` - Plan and break down complex development tasks
-- `/task-review` - Review code changes and implementation
 - `/task-update-docs` - Update project documentation
 
 For more information, see [Cursor Commands Documentation](https://cursor.com/docs/agent/chat/commands).
@@ -61,18 +61,18 @@ Key Principles:
 ### Task Commands
 Task commands provide guided workflows for specific development activities (use with `/task-*` in Cursor chat):
 
-- `task-analyze-error.md` - Analyze errors and suggest fixes
 - `task-answer.md` - Answer questions with context
+- `task-build-agents-md.md` - Generate optimized AGENTS.md from rules files
 - `task-check.md` - **Quick check**: run `./run check` + read-only error analysis without code modifications. Proposes solutions to user
-- `task-investigate.md` - **Deep investigation**: root cause diagnosis with experiments in hypothesis/* branches, without permanent code changes
-- `task-fix.md` - **Complete fix cycle**: from diagnosis to fix implementation with tests in fix/* branches. Requires confirmation before merge
 - `task-commit.md` - Commit workflow following Conventional Commits (strict)
 - `task-create-command.md` - Create a new Cursor command
 - `task-create-run-ts-script.md` - Create the `./run` maintenance script
+- `task-do.md` - General task execution workflow
 - `task-execute.md` - Execute and implement planned tasks
 - `task-github-issue-create.md` - Create GitHub issues using GODS framework
+- `task-investigate-autonomous.md` - **Deep investigation**: autonomous root cause diagnosis
+- `task-investigate-step-by-step.md` - **Deep investigation**: user-controlled root cause diagnosis
 - `task-plan.md` - Plan and break down complex development tasks
-- `task-review.md` - Review code changes and implementation
 - `task-update-docs.md` - Update project documentation
 
 ### Documentation Rules

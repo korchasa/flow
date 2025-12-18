@@ -26,6 +26,7 @@
 - **Dependencies:** User input, existing codebase.
 - **Key Files:**
   - `task-answer.md`: Question answering with codebase context.
+  - `task-build-agents-md.md`: AGENTS.md generation workflow.
   - `task-check.md`: Quick project validation.
   - `task-commit.md`: Conventional Commits workflow.
   - `task-create-command.md`: Command creation utility.
@@ -37,7 +38,6 @@
   - `task-investigate-step-by-step.md`: Step-by-step investigation workflow.
   - `task-plan.md`: Task planning and breakdown.
   - `task-update-docs.md`: Documentation maintenance.
-  - `alpha-task-build-claude-md.md`: Experimental Claude.md generation.
 
 ### 3.2 Context Rules (`.cursor/rules/`)
 - **Purpose:** Provide automatic context to the LLM for code generation, style, and behavior.
@@ -46,9 +46,9 @@
 - **Key Directories:**
   - `rules-code-style-*/`: Language-specific coding standards (TypeScript, Swift, Fullstack, Deno).
   - `rules-*/`: Core behavioral frameworks (Autonomous, TDD, Zen, PoC).
+  - `rules-design-style-guide/`: Design principles and guidelines.
   - `howto-*/`: Practical guides for workflows and tools (10 guides total).
   - `docs-schema-*/`: Documentation templates and schemas (RDS-SDS, Cline-bank).
-  - `rule-design-style-guide/`: Design principles and guidelines.
   - `rules-run-commands/`: Command execution rules.
   - `main-example/`: Core project rules and guidelines.
 
