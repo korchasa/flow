@@ -33,7 +33,6 @@
   - `task-create-run-ts-script.md`: Maintenance script generation.
   - `task-execute.md`: Task implementation workflow.
   - `task-fix.md`: Error fixing and testing.
-  - `task-github-issue-create.md`: GitHub issue management.
   - `task-investigate.md`: Deep codebase investigation.
   - `task-plan.md`: Task planning and breakdown.
   - `task-review.md`: Code review workflow.
