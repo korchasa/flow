@@ -48,8 +48,7 @@ Generate optimized `AGENTS.md` in project root from `.cursor/rules/*/RULE.md` fi
    [content from howto-*/RULE.md files]
    [content from other RULE.md files]
    ```
-   - Add section headers only if category has files
-   - Add `### [directory name]` as subsection header for each file (e.g., `### rules-zen`)
+   - Separate sections with `---` (horizontal rule)
    - Separate files within section with blank line
 
 5. **Write AGENTS.md**
@@ -75,7 +74,7 @@ Generate optimized `AGENTS.md` in project root from `.cursor/rules/*/RULE.md` fi
 - [ ] No scripts created or used (manual execution only)
 - [ ] All `.cursor/rules/*/RULE.md` files validated
 - [ ] Frontmatter removed from all files
-- [ ] CLAUDE.md generated with proper structure
+- [ ] AGENTS.md generated with proper structure
 - [ ] Section headers added for populated categories
 - [ ] File written to project root
 - [ ] Completion report displayed
