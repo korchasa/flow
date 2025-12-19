@@ -117,3 +117,4 @@ Parts of the file:
 - Ongoing plans and progress marks.
 - The only file for in-progress notes.
 - Must be cleaned up after new session starts.
+- Can be in the user's language or English.
