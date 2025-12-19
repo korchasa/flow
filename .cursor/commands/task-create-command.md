@@ -1,77 +1,58 @@
 # Create New Command
 
 ## Overview
-Interactive process to create a custom command based on user needs through Q&A session.
+Interactive process to create a custom command file (e.g., `task-*.md`) based on user needs, following the project's standard command structure.
 
 ## Todo List
 
-1. **Understand the use case**
-   - Ask the user what task or workflow they want to automate
-   - Identify the frequency and context of use
-   - Determine if it's for personal use, team, or project-specific
+1. **Analyze Request & Context**
+   - Understand what the user wants to automate.
+   - Check if a similar command already exists.
+   - Identify the scope (personal vs. project-wide).
 
-2. **Gather requirements through Q&A**
-   - What is the main goal of this command?
-   - What steps should be included?
-   - Are there any specific outputs expected?
-   - Should it include checklists or validation steps?
-   - What parameters or context might be needed?
+2. **Conduct Q&A Session (If Needed)**
+   - If the user's request is vague or missing details, **STOP** and ask clarifying questions.
+   - Key information needed:
+     - **Goal**: What is the primary purpose?
+     - **Steps**: What are the specific actionable steps?
+     - **Validation**: How do we know it's done? (Checklist items)
+     - **Constraints**: Any specific rules or restricted actions?
+     - **Output**: specific format required?
+   - *Example Question*: "What are the exact steps you usually take to perform this task manually?"
 
-3. **Design the command structure**
-   - Choose an appropriate command name (short, descriptive, kebab-case)
-   - Outline the main sections: Overview, Steps, Checklist
-   - Identify any categories or sub-tasks
-   - Plan any conditional logic or variations
+3. **Draft Command Structure**
+   - The command **MUST** follow this standard template:
+     ```markdown
+     # [Command Title]
 
-4. **Generate the command content**
-   - Write clear Overview section explaining purpose
-   - Break down Steps with actionable instructions
-   - Add relevant checklists for verification (use `- [ ] Item description` format)
-   - Include examples if applicable
-   - Use proper Markdown formatting
+     ## Overview
+     [Brief description of the command's purpose]
 
-5. **Create the command file**
-   - Suggest filename: `task-{command-name}.md`
-   - Recommend location:
-     - Project: `.cursor/commands/` for project-specific
-     - Global: `~/.cursor/commands/` for personal use
-     - Team: Via Cursor Dashboard for team sharing
-   - Generate complete file content
+     ## Todo List
+     1. **[Step 1 Name]**
+        - [Action detail]
+        - [Action detail]
+     2. **[Step 2 Name]**
+        ...
 
-6. **Provide usage instructions**
-   - Show how to invoke: `/command-name [optional parameters]`
-   - Explain any parameters or variations
-   - Suggest related commands if applicable
+     ## Checklist
+     - [ ] [Verification item 1]
+     - [ ] [Verification item 2]
+     ```
 
-## Q&A Template
+4. **Generate and Review**
+   - Create the content following the drafted structure.
+   - Ensure the filename follows the pattern `task-[action]-[object].md` (e.g., `task-analyze-logs.md`).
+   - Validate that the "Todo List" provides clear, atomic instructions for the agent.
+   - Validate that the "Checklist" allows for objective verification.
 
-Ask user these questions:
-1. What task do you want to automate?
-2. How often will you use this command?
-3. What are the key steps involved?
-4. What should be the final outcome?
-5. Do you need any checklists or validation?
-6. Should this be shared with your team?
+5. **Finalize**
+   - Create the file in the appropriate directory (default: `.cursor/commands/`).
+   - Inform the user of the command name and how to use it (e.g., "Run by opening the file or typing `@.cursor/commands/task-name.md`").
 
-## Output Format
-
-Provide:
-- ✅ Suggested command name
-- 📝 Complete Markdown content
-- 📁 Recommended file location
-- 💡 Usage examples
-- 🔗 Related commands to consider
-
-## Example Interaction
-
-User: "I need a command to help me write commit messages"
-
-Response:
-- Command name: `task-write-commit`
-- Location: `.cursor/commands/task-write-commit.md`
-- Content includes:
-  - Analyze git diff
-  - Follow conventional commits format
-  - Generate descriptive message
-  - Include breaking changes if any
-- Usage: `/task-write-commit for the authentication refactor`
+## Checklist
+- [ ] User's intent is clearly understood (Q&A performed if needed).
+- [ ] Command file structure matches the standard project template (Overview, Todo List, Checklist).
+- [ ] Filename uses kebab-case `task-name.md` convention.
+- [ ] Content is actionable and clear.
+- [ ] File created.
