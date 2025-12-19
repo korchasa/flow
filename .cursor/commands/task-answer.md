@@ -1,7 +1,7 @@
-# Task Ask
+# Task Answer
 
 ## Overview
-Analyze and answer a user's question in Autonomous Mode by carefully reading documentation and inspecting the codebase, without modifying any project files.
+Analyze and answer a user's question in Autonomous Mode by carefully reading documentation and inspecting the codebase. For large responses, save detailed analysis to `documents/whiteboard.md`.
 
 ## Todo List
 1. **Understand the question**
@@ -21,21 +21,22 @@ Analyze and answer a user's question in Autonomous Mode by carefully reading doc
    - Cross-check implementation against requirements and design to identify matches, gaps, or inconsistencies
 
 4. **Answer synthesis**
-   - Formulate a clear, structured answer in the language of the original question
+   - Formulate a clear, structured answer in the language of the original question (reports should be in the language of the query unless user explicitly requests otherwise)
    - Explain how the existing code and design relate to the question and requirements
    - Highlight limitations, edge cases, and potential improvements where relevant
    - If critical uncertainties remain, clearly state them and explicitly ask the user for additional input instead of guessing
+   - For large responses (>1000 characters), save detailed analysis to `documents/whiteboard.md` and provide summary in chat
 
 5. **Constraints**
-   - Do **not** modify any files in the repository
+   - Do **not** modify any files in the repository except `documents/whiteboard.md` for large responses
    - Do **not** use tools or commands that change the working tree or project configuration
-   - Use tools only in read-only ways (e.g., reading files, searching code, inspecting diagnostics)
+   - Use tools only in read-only ways (e.g., reading files, searching code, inspecting diagnostics) unless saving to whiteboard
 
 ## Checklist
 - [ ] Documentation read (where available) and question clarified
 - [ ] Necessary clarification questions asked to the user (if needed)
 - [ ] Relevant code located and analyzed
 - [ ] Answer formulated and structured
-- [ ] No file modifications performed
+- [ ] Response saved to `documents/whiteboard.md` if large, otherwise provided directly
 
 
