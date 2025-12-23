@@ -9,7 +9,7 @@ alwaysApply: true
 - TREAT LINTER/COMPILER WARNINGS AS ERRORS
 - MAIN/EXPORTED FUNCTIONS FIRST, AUXILIARIES LAST
 - PARAMETER STYLE: `{ REQUIRED, OPTIONAL = "DEFAULT" }`
-- DOCUMENT ALL FILES AND FUNCTIONS WITH TSDOC
+- DOCUMENT EVERY FILE, CLASS, AND METHOD/FUNCTION (FOCUS ON RESPONSIBILITY AND IMPLEMENTATION)
 - TESTABILITY IS MORE IMPORTANT THAN PERFORMANCE AND ENCAPSULATION
 - CODE ORDER IN FILES: imports, constants, types, interfaces, classes, main, public functions, private functions, tests
 
@@ -68,7 +68,9 @@ export async function fetchData(
 - Consistent naming
 
 ### Documentation
-- TSDoc for public APIs (params, returns, exceptions, examples)
+- Document every file, class, method, and function with TSDoc.
+- Focus on responsibility (what it does/is for) and implementation details or peculiarities.
+- DO NOT document parameters and return values (TypeScript types already provide this information).
 - English comments only
 - Intent/invariants when code unclear; no redundant comments
 - Document complex logic/architecture
