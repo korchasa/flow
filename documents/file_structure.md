@@ -13,7 +13,7 @@
   - `rules-code-style-*/` - Language-specific coding standards (4 variants).
   - `rules-*/` - Core behavioral frameworks (Autonomous, TDD, Zen, PoC).
   - `rules-design-style-guide/` - Design principles and guidelines.
-  - `howto-*/` - Practical workflow guides (10 guides).
+  - `howto-*/` - Practical workflow guides (12 guides).
   - `docs-schema-*/` - Documentation templates (2 schemas).
   - `rules-run-commands/` - Command execution rules.
   - `main-example/` - Core project rules and guidelines.

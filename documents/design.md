@@ -47,7 +47,7 @@
   - `rules-code-style-*/`: Language-specific coding standards (TypeScript, Swift, Fullstack, Deno).
   - `rules-*/`: Core behavioral frameworks (Autonomous, TDD, Zen, PoC).
   - `rules-design-style-guide/`: Design principles and guidelines.
-  - `howto-*/`: Practical guides for workflows and tools (10 guides total).
+  - `howto-*/`: Practical guides for workflows and tools (12 guides total).
   - `docs-schema-*/`: Documentation templates and schemas (RDS-SDS, Cline-bank).
   - `rules-run-commands/`: Command execution rules.
   - `main-example/`: Core project rules and guidelines.
