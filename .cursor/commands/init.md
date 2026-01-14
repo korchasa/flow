@@ -27,13 +27,14 @@ The user wants to bootstrap an AI agent's understanding of the project. The agen
 
 2. **Analyze Tooling**
    - **Search** for dependency/configuration files:
+     - Deno: `deno.json`.
      - Node/JS: `package.json`, `tsconfig.json`, `.eslintrc*`, `vite.config.*`, `next.config.*`.
      - Python: `requirements.txt`, `pyproject.toml`, `setup.py`, `Pipfile`.
      - Rust: `Cargo.toml`.
      - Go: `go.mod`.
      - Docker: `Dockerfile`, `docker-compose.yml`.
      - CI/CD: `.github/workflows/`, `.gitlab-ci.yml`.
-   - **Extract** key dependencies (frameworks, libraries) and scripts (build, test, lint).
+   - **Extract** key dependencies (frameworks, libraries) and scripts (build, test, lint, run).
 
 3. **Analyze Architecture**
    - **List** the root directory structure to identify key folders (e.g., `src`, `app`, `components`, `api`, `lib`, `docs`).
@@ -66,6 +67,7 @@ The user wants to bootstrap an AI agent's understanding of the project. The agen
    - Follow with the dynamic sections:
      - `# Agent Reference: [Project Name]`
      - `## Tooling Stack`: List of languages, frameworks, build tools, and key libraries found.
+     - `## Development Commands`: List of commands for running the project, tests, and builds (e.g., `deno task check`, `npm run build`).
      - `## Architecture`: Description of the folder structure and inferred design patterns.
      - `## Key Decisions`: Any explicit architectural choices found in docs or inferred (e.g., "Uses Tailwind for styling", "Uses Jest for testing").
 
