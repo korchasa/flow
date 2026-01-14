@@ -9,7 +9,7 @@
 
 ## .cursor Directory
 - `commands/` - Executable task workflows (16 commands).
-  - `task-*.md` - Standard task definitions (check, commit, plan, investigate, etc.).
+  - `*.md` - Standard task definitions (check, commit, plan, investigate, etc.).
 - `rules/` - Context rules and guides (27 rule directories total).
   - `rules-code-style-*/` - Language-specific coding standards (5 variants).
   - `rules-*/` - Core behavioral frameworks (Autonomous, TDD, Zen, PoC).
@@ -20,7 +20,7 @@
   - `skill-creator/` - Skill authoring guide with templates and scripts.
 
 ## File Organization Patterns
-- **Commands:** Named `task-<action>.md` (or `engineer-command.md`). Stored in `.cursor/commands/`.
+- **Commands:** Named `<action>.md` (or `engineer-command.md`). Stored in `.cursor/commands/`.
 - **Rules:** Named `rules-<topic>/` or `howto-<topic>/`. Each directory contains `RULE.md` with YAML frontmatter.
 - **Scripts:** Named `run.ts` for Deno-based maintenance utilities. Root level.
 - **Docs:** Named according to SRS/SDS schema. Stored in `documents/`.

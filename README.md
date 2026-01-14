@@ -18,32 +18,32 @@ Cursor supports custom commands that create reusable workflows launched with `/`
 
 ### Available Commands
 
-Use these commands by typing `/task-*` in Cursor chat:
+Use these commands by typing `/<command>` in Cursor chat:
 
-- `/task-answer` - Answer questions with context from codebase
-- `/task-build-agents-md` - Generate optimized AGENTS.md from rules files
-- `/task-check` - **Quick check**: run `./run check` + read-only error analysis without code modifications
-- `/task-commit` - Git commit workflow following Conventional Commits
-- `/task-create-command` - Create a new Cursor command
-- `/task-create-run-ts-script` - Create the `./run` maintenance script
-- `/task-do` - General task execution workflow
-- `/task-execute` - Execute and implement planned tasks
-- `/task-github-issue-create` - Create GitHub issues using GODS framework
-- `/task-investigate-autonomous` - **Deep investigation**: autonomous root cause diagnosis
-- `/task-investigate-step-by-step` - **Deep investigation**: user-controlled root cause diagnosis
-- `/task-plan` - Plan and break down complex development tasks
-- `/task-update-docs` - Update project documentation
+- `/answer` - Answer questions with context from codebase
+- `/build-agents-md` - Generate optimized AGENTS.md from rules files
+- `/check` - **Quick check**: run `./run check` + read-only error analysis without code modifications
+- `/commit` - Git commit workflow following Conventional Commits
+- `/create-command` - Create a new Cursor command
+- `/create-run-ts-script` - Create the `./run` maintenance script
+- `/do` - General task execution workflow
+- `/execute` - Execute and implement planned tasks
+- `/github-issue-create` - Create GitHub issues using GODS framework
+- `/investigate-autonomous` - **Deep investigation**: autonomous root cause diagnosis
+- `/investigate-step-by-step` - **Deep investigation**: user-controlled root cause diagnosis
+- `/plan` - Plan and break down complex development tasks
+- `/update-docs` - Update project documentation
 
 For more information, see [Cursor Commands Documentation](https://cursor.com/docs/agent/chat/commands).
 
 ## Framework
 
-The main idea is to work together with the agent, keeping control over the process and acting as a guardrail between stages, explicitly switching them using `/task-*` command syntax.
+The main idea is to work together with the agent, keeping control over the process and acting as a guardrail between stages, explicitly switching them using `/<command>` syntax.
 
 Key Principles:
 - instruction unification (in progress): setting up a new project should boil down to selecting instructions and editing `main.mdc`;
 - splitting instructions into types:
-  - Stages (Manual Apply): stages of work over the project (`task-*`);
+  - Stages (Manual Apply): stages of work over the project (`<command>.md`);
   - Rules (Always Apply): working rules: tdd, code style, etc (`rules-*`);
   - Documentation (Always Apply): documentation guidelines (`docs-*`);
   - Project Maintenance (Always Apply): list of console commands for project maintenance (`run-commands.mdc`);
@@ -59,21 +59,21 @@ Key Principles:
 ## Available Components
 
 ### Task Commands
-Task commands provide guided workflows for specific development activities (use with `/task-*` in Cursor chat):
+Task commands provide guided workflows for specific development activities (use with `/<command>` in Cursor chat):
 
-- `task-answer.md` - Answer questions with context
-- `task-build-agents-md.md` - Generate optimized AGENTS.md from rules files
-- `task-check.md` - **Quick check**: run `./run check` + read-only error analysis without code modifications. Proposes solutions to user
-- `task-commit.md` - Commit workflow following Conventional Commits (strict)
-- `task-create-command.md` - Create a new Cursor command
-- `task-create-run-ts-script.md` - Create the `./run` maintenance script
-- `task-do.md` - General task execution workflow
-- `task-execute.md` - Execute and implement planned tasks
-- `task-github-issue-create.md` - Create GitHub issues using GODS framework
-- `task-investigate-autonomous.md` - **Deep investigation**: autonomous root cause diagnosis
-- `task-investigate-step-by-step.md` - **Deep investigation**: user-controlled root cause diagnosis
-- `task-plan.md` - Plan and break down complex development tasks
-- `task-update-docs.md` - Update project documentation
+- `answer.md` - Answer questions with context
+- `build-agents-md.md` - Generate optimized AGENTS.md from rules files
+- `check.md` - **Quick check**: run `./run check` + read-only error analysis without code modifications. Proposes solutions to user
+- `commit.md` - Commit workflow following Conventional Commits (strict)
+- `create-command.md` - Create a new Cursor command
+- `create-run-ts-script.md` - Create the `./run` maintenance script
+- `do.md` - General task execution workflow
+- `execute.md` - Execute and implement planned tasks
+- `github-issue-create.md` - Create GitHub issues using GODS framework
+- `investigate-autonomous.md` - **Deep investigation**: autonomous root cause diagnosis
+- `investigate-step-by-step.md` - **Deep investigation**: user-controlled root cause diagnosis
+- `plan.md` - Plan and break down complex development tasks
+- `update-docs.md` - Update project documentation
 
 ### Documentation Rules
 Documentation schemas and guidelines:

@@ -5,14 +5,14 @@ description: Create, Refine, or Edit a Cursor Command
 # Engineer Command
 
 ## Overview
-You are an expert **AI Interaction Architect**. Your goal is to **create** or **refine** a custom command file (e.g., `task-*.md` or `*.md`) in the `.cursor/commands/` directory. You will ensure the command is atomic, logically sound, and follows the project's **2026 Architectural Standards**.
+You are an expert **AI Interaction Architect**. Your goal is to **create** or **refine** a custom command file (e.g., `<action>.md`) in the `.cursor/commands/` directory. You will ensure the command is atomic, logically sound, and follows the project's **2026 Architectural Standards**.
 
 ## Strategy
 
 ### Phase 1: Contextual Analysis & Planning
 1.  **Identify Intent**:
     -   **Creation**: User wants a new workflow (e.g., "Create a command to refactor code").
-    -   **Refinement**: User wants to improve an existing command (e.g., "Update task-test.md to include coverage checks").
+    -   **Refinement**: User wants to improve an existing command (e.g., "Update test.md to include coverage checks").
 2.  **Search & Verify**:
     -   Check `.cursor/commands/` for existing files.
     -   If creating: ensure no duplicate exists.
@@ -75,6 +75,6 @@ description: [Action-oriented description for the AI agent]
 
 ## Validation Checklist
 - [ ] Command file is in `.cursor/commands/`.
-- [ ] Filename follows `task-[action].md` or specific naming convention (e.g., `engineer-command.md`).
+- [ ] Filename follows `<action>.md` or specific naming convention (e.g., `engineer-command.md`).
 - [ ] Content uses the **XML-based architecture** (`<context>`, `<rules>`, `<step_by_step>`).
 - [ ] Steps are clear, actionable, and atomic.

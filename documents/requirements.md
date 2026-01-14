@@ -19,10 +19,10 @@
 ## 3. Functional requirements
 ### 3.1 Command Execution (FR-1)
 - **Description:** The system must provide executable workflows for common development tasks, accessible via chat commands.
-- **Use case scenario:** User types `/task-commit` to start a commit workflow. Agent reads the command file and follows the steps.
+- **Use case scenario:** User types `/commit` to start a commit workflow. Agent reads the command file and follows the steps.
 - **Acceptance criteria:**
   - [x] Support for 16 task commands including planning, execution, investigation, and documentation
-  - [x] Commands follow `/task-*` naming convention (with exceptions like `engineer-command.md`)
+  - [x] Commands follow `/<command>` naming convention (file name without `task-` prefix)
   - [x] Each command provides guided workflow with checklist
 
 ### 3.2 Rule Enforcement (FR-2)
@@ -60,7 +60,7 @@
 - **Performance:** Rules and commands must be concise to fit within the context window.
 - **Reliability:** Instructions must be unambiguous to prevent agent hallucination or error.
 - **Scalability:** The system must allow adding new commands and rules without breaking existing ones.
-- **Usability:** Commands must be intuitive (e.g., `/task-*` prefix).
+- **Usability:** Commands must be intuitive (e.g., `/commit`).
 
 ## 5. Interfaces
 - **APIs and integrations:**
