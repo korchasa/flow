@@ -22,25 +22,25 @@
 ## 3. Components
 ### 3.1 Task Commands (`.cursor/commands/`)
 - **Purpose:** Provide step-by-step instructions for specific development activities.
-- **Interfaces:** Markdown files starting with `task-` or `alpha-task-`.
+- **Interfaces:** Markdown files without the `task-` prefix (e.g., `check.md`).
 - **Dependencies:** User input, existing codebase.
 - **Key Files:**
-  - `task-answer.md`: Question answering with codebase context.
-  - `task-build-agents-md.md`: AGENTS.md generation workflow.
-  - `task-check.md`: Quick project validation.
-  - `task-commit.md`: Conventional Commits workflow.
+  - `answer.md`: Question answering with codebase context.
+  - `build-agents-md.md`: AGENTS.md generation workflow.
+  - `check.md`: Quick project validation.
+  - `commit.md`: Conventional Commits workflow.
+  - `create-run-ts-script.md`: Maintenance script generation.
+  - `create-vision-doc.md`: Vision document creation workflow.
+  - `do.md`: General task execution workflow.
   - `engineer-command.md`: Command engineering (Create/Edit) utility.
   - `engineer-rule.md`: Rule creation utility.
+  - `execute.md`: Task implementation workflow.
+  - `init.md`: Project initialization workflow.
+  - `investigate.md`: Investigation workflow.
   - `migrate-run-ts.md`: Migration workflow for run.ts.
-  - `task-create-run-ts-script.md`: Maintenance script generation.
-  - `task-create-vision-doc.md`: Vision document creation workflow.
-  - `task-do.md`: General task execution workflow.
-  - `task-execute.md`: Task implementation workflow.
-  - `task-investigate-autonomous.md`: Autonomous investigation workflow.
-  - `task-investigate-step-by-step.md`: Step-by-step investigation workflow.
-  - `task-plan.md`: Task planning and breakdown.
-  - `task-update-docs.md`: Documentation maintenance.
-  - `task-write-skill.md`: Skill documentation workflow.
+  - `plan.md`: Task planning and breakdown.
+  - `update-docs.md`: Documentation maintenance.
+  - `write-skill.md`: Skill documentation workflow.
 
 ### 3.2 Context Rules (`.cursor/rules/`)
 - **Purpose:** Provide automatic context to the LLM for code generation, style, and behavior.
@@ -58,7 +58,7 @@
 ### 3.3 Project Documentation (`documents/`)
 - **Purpose:** Serve as the long-term memory of the project.
 - **Interfaces:** Markdown files following SRS/SDS or Cline-bank schema.
-- **Dependencies:** Updated by `task-update-docs`.
+- **Dependencies:** Updated by `update-docs`.
 
 ### 3.4 Project Maintenance
 - **Purpose:** Provide automated project maintenance and quality assurance.
@@ -82,7 +82,7 @@
   - **Command Parsing:** Cursor detects `/` and matches against `.cursor/commands` filenames.
   - **Rule Matching:** Cursor matches open files/context against RULE.md globs.
 - **Business rules:**
-  - All commands must start with `/task-`.
+  - All commands must start with `/` and match `.cursor/commands` filenames.
   - Documentation must be kept up-to-date with code changes.
   - Code changes must follow defined style rules.
 
