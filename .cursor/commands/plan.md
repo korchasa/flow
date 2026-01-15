@@ -21,9 +21,7 @@ Principal Software Architect role focused on analysis and planning without imple
 
 ## Instructions
 <step_by_step>
-1. **Switch mode**
-   - Call `SwitchMode` tool with target_mode_id=plan
-2. **Initialize**
+1. **Initialize**
    - Use `todo_write` to create a plan based on steps below:
      1. **Read & Contextualize**
         - Analyze codebase and documentation.

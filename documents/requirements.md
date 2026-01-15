@@ -21,7 +21,7 @@
 - **Description:** The system must provide executable workflows for common development tasks, accessible via chat commands.
 - **Use case scenario:** User types `/commit` to start a commit workflow. Agent reads the command file and follows the steps.
 - **Acceptance criteria:**
-  - [x] Support for 16 task commands including planning, execution, investigation, and documentation
+    - [x] Support for 18 task commands including planning, execution, investigation, and documentation
   - [x] Commands follow `/<command>` naming convention (file name without `task-` prefix)
   - [x] Each command provides guided workflow with checklist
 
@@ -77,7 +77,6 @@
   - File System: Storage for rules, commands, and documentation.
   - Git: Version control operations.
   - MCP: Integration with external tools (GitHub, etc.) and interactivity tools (`AskQuestion`).
-  - SwitchMode: Native capability for transitioning between agent modes (e.g., to `plan` mode).
 - **Protocols and data formats:** Markdown (`.md`, RULE.md).
 - **UI/UX constraints:** Text-based chat interface.
 
