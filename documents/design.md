@@ -33,11 +33,13 @@
   - `create-vision-doc.md`: Vision document creation workflow.
   - `do.md`: General task execution workflow.
   - `engineer-command.md`: Command engineering (Create/Edit) utility.
+  - `engineer-prompt.md`: Engineering prompt utility.
   - `engineer-rule.md`: Rule creation utility.
   - `execute.md`: Task implementation workflow.
   - `init.md`: Project initialization workflow.
   - `investigate.md`: Investigation workflow.
   - `migrate-run-ts.md`: Migration workflow to Deno tasks.
+  - `plan-and-execute.md`: Planning and execution workflow.
   - `plan.md`: Task planning and breakdown.
   - `update-docs.md`: Documentation maintenance.
   - `write-skill.md`: Skill documentation workflow.

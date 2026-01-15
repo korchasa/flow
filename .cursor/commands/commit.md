@@ -16,8 +16,9 @@ The project follows Conventional Commits 1.0.0 and uses a structured documentati
 <rules>
 1. **Strict Commits**: Compose the message in **English** per Conventional Commits 1.0.0 (Strict Profile).
 2. **Git Pager**: All git commands must disable pager by setting `GIT_PAGER=cat`.
-3. **Inclusion Policy**: Automatically include all verified non-PII changes. **DO NOT** ask for selection unless potential PII is detected.
-4. **Planning**: The agent MUST use `todo_write` to track the execution steps.
+3. **Logical Grouping**: If changes are not logically related (e.g., refactoring mixed with features), group them and **ask the user for permission** to create multiple commits.
+4. **Inclusion Policy**: Automatically include all verified non-PII changes. **DO NOT** ask for selection unless potential PII is detected or splitting changes.
+5. **Planning**: The agent MUST use `todo_write` to track the execution steps.
 </rules>
 
 ## Instructions
@@ -27,21 +28,26 @@ The project follows Conventional Commits 1.0.0 and uses a structured documentati
 2. **Pre-flight checks**
    - Run `deno task check` if the project wasn’t checked since the last modification.
    - Review `./documents` tree and catalogue facts that need reflection.
-   - Inspect changes since last commit using `GIT_PAGER=cat git diff`.
+   - Inspect changes since last commit using `GIT_PAGER=cat git diff` (staged and unstaged).
 3. **Workspace sync**
    - Update docs under `./documents` (excluding `whiteboard.md`) to reflect current project state in **English**.
    - Apply combined extractive/abstractive summarization.
    - Keep content compact (lists, tables, YAML, Mermaid).
-4. **Change review**
-   - Study all changes since last commit.
-   - Ensure package updates are isolated in their own commit.
-   - Stage every verified non-PII change.
-5. **Commit creation**
-   - Compose the message in **English**.
-   - Verify type, scope, header length, body wrapping, and footers.
-   - Confirm staged diff contains all relevant files.
+4. **Change Analysis & Grouping**
+   - Analyze all changes to determine if they belong to a single logical unit.
+   - **If unrelated changes are detected**:
+     - Group files by logical intent (e.g., "Refactor", "Feat: Auth", "Docs").
+     - **ASK THE USER** for permission to split into multiple commits: "I see changes that look unrelated. Shall I split them into X commits? [List plan]".
+     - Wait for confirmation.
+   - If related or user denies split, proceed with a single commit.
+5. **Commit execution**
+   - **For each** defined commit group (or the single group):
+     - Stage the relevant files for this group.
+     - Compose the message in **English** per Conventional Commits.
+     - Verify type, scope, header length, body wrapping, and footers.
+     - Create the commit.
 6. **Publish**
-   - Push the commit to GitHub.
+   - Push the commit(s) to GitHub.
    - If not on `main`, create a pull request via `gh pr create` and share the link.
 </step_by_step>
 
@@ -49,9 +55,8 @@ The project follows Conventional Commits 1.0.0 and uses a structured documentati
 <verification>
 - [ ] Project checked with `deno task check`.
 - [ ] `./documents` reviewed and updated to reflect current state.
-- [ ] Facts extracted from changes and compressed.
-- [ ] Changes reviewed and staged.
-- [ ] Dependency changes isolated if applicable.
-- [ ] Commit complies with Conventional Commits (strict).
+- [ ] Changes analyzed for logical grouping.
+- [ ] User asked for permission if multiple commits proposed.
+- [ ] Commits comply with Conventional Commits (strict).
 - [ ] PR created and link shared (if not on `main`).
 </verification>
