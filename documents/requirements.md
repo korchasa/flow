@@ -21,7 +21,7 @@
 - **Description:** The system must provide executable workflows for common development tasks, accessible via chat commands.
 - **Use case scenario:** User types `/commit` to start a commit workflow. Agent reads the command file and follows the steps.
 - **Acceptance criteria:**
-    - [x] Support for 18 task commands including planning, execution, investigation, and documentation
+    - [x] Support for 17 task commands including planning, execution, investigation, and documentation
   - [x] Commands follow `/<command>` naming convention (file name without `task-` prefix)
   - [x] Each command provides guided workflow with checklist
 
@@ -56,6 +56,15 @@
   - [x] Task scripts stored in `./scripts/` and invoked via `deno task`
   - [x] Support for check, test, and dev commands
   - [x] Automated quality assurance workflows
+
+### 3.6 Developer Onboarding & Workflow Clarity (FR-6)
+- **Description:** The project's `README.md` must provide clear, actionable instructions for developers on when and how to use the available tools.
+- **Use case scenario:** A new developer joins the project and reads the `README.md` to understand the workflow for starting the project, implementing a task, and performing periodic maintenance.
+- **Acceptance criteria:**
+  - [x] Instructions for project initialization and environment verification.
+  - [x] Step-by-step workflow for task implementation (Plan -> Execute -> Verify -> Commit).
+  - [x] Schedule for periodic maintenance (Health Check, Docs Audit, Agent Updates).
+  - [x] Guidance for specific cases (Investigate, Answer, Engineer).
 
 ## 4. Non-functional requirements
 - **Performance:** Rules and commands must be concise to fit within the context window.

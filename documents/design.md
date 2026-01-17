@@ -26,10 +26,9 @@
 - **Dependencies:** User input, existing codebase.
 - **Key Files:**
   - `answer.md`: Question answering with codebase context.
-  - `build-agents-md.md`: AGENTS.md generation workflow.
   - `check.md`: Quick project validation.
   - `commit.md`: Conventional Commits workflow.
-  - `create-run-ts-script.md`: Maintenance script generation.
+  - `create-deno-scripts.md`: Maintenance script generation.
   - `create-vision-doc.md`: Vision document creation workflow.
   - `do.md`: General task execution workflow.
   - `docs-check.md`: Documentation consistency and integrity check.
@@ -53,7 +52,7 @@
   - `rules-*/`: Core behavioral frameworks (Autonomous, TDD, Zen, PoC).
   - `rules-design-style-guide/`: Design principles and guidelines.
   - `howto-*/`: Practical guides for workflows and tools (12 guides total).
-  - `docs-schema-*/`: Documentation templates and schemas (RDS-SDS, vision RDS-SDS, Cline-bank).
+  - `docs-schema-*/`: Documentation templates and schemas (RDS-SDS, vision RDS-SDS).
   - `rules-run-commands/`: Command execution rules.
   - `skill-creator/`: Skill authoring guide with templates and scripts.
 
