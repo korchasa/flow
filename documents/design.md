@@ -40,6 +40,7 @@
   - `investigate.md`: Deep investigation and root cause diagnosis.
   - `maintenance.md`: Project maintenance and health audit.
   - `migrate-run-ts.md`: Migration workflow to Deno tasks.
+  - `plan-next-version.md`: Task planning using GODS framework with proactive uncertainty resolution.
   - `plan.md`: Task planning using GODS framework and chat-first reasoning.
   - `update-docs.md`: Documentation maintenance.
 
