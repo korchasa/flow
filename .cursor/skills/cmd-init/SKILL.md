@@ -1,7 +1,6 @@
 ---
-name: cmd-init
+name: init
 description: Initialize project with AGENTS.md and rules, handling both Greenfield (new) and Brownfield (existing) projects.
-disable-model-invocation: true
 ---
 
 # Task: Initialize Project Agent Documentation

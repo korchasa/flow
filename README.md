@@ -1,4 +1,4 @@
-# AI Roles Collection
+# AssistFlow
 
 A collection of Cursor skills and agents, designed to standardize work across
 various software development contexts.
@@ -15,7 +15,7 @@ the development lifecycle.
 
 **Goal**: Ensure the environment is ready and the project base is solid.
 
-- **Initialize Project**: Use `cmd-init` skill to set up the project structure
+- **Initialize Project**: Use `init` skill to set up the project structure
   and initial documentation if starting fresh.
 - **Define Vision**: Use `cmd-create-vision-doc` skill to create or update the
   project vision in `documents/vision.md`.
@@ -42,16 +42,14 @@ coverage.
 
 - **Health Check**: Run `cmd-check-and-fix` or `deno task check` regularly to
   catch regressions.
-- **Documentation Audit**: Use `cmd-docs-check` to verify documentation
-  integrity and consistency.
 - **Update Agents**: Run `deno task check` to ensure all rules are consistent.
 
 ### 4. Specific cases
 
 - **Deep Investigation**: Use `cmd-investigate` if you encounter complex bugs or
   unexplained behavior.
-- **Engineering Utilities**: Use `cmd-engineer-prompt`, `cmd-engineer-rule`, or
-  `cmd-engineer-command` when creating or refining AI instructions.
+- **Engineering Utilities**: Use `cmd-engineer-prompt` or `cmd-engineer-rule`
+  when creating or refining AI instructions.
 - **Codebase Q&A**: Use `cmd-answer` to get explanations or find logic within
   the project.
 - **Maintenance Audit**: Use `cmd-maintenance` for a comprehensive project
@@ -78,17 +76,17 @@ standardize team processes and speeds up typical tasks.
 - `cmd-create-scripts` - Create the Deno task scripts
 - `cmd-create-vision-doc` - Create vision documentation
 - `cmd-do` - General task execution workflow
-- `cmd-docs-check` - Documentation consistency and integrity check
-- `cmd-engineer-command` - Command engineering (Create/Edit) utility
 - `cmd-engineer-prompt` - Prompt engineering utility
 - `cmd-engineer-rule` - Rule engineering utility
 - `cmd-execute` - Execute and implement planned tasks
-- `cmd-init` - Project initialization workflow
 - `cmd-investigate` - Deep investigation and root cause diagnosis
 - `cmd-maintenance` - Project maintenance and health audit
-- `cmd-migrate-run-ts` - Migration to Deno tasks
 - `cmd-plan` - Plan and break down complex development tasks
-- `cmd-update-docs` - Update project documentation
+- `cmd-qa` - Quality Assurance workflow
+- `cmd-reflect` - Reflect on recent work and update context
+- `draw-mermaid-diagrams` - Create and edit Mermaid diagrams
+- `init` - Project initialization workflow
+- `write-agent-benchmarks` - Create and run agent benchmarks
 
 ## Framework
 
