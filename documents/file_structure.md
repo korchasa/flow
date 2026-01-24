@@ -1,7 +1,7 @@
 # File Structure Map
 
 ## Root Directory
-- `.cursor/` - Cursor IDE configuration, rules, and commands.
+- `.cursor/` - Cursor IDE configuration, skills, and agents.
 - `documents/` - Project documentation (SRS, SDS, etc.).
 - `scripts/` - Deno task scripts.
 - `AGENTS.md` - Persistent project-wide agent rules.
@@ -10,20 +10,14 @@
 - `deno.json` - Deno task configuration.
 
 ## .cursor Directory
-- `commands/` - Executable task workflows.
-  - `*.md` - Standard task definitions (check, commit, plan, investigate, etc.).
-- `rules/` - Context rules and guides (27 rule directories total).
-  - `rules-code-style-*/` - Language-specific coding standards (5 variants).
-  - `rules-*/` - Core behavioral frameworks (Autonomous, TDD, Zen, PoC).
-  - `rules-design-style-guide/` - Design principles and guidelines.
-  - `howto-*/` - Practical workflow guides (13 guides).
-  - `docs-schema-*/` - Documentation templates (3 schemas).
-  - `rules-run-commands/` - Command execution rules.
-  - `skill-creator/` - Skill authoring guide with templates and scripts.
+- `agents/` - Agent definitions and prompts.
+- `skills/` - Executable skills and workflows.
+  - `cmd-*/` - Command-like skills (formerly commands).
+  - `howto-*/` - How-to guides and workflows.
+  - `rules-*/` - Context rules and behavioral frameworks.
 
 ## File Organization Patterns
-- **Commands:** Named `<action>.md` (or `engineer-command.md`). Stored in `.cursor/commands/`.
-- **Rules:** Named `rules-<topic>/` or `howto-<topic>/`. Each directory contains `RULE.md` with YAML frontmatter.
+- **Skills:** Stored in `.cursor/skills/` as directories containing `SKILL.md`.
+- **Agents:** Stored in `.cursor/agents/` as `.md` files.
 - **Scripts:** Deno task scripts in `./scripts/` with tasks configured in `deno.json`.
 - **Docs:** Named according to SRS/SDS schema. Stored in `documents/`.
-
