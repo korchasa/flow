@@ -1,5 +1,5 @@
 ---
-name: cmd-engineer-rule
+name: engineer-rule
 description: Create or update a .cursor/rules rule to steer agent behavior
 disable-model-invocation: true
 ---

@@ -1,5 +1,5 @@
 ---
-name: cmd-execute
+name: execute
 description: Execute task in Autonomous Mode using strict TDD
 disable-model-invocation: true
 ---

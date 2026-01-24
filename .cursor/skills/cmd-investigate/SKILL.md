@@ -1,5 +1,5 @@
 ---
-name: cmd-investigate
+name: investigate
 description: Iterative issue investigation with user-controlled hypothesis selection
 disable-model-invocation: true
 ---

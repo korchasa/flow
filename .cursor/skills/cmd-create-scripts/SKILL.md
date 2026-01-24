@@ -1,5 +1,5 @@
 ---
-name: cmd-create-scripts
+name: create-scripts
 description: Create Deno task scripts for project automation
 disable-model-invocation: true
 ---

@@ -1,5 +1,5 @@
 ---
-name: cmd-plan
+name: plan
 description: >-
   Create critiqued plan in whiteboard.md using GODS framework with proactive
   uncertainty resolution

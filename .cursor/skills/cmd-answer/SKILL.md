@@ -1,5 +1,5 @@
 ---
-name: cmd-answer
+name: answer
 description: >-
   Analyze and answer user questions in Autonomous Mode by reading documentation
   and inspecting codebase

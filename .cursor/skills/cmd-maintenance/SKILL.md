@@ -1,5 +1,5 @@
 ---
-name: cmd-maintenance
+name: maintenance
 description: >-
   Perform a comprehensive "Lead Engineer" audit: structure, consistency, code
   quality, technical debt, documentation coverage, and terminology checks.

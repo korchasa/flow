@@ -1,5 +1,5 @@
 ---
-name: cmd-qa
+name: qa
 description: "Verify task completion, implementation quality, and cleanup as a QA agent."
 disable-model-invocation: true
 ---

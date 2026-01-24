@@ -1,5 +1,5 @@
 ---
-name: cmd-check-and-fix
+name: check-and-fix
 description: Iteratively run project checks and fix errors until success
 disable-model-invocation: true
 ---

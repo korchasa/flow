@@ -1,5 +1,5 @@
 ---
-name: cmd-reflect
+name: reflect
 description: Analyze recent task execution to improve agent instructions and rules.
 disable-model-invocation: true
 ---

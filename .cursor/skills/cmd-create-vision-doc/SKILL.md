@@ -1,5 +1,5 @@
 ---
-name: cmd-create-vision-doc
+name: create-vision-doc
 description: Interactive process to create or update Product Vision document
 disable-model-invocation: true
 ---
