@@ -58,8 +58,7 @@ EFFECTIVENESS ENTIRELY DEPENDS ON ITS ACCURACY.
 
 ## Benchmarking Principles
 
-The benchmarking system (`scripts/task-bench.ts`) is designed to evaluate agent
-performance objectively.
+The benchmarking system (`scripts/task-bench.ts`) is designed to evaluate agent performance objectively. We use these benchmarks to verify the quality of our subagents and skills.
 
 1. **Verify Side Effects, Not Just Output**:
    - The primary validation method must be checking the actual state of the
