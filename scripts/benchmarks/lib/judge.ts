@@ -6,7 +6,7 @@ export async function evaluateChecklist(
   agentLogs: string,
   fileDiffs: string,
   checklist: BenchmarkChecklistItem[],
-): Promise<Record<string, boolean>> {
+): Promise<Record<string, { pass: boolean; reason: string }>> {
   const checklistJson = JSON.stringify(
     checklist.map((c) => ({ id: c.id, description: c.description })),
     null,
@@ -32,10 +32,21 @@ ${checklistJson}
 
 INSTRUCTIONS:
 1. Analyze the Context against each item in the Checklist.
-2. Determine strictly YES (true) or NO (false).
-3. Output ONLY a valid JSON object mapping the checklist item 'id' to a Boolean value.
-4. Do NOT provide explanations.
-5. Do NOT output markdown formatting (like \`\`\`json), just the raw JSON string.
+2. For each item, provide a "reason" explaining your finding, and then a strict "pass" (boolean).
+3. Output ONLY a valid JSON object mapping the checklist item 'id' to an object with 'reason' (string) and 'pass' (boolean).
+4. Do NOT output markdown formatting (like \`\`\`json), just the raw JSON string.
+
+EXAMPLE OUTPUT:
+{
+  "check_id_1": {
+    "reason": "The agent executed the command correctly.",
+    "pass": true
+  },
+  "check_id_2": {
+    "reason": "The agent failed to update the file.",
+    "pass": false
+  }
+}
 `;
 
   const messages: LLMMessage[] = [
@@ -63,9 +74,9 @@ INSTRUCTIONS:
   } catch (error) {
     console.error("Error in Judge evaluation:", error);
     // Return all false if judge fails, to be safe
-    const fallback: Record<string, boolean> = {};
+    const fallback: Record<string, { pass: boolean; reason: string }> = {};
     for (const item of checklist) {
-      fallback[item.id] = false;
+      fallback[item.id] = { pass: false, reason: "Judge evaluation failed" };
     }
     return fallback;
   }

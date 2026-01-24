@@ -33,7 +33,7 @@ export interface BenchmarkResult {
   durationMs: number;
   tokensUsed: number;
   toolCallsCount: number;
-  checklistResults: Record<string, boolean>;
+  checklistResults: Record<string, { pass: boolean; reason: string }>;
   logs: string; // Full conversation log
 }
 

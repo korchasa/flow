@@ -1,14 +1,13 @@
+import { join } from "@std/path";
+import { parse } from "@std/flags";
+import { GitCommitterBench } from "./benchmarks/scenarios/git-committer.bench.ts";
 import {
-  dirname,
-  fromFileUrl,
-  join,
-} from "https://deno.land/std@0.224.0/path/mod.ts";
-import { ensureDir } from "https://deno.land/std@0.224.0/fs/mod.ts";
-import { parse } from "https://deno.land/std@0.224.0/flags/mod.ts";
-import { GitCommitterBench } from "./scenarios/git-committer.bench.ts";
-import { BenchmarkResult, BenchmarkScenario, LLMMessage } from "./lib/types.ts";
-import { chatCompletion } from "./lib/llm.ts";
-import { evaluateChecklist } from "./lib/judge.ts";
+  BenchmarkResult,
+  BenchmarkScenario,
+  LLMMessage,
+} from "./benchmarks/lib/types.ts";
+import { chatCompletion } from "./benchmarks/lib/llm.ts";
+import { evaluateChecklist } from "./benchmarks/lib/judge.ts";
 
 const SCENARIOS: BenchmarkScenario[] = [
   GitCommitterBench,
@@ -48,12 +47,16 @@ async function runScenario(
     // To make this work with the text-based agent prompt, we append instructions to output commands in a specific block.
 
     messages[0].content += `\n\nIMPORTANT FOR BENCHMARK:
-You are running in a benchmark mode. 
-Instead of calling actual tools, output the shell commands you WANT to run inside a markdown code block like this:
+You are running in a benchmark mode.
+DO NOT use any tools directly.
+Instead, output the shell commands you WANT to run inside a SINGLE markdown code block with the 'bash' language tag.
+Example:
 \`\`\`bash
-git status
+git add .
+git commit -m "feat: my feature"
 \`\`\`
-And then provide your final response.
+Ensure ALL commands are inside this block.
+Write ONE command per line. Do NOT use '&&'.
 `;
 
     console.log("  Invoking Agent LLM...");
@@ -146,10 +149,12 @@ ${new TextDecoder().decode(logOut.stdout)}
 
     // 7. Calculate Score
     const totalItems = scenario.checklist.length;
-    const passedItems = Object.values(checklistResults).filter((v) => v).length;
+    const passedItems = Object.values(checklistResults).filter((v) =>
+      v.pass
+    ).length;
     const score = totalItems > 0 ? (passedItems / totalItems) * 100 : 0;
     const success = scenario.checklist.every((item) =>
-      !item.critical || checklistResults[item.id]
+      !item.critical || checklistResults[item.id]?.pass
     );
 
     return {
@@ -173,6 +178,7 @@ ${new TextDecoder().decode(logOut.stdout)}
 }
 
 async function main() {
+  console.log("DEBUG: Running new version with reasoning output");
   const args = parse(Deno.args);
   const filter = args._[0];
 
@@ -195,8 +201,10 @@ async function main() {
         }%)`,
       );
       console.log("  Checklist:");
-      for (const [id, passed] of Object.entries(result.checklistResults)) {
-        console.log(`    [${passed ? "x" : " "}] ${id}`);
+      for (const [id, res] of Object.entries(result.checklistResults)) {
+        const color = res.pass ? "\x1b[32m" : "\x1b[31m";
+        const mark = res.pass ? "x" : " ";
+        console.log(`    ${color}[${mark}] ${id}: ${res.reason}\x1b[0m`);
       }
     } catch (e) {
       console.error(`  Error running scenario ${scenario.id}:`, e);
@@ -214,5 +222,10 @@ async function main() {
 }
 
 if (import.meta.main) {
-  main();
+  try {
+    await main();
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : error);
+    Deno.exit(1);
+  }
 }
