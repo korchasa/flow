@@ -4,8 +4,8 @@ import { join } from "@std/path";
 const AGENT_PATH = ".cursor/agents/interviewer.md";
 
 /**
- * Сценарий: Уточнение требований к новой фиче.
- * Агент должен задать уточняющие вопросы, так как запрос слишком общий.
+ * Scenario: Clarifying requirements for a new feature.
+ * The agent should ask clarifying questions because the request is too general.
  */
 export const InterviewerClarifyFeatureBench: BenchmarkScenario = {
   id: "interviewer-clarify-feature",
@@ -20,7 +20,7 @@ export const InterviewerClarifyFeatureBench: BenchmarkScenario = {
   },
 
   userQuery:
-    "Я хочу добавить систему аутентификации в проект. С чего мне начать?",
+    "I want to add an authentication system to the project. Where should I start?",
 
   checklist: [
     {
@@ -49,8 +49,8 @@ export const InterviewerClarifyFeatureBench: BenchmarkScenario = {
 };
 
 /**
- * Сценарий: Сбор информации о баге.
- * Агент должен запросить шаги для воспроизведения и логи.
+ * Scenario: Gathering information about a bug.
+ * The agent should request reproduction steps and logs.
  */
 export const InterviewerBugReportBench: BenchmarkScenario = {
   id: "interviewer-bug-report",
@@ -64,7 +64,8 @@ export const InterviewerBugReportBench: BenchmarkScenario = {
     );
   },
 
-  userQuery: "У меня падает приложение с ошибкой в консоли. Помоги исправить.",
+  userQuery:
+    "My application is crashing with an error in the console. Help me fix it.",
 
   checklist: [
     {
@@ -88,8 +89,8 @@ export const InterviewerBugReportBench: BenchmarkScenario = {
 };
 
 /**
- * Сценарий: Уточнение архитектурного решения.
- * Агент должен помочь выбрать между вариантами.
+ * Scenario: Clarifying an architectural decision.
+ * The agent should help choose between options.
  */
 export const InterviewerArchitectureChoiceBench: BenchmarkScenario = {
   id: "interviewer-arch-choice",
@@ -104,7 +105,7 @@ export const InterviewerArchitectureChoiceBench: BenchmarkScenario = {
   },
 
   userQuery:
-    "Мне нужно выбрать базу данных для проекта: PostgreSQL или MongoDB. Что посоветуешь?",
+    "I need to choose a database for the project: PostgreSQL or MongoDB. What do you recommend?",
 
   checklist: [
     {

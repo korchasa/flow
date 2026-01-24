@@ -3,8 +3,7 @@
 ## 1. Vision Statement
 
 To become a set of commands and rules that enable control over AI agents in
-AI-first IDEs across all development and support domains, ensuring stable and
-predictable outcomes.
+AI-first IDEs across all development and support domains, ensuring stable and predictable outcomes.
 
 ## 2. Target Audience
 

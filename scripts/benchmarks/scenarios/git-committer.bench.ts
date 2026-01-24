@@ -23,7 +23,7 @@ export const GitCommitterBasicBench: BenchmarkScenario = {
   },
 
   userQuery:
-    "Я добавил функцию сложения в utils.ts. Закоммить это с сообщением 'add sum function'.",
+    "I added a sum function in utils.ts. Commit this with the message 'add sum function'.",
 
   checklist: [
     {
@@ -80,7 +80,7 @@ export const GitCommitterAtomicDocsBench: BenchmarkScenario = {
   },
 
   userQuery:
-    "Закоммить изменения. Я обновил README.md (доки) и main.ts (код). Раздели документацию и код.",
+    "Commit changes. I updated README.md (docs) and main.ts (code). Split documentation and code.",
 
   checklist: [
     {
@@ -141,7 +141,7 @@ export const GitCommitterAtomicRefactorBench: BenchmarkScenario = {
   },
 
   userQuery:
-    "Закоммить изменения. Я переименовал функцию в math.ts (рефакторинг) и добавил utils.ts (новая фича). Отдели рефакторинг от новой фичи.",
+    "Commit changes. I renamed a function in math.ts (refactoring) and added utils.ts (new feature). Separate refactoring from the new feature.",
 
   checklist: [
     {
@@ -181,7 +181,7 @@ export const GitCommitterCheckBench: BenchmarkScenario = {
     await Deno.writeTextFile(join(sandboxPath, "file.ts"), "const x = 2;");
   },
 
-  userQuery: "Закоммить изменения в file.ts.",
+  userQuery: "Commit changes in file.ts.",
 
   checklist: [
     {
@@ -224,7 +224,7 @@ export const GitCommitterSyncDocsBench: BenchmarkScenario = {
   },
 
   userQuery:
-    "Я добавил новую фичу в src.ts. Закоммить изменения, но сначала обнови документацию в documents/README.md, чтобы отразить изменения.",
+    "I added a new feature in src.ts. Commit changes, but first update the documentation in documents/README.md to reflect the changes.",
 
   checklist: [
     {
@@ -264,7 +264,7 @@ export const GitCommitterAtomicHunkBench: BenchmarkScenario = {
   },
 
   userQuery:
-    "Закоммить изменения. Я переименовал функцию (логика) и добавил комментарий (стиль). Раздели их на два коммита (style и refactor).",
+    "Commit changes. I renamed a function (logic) and added a comment (style). Split them into two commits (style and refactor).",
 
   checklist: [
     {
@@ -316,7 +316,7 @@ export const GitCommitterDepsBench: BenchmarkScenario = {
   },
 
   userQuery:
-    "Закоммить изменения. Я обновил версию в deno.json и логику в mod.ts. Раздели их.",
+    "Commit changes. I updated the version in deno.json and the logic in mod.ts. Split them.",
 
   checklist: [
     {
@@ -358,7 +358,7 @@ export const GitCommitterCheckFailBench: BenchmarkScenario = {
     await Deno.writeTextFile(join(sandboxPath, "file.ts"), "const x = 2;");
   },
 
-  userQuery: "Закоммить изменения.",
+  userQuery: "Commit changes.",
 
   checklist: [
     {
