@@ -1,5 +1,10 @@
-import { join } from "@std/path";
-import { parse } from "@std/flags";
+import {
+  dirname,
+  fromFileUrl,
+  join,
+} from "https://deno.land/std@0.224.0/path/mod.ts";
+import { ensureDir } from "https://deno.land/std@0.224.0/fs/mod.ts";
+import { parse } from "https://deno.land/std@0.224.0/flags/mod.ts";
 import { GitCommitterBench } from "./benchmarks/scenarios/git-committer.bench.ts";
 import {
   BenchmarkResult,
