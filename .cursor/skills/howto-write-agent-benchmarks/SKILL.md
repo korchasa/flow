@@ -27,7 +27,7 @@ Use this workflow if the project lacks a benchmarking system.
     -   `work/` (Runtime sandboxes - ADD TO .gitignore)
 3.  **Implement Core Modules**:
     -   **Runner**: Implements the REPL loop (Agent -> Command -> Output).
-    -   **Judge**: Implements LLM evaluation using `assets/judge-prompt.txt`.
+    -   **Judge**: Implements LLM evaluation using `.cursor/skills/howto-write-agent-benchmarks/assets/judge-prompt.txt`.
     -   **Trace**: Implements logging to `trace.md`.
 4.  **Configure Task**: Add a command (e.g., `deno task bench`) to run the benchmarks.
 
@@ -101,5 +101,5 @@ Use this workflow to evaluate agents and debug failures.
 
 ## Assets
 - **[REQUIREMENTS.md](REQUIREMENTS.md)**: Full System Requirements Specification (SRS).
-- **`assets/judge-prompt.txt`**: System prompt for the LLM Judge.
-- **`assets/types.ts`**: TypeScript interfaces for the system.
+- **`.cursor/skills/howto-write-agent-benchmarks/assets/judge-prompt.txt`**: System prompt for the LLM Judge.
+- **`.cursor/skills/howto-write-agent-benchmarks/assets/types.ts`**: TypeScript interfaces for the system.
