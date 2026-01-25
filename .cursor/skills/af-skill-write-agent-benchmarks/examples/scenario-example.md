@@ -1,4 +1,9 @@
-# Scenario Template (Pseudocode Example)
+# Scenario Template (Conceptual)
+
+This template demonstrates the **data structure** required for a benchmark scenario. You can implement this as:
+- A Class/Struct in your code (Python, TS, Go).
+- A JSON/YAML configuration file.
+- A database entry.
 
 ```pseudocode
 // Define a test case for a Smart Home Agent

@@ -3,242 +3,133 @@ name: af-skill-write-agent-benchmarks
 description: Create, maintain, and run evidence-based benchmarks for AI agents. Use when setting up testing infrastructure, writing new test scenarios, or evaluating agent performance.
 ---
 
-# Agent Benchmarking Skill
+# Universal Agent Benchmarking Skill
 
-## Context
+## 1. Context & Philosophy
 
-This skill guides you in building and maintaining a robust, evidence-based benchmarking system for Autonomous AI Agents. The system verifies agent capabilities by checking **side effects** (file changes, git commits) in isolated sandboxes, rather than trusting text output.
+This skill defines a universal, language-agnostic standard for benchmarking Autonomous AI Agents. The goal is to objectively measure an agent's ability to solve real-world coding tasks.
 
-**Universal Applicability**: While the reference implementation below uses TypeScript/Deno, the **principles and architecture** (Sandbox -> Runner -> Judge) are universal and can be implemented in Python, Node.js, Go, or any other language suitable for your project.
+### Core Principles
 
-## Core Components
+1.  **Evidence-Based Verification**: We do not trust the agent's words. We verify its actions.
+    *   **Bad**: The agent says "I fixed the bug." -> Judge believes it.
+    *   **Good**: The agent says "I fixed the bug." -> Judge runs the test suite in the sandbox and verifies the exit code is 0.
+2.  **Isolation & Safety**: Every test run must execute in a completely isolated environment (Sandbox) to prevent side effects on the host system.
+3.  **Determinism**: Benchmarks should be reproducible. Mock external network calls where possible and use fixed seeds.
+4.  **Freedom of Implementation**: This standard describes **WHAT** needs to be built, not **HOW**. You are free to implement these modules in any language (Python, TS, Go, etc.).
 
-- **Runner**: Orchestrates tests, manages sandboxes (`work/<id>/sandbox`), and executes the agent loop.
-- **Judge**: LLM-based evaluator that checks evidence against criteria.
-- **Scenarios**: Files defining the task, setup, and success criteria.
-- **Trace**: Detailed logs of execution (`trace.md`).
+## 2. Evaluation Modes
 
-## Workflows
+The system supports three primary evaluation modes:
 
-### 1. Initialize Infrastructure
+1.  **Quality Evaluation (Checklist-based)**:
+    *   **Goal**: Verify if an agent meets minimum quality standards.
+    *   **Method**: Evaluates a single agent against a predefined checklist of criteria (Critical Errors vs Warnings).
+    *   **Use Case**: CI/CD pipelines, regression testing.
 
-Use this workflow if the project lacks a benchmarking system.
+2.  **Model Selection (Pairwise Comparison)**:
+    *   **Goal**: Determine which LLM/Model performs best.
+    *   **Method**: **LLM-as-a-Judge Side-by-Side (SBS)**. The Judge compares outputs from two models and selects a winner.
 
-1. **Analyze Project**: Detect language and test runner (e.g., `npm`, `deno`, `pytest`).
-2. **Scaffold Directory Structure**:
-   - `scripts/benchmarks/` (Root for benchmarks)
-   - `scripts/benchmarks/scenarios/` (Test definitions)
-   - `scripts/benchmarks/lib/` (Core logic: Runner, Judge, Trace)
-   - `work/` (Runtime sandboxes - **ADD TO .gitignore**)
-3. **Implement Core Modules**:
-   - Implement the **Runner**, **Judge**, and **Trace** logic using your project's language.
-   - See [Reference Implementation](#2-implement-core-modules-reference-implementation-deno) for logic details.
-   - See [Adapting to Other Stacks](#adapting-to-other-stacks) for language-specific tips.
-4. **Configure Task**: Add a command (e.g., `deno task bench`, `npm run bench`, or `pytest benchmarks/`) to run the benchmarks.
+3.  **Version Comparison (Regression Tracking)**:
+    *   **Goal**: Measure impact of changes to prompt or logic.
+    *   **Method**: Compare current version (HEAD) against a baseline (BASE).
 
-**Reference**: See [reference/REQUIREMENTS.md](reference/REQUIREMENTS.md) for detailed specifications.
+## 3. Architecture & Requirements
 
-### 2. Implement Core Modules (Reference Implementation: Deno)
+A robust benchmarking system consists of four key modules.
 
-The following reference implementation is written in **TypeScript for Deno**. Use this as a blueprint for logic and structure.
+### 3.1 The Sandbox (Environment)
+The interface through which the agent interacts with the world.
+*   **Isolation**: Must use temporary directories, Docker, or VMs.
+*   **Capabilities**: FileSystem operations, Shell execution (`git`, `npm`), and Snapshotting (capturing state before/after).
 
-#### 2.1 Types
+### 3.2 The Runner (Orchestrator)
+The central controller managing the test lifecycle (`Setup` -> `Run Agent` -> `Collect Evidence` -> `Teardown`).
+*   **Multi-turn Interaction**: Supports iterative loops (Agent -> Command -> Output -> Agent) with a configurable `max_steps` limit.
+*   **Tool Execution**: Intercepts and executes shell commands; supports mocking external tools (e.g., `gh`, `curl`).
+*   **Concurrency**: Should run multiple scenarios in parallel.
 
+### 3.3 The Judge (Evaluator)
+The logic that determines if a test passed or failed.
+*   **Deterministic Checks (Hard)**: "File X must exist", "Exit code 0".
+*   **Probabilistic Checks (Soft)**: LLM-based evaluation (e.g., "Is the commit message descriptive?").
+*   **Metrics**: Tracks Pass/Fail status, Financial Cost, Steps Taken, and Duration.
+*   **Pass@k**: Supports running a scenario `k` times to determine success rate.
+
+### 3.4 Observability (The Trace)
+Complete capture of the agent's lifecycle in a **single human-readable file** (e.g., `trace.md`).
+*   **Must Capture**: Full conversation history, exact Judge prompts/responses, command outputs (stdout/stderr), file system diffs, and final score/reasoning.
+*   **Normalization**: Output should be normalized (line endings, encoding) for consistent evaluation.
+
+## 4. Workflow: Creating a New Benchmark
+
+Follow this process to add a new benchmark scenario.
+
+### Step 1: Define the Goal
+What specific capability are you testing?
+*   *Example*: "Can the agent fix a syntax error in a Python file?"
+
+### Step 2: Design the Setup (Pre-condition)
+Create the initial state that presents the problem.
+*   *Action*: Write code to create a file `script.py` containing `print("hello"` (missing closing paren).
+
+### Step 3: Define the Task (Trigger)
+Write the prompt that instructs the agent.
+*   *Prompt*: "Run the script and fix any errors you find."
+
+### Step 4: Define Success Criteria (Post-condition)
+How do we know it worked?
+1.  **Hard Check**: Running `python script.py` returns exit code 0.
+2.  **Hard Check**: File `script.py` content matches `print("hello")`.
+3.  **Soft Check**: Agent did not delete other files.
+
+### Step 5: Register
+Add the scenario to your Runner's registry.
+
+## 5. Workflow: Running & Debugging
+
+### Execution Loop
+1.  **Init**: Runner creates a clean Sandbox (e.g., `/tmp/bench-123`).
+2.  **Seed**: Runner executes Scenario Setup (writes the buggy file).
+3.  **Act**: Agent runs in the sandbox.
+    *   Agent reads file -> runs file (fails) -> edits file -> runs file (passes).
+4.  **Stop**: Agent signals completion or timeout.
+5.  **Evidence**: Runner collects `git diff` and execution logs.
+6.  **Judge**: Runner passes Evidence to the Judge.
+7.  **Report**: Result is saved. Sandbox is deleted.
+
+### Debugging Failures
+If a benchmark fails, check the **Trace**:
+1.  **Did the Setup work?** Check initial file state.
+2.  **Did the Agent try?** Check logs for tool calls.
+3.  **Did the Tool fail?** Check stderr of the commands.
+4.  **Did the Judge hallucinate?** Check the Judge's reasoning against the actual file diff.
+
+## 6. Data Model Reference
+
+### Scenario Definition
 ```pseudocode
-// Core data structures for benchmarking
-Structure BenchmarkChecklistItem:
-    id: String
-    description: String
-    critical: Boolean
-
 Structure BenchmarkScenario:
-    id: String
-    name: String
-    targetAgentPath: Path
-    setup: Function(sandboxPath: Path) -> Promise
-    userQuery: String
-    checklist: List<BenchmarkChecklistItem>
-    mocks: Map<String, String> (Optional)
-    maxSteps: Integer (Optional)
-    stepTimeoutMs: Integer (Optional)
-
-Structure BenchmarkResult:
-    scenarioId: String
-    success: Boolean
-    score: Integer
-    errorsCount: Integer
-    warningsCount: Integer
-    durationMs: Integer
-    tokensUsed: Integer
-    totalCost: Float
-    toolCallsCount: Integer
-    model: String
-    checklistResults: Map<String, { pass: Boolean, reason: String }>
-    logs: String
-    evidence: String (Optional)
+    id: String              // Unique identifier (e.g., "af-commit-basic")
+    name: String            // Human-readable name
+    targetAgentPath: Path   // Path to the agent/skill definition
+    setup: Function(sandboxPath: Path) -> Promise // Fixture setup logic
+    userQuery: String       // The initial task for the agent
+    checklist: List<ChecklistItem> // Evaluation criteria
+    maxSteps: Integer       // Optional limit on interaction turns (default: 10)
+    mocks: Map<String, String> // Optional tool mocks (command -> response)
 ```
 
-#### 2.2 LLM Client
-
+### Checklist Item
 ```pseudocode
-// Logic for interacting with LLM API
-Function chatCompletion(messages: List<Message>, model: String, temperature: Float):
-    apiKey = GetEnvironmentVariable("OPENROUTER_API_KEY")
-    If apiKey is Null:
-        Raise Error("API key not set")
-
-    payload = {
-        "model": model,
-        "messages": messages,
-        "temperature": temperature
-    }
-
-    response = SendPostRequest(
-        url: "https://openrouter.ai/api/v1/chat/completions",
-        headers: { "Authorization": "Bearer " + apiKey },
-        body: payload
-    )
-
-    If response.status is not OK:
-        Raise Error("API error: " + response.text)
-
-    Return {
-        content: response.data.choices[0].message.content,
-        usage: response.data.usage
-    }
+Structure ChecklistItem:
+    id: String              // Unique identifier within the scenario
+    description: String     // What the judge should verify
+    critical: Boolean       // True: Failure fails the test. False: Results in a warning.
+    type: Enum              // Optional: "static" (regex/grep) or "semantic" (LLM judge)
 ```
 
-#### 2.3 Judge
+## 7. Assets & References
 
-```pseudocode
-// LLM-based evaluation logic
-Function evaluateChecklist(userQuery, agentLogs, fileDiffs, checklist):
-    // 1. Prepare checklist for the prompt
-    checklistData = Map checklist to {id, description}
-
-    // 2. Define System Prompt (Role, Goal, Rules, Instructions)
-    // See PROMPTS.md for a reference implementation.
-    systemPrompt = "..." 
-
-    // 3. Prepare Evidence (Query + Logs + Diffs)
-    userMessage = FormatPrompt(
-        query: userQuery,
-        logs: agentLogs,
-        diffs: fileDiffs,
-        checklist: checklistData
-    )
-
-    // 4. Get LLM Judgment
-    Try:
-        response = chatCompletion(
-            messages: [System: systemPrompt, User: userMessage],
-            model: "gemini-2.0-flash",
-            temperature: 0
-        )
-        
-        // 5. Parse and Return JSON
-        jsonResult = ParseJson(ExtractMarkdownCodeBlock(response.content))
-        Return jsonResult
-    Catch Error:
-        Log("Judge failed: " + Error)
-        Return DefaultFailureResult(checklist)
-```
-
-#### 2.4 Runner
-
-```pseudocode
-// Main execution loop
-Function runScenario(scenario: BenchmarkScenario):
-    // 1. Setup Environment
-    sandboxPath = CreateTemporaryDirectory("work/" + scenario.id)
-    Execute(scenario.setup, sandboxPath)
-
-    // 2. Initialize Agent Loop
-    messages = [System: GetAgentPrompt(scenario.targetAgentPath), User: scenario.userQuery]
-    step = 0
-    
-    While step < scenario.maxSteps:
-        // 3. Agent Turn
-        response = chatCompletion(messages)
-        AppendToLogs(response.content)
-        
-        // 4. Tool Execution
-        tools = ParseToolCalls(response.content)
-        If no tools: Break // Agent finished
-        
-        For each tool in tools:
-            result = ExecuteToolInSandbox(tool, sandboxPath)
-            AppendToMessages(Role: Tool, Content: result)
-        
-        step += 1
-
-    // 5. Collect Evidence
-    fileDiffs = GetGitDiff(sandboxPath)
-    
-    // 6. Final Evaluation
-    results = evaluateChecklist(scenario.userQuery, GetLogs(), fileDiffs, scenario.checklist)
-    
-    // 7. Cleanup and Report
-    Cleanup(sandboxPath)
-    Return CreateBenchmarkResult(results)
-```
-
-### 3. Adapting to Other Stacks
-
-If you are not using Deno, adapt the reference implementation as follows:
-
-#### Node.js
-- **File System**: Use `fs/promises` (`readFile`, `writeFile`, `rm`, `mkdir`).
-- **Shell Execution**: Use `child_process.spawn` or `exec`. Ensure you handle `cwd` correctly to keep the agent inside the sandbox.
-- **HTTP**: Use `fetch` (built-in in Node 18+) or `axios`.
-- **Test Runner**: You can use `mocha`, `jest`, or a simple `node scripts/bench.js` script.
-
-#### Python
-- **File System**: Use `pathlib.Path` for robust path handling and file operations.
-- **Shell Execution**: Use `subprocess.run(..., cwd=sandbox_path, capture_output=True)`.
-- **HTTP**: Use `httpx` or `requests`.
-- **Types**: Use `pydantic` models instead of TypeScript interfaces for `BenchmarkScenario` and `BenchmarkResult`.
-
-### 4. Write a New Scenario
-
-Use this workflow to add a new test case.
-
-1. **Define Goal**: What capability are we testing? (e.g., "Git Commit", "Refactoring").
-2. **Create File**: Create a new file in `scenarios/` (e.g., `af-commit.bench.ts` or `test_af_commit.py`).
-3. **Setup Fixture**: Define the initial state. Use your language's file system API to prepare the environment.
-4. **Define Criteria**:
-   - **Critical**: Binary checks (e.g., "file exists", "exit code 0"). Failure here fails the test.
-   - **Semantic**: LLM Judge checks (e.g., "commit message is descriptive").
-5. **Register**: Ensure the runner imports/discovers the new scenario.
-
-**Scenario Template**: See [examples/scenario-example.md](examples/scenario-example.md) for a concrete example.
-
-### 5. Run and Debug
-
-Use this workflow to evaluate agents and debug failures.
-
-1. **Run Benchmarks**: Execute the task (e.g., `deno task bench`).
-2. **Analyze Metrics**:
-   - **Quality (Single Run)**: Check Errors, Warnings, and Cost.
-   - **Comparison (Models/Versions)**: Review the **Judge's decision**. In comparison modes, the Judge analyzes two runs side-by-side and explicitly declares which one is better and why.
-   - **Deltas**: Check changes in Cost and Time to ensure efficiency improvements.
-3. **Analyze Trace**: Open `work/<scenario-id>/trace.md`.
-   - Check **Conversation**: Did the agent understand the task?
-   - Check **Execution**: Did the commands succeed?
-   - Check **Evidence**: What did the file system look like at the end?
-   - Check **Judge Reasoning**: Why did it pass/fail?
-3. **Debug**:
-   - If the agent failed to execute commands, check the Runner logic.
-   - If the Judge failed a correct result, refine the `checklist` description or the Judge prompt.
-
-## Best Practices
-
-- **Isolation**: NEVER run tests in the root directory. Always use a sandbox.
-- **Determinism**: Mock external tools (network, time) if possible.
-- **Evidence**: Collect git diffs, file trees, and exit codes to show the Judge.
-- **Cleanliness**: Ensure `work/` directory is cleaned before runs.
-
-## Assets
-
-- **[reference/REQUIREMENTS.md](reference/REQUIREMENTS.md)**: Full System Requirements Specification (SRS).
-- **[reference/PROMPTS.md](reference/PROMPTS.md)**: Reference prompts for the Judge component (Optional).
+*   **[examples/scenario-example.md](examples/scenario-example.md)**: Template for defining scenarios.
