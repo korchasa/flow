@@ -6,7 +6,11 @@ export async function evaluateChecklist(
   agentLogs: string,
   fileDiffs: string,
   checklist: BenchmarkChecklistItem[],
-): Promise<Record<string, { pass: boolean; reason: string }>> {
+): Promise<{
+  results: Record<string, { pass: boolean; reason: string }>;
+  messages: LLMMessage[];
+  response: string;
+}> {
   const checklistJson = JSON.stringify(
     checklist.map((c) => ({ id: c.id, description: c.description })),
     null,
@@ -100,7 +104,11 @@ Evaluate the agent performance now.
       cleanContent = cleanContent.replace(/^```/, "").replace(/```$/, "");
     }
 
-    return JSON.parse(cleanContent);
+    return {
+      results: JSON.parse(cleanContent),
+      messages,
+      response: response.content,
+    };
   } catch (error) {
     console.error("Error in Judge evaluation:", error);
     // Return all false if judge fails, to be safe
@@ -108,6 +116,10 @@ Evaluate the agent performance now.
     for (const item of checklist) {
       fallback[item.id] = { pass: false, reason: "Judge evaluation failed" };
     }
-    return fallback;
+    return {
+      results: fallback,
+      messages,
+      response: "ERROR: Judge failed",
+    };
   }
 }

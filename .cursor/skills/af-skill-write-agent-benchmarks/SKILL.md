@@ -61,6 +61,11 @@ The logic that determines if a test passed or failed.
 Complete capture of the agent's lifecycle in a **single human-readable file** (e.g., `trace.md`).
 *   **Must Capture**: Full conversation history, exact Judge prompts/responses, command outputs (stdout/stderr), file system diffs, and final score/reasoning.
 *   **Normalization**: Output should be normalized (line endings, encoding) for consistent evaluation.
+*   **Structured Readability**:
+    *   **Visual Separation**: Use clear delimiters between logical sections (Messages, Commands, Evaluations).
+    *   **Embedded Metadata**: Each section must include machine-readable metadata (type, source, role, step, etc.) using hidden or non-obtrusive formats.
+    *   **Source Attribution**: Clearly identify the origin of every interaction (e.g., `agent`, `judge`, `user_emulation`, `system`).
+    *   **Tool Context**: Include definitions of tools or mocks available to the agent during the run.
 
 ## 4. Workflow: Creating a New Benchmark
 

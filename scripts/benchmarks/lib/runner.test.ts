@@ -70,7 +70,11 @@ Deno.test("Runner - Multi-turn Interaction", async () => {
   const judgeClient = async () => {
     await Promise.resolve(); // satisfy require-await
     return {
-      check1: { pass: true, reason: "Test passed" },
+      results: {
+        check1: { pass: true, reason: "Test passed" },
+      },
+      messages: [],
+      response: "Judge response",
     };
   };
 

@@ -47,7 +47,11 @@ Deno.test("Runner - should aggregate cost from multiple turns", async () => {
 
   const judgeClient = async () => {
     await Promise.resolve();
-    return {};
+    return {
+      results: {},
+      messages: [],
+      response: "Judge response",
+    };
   };
 
   try {

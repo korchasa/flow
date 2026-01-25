@@ -58,6 +58,14 @@ export async function runScenario(
     scenario.userQuery,
   );
 
+  // Log tools if any
+  if (scenario.mocks && Object.keys(scenario.mocks).length > 0) {
+    const toolsDesc = Object.keys(scenario.mocks).map((t) => `- **${t}**`).join(
+      "\n",
+    );
+    await tracer.logTools(toolsDesc);
+  }
+
   let result: (BenchmarkResult & { evidence: string }) | undefined;
 
   try {
@@ -135,7 +143,11 @@ DO NOT use interactive commands like 'git add -p' or 'git add -i'. Use 'git add 
         const agentOutput = response.content;
         fullLog += `\n\n--- Step ${step} ---\nAgent: ${agentOutput}`;
 
-        await tracer.logLLMInteraction(messages, agentOutput);
+        await tracer.logLLMInteraction(messages, agentOutput, {
+          step,
+          source: "agent",
+          model: options.model,
+        });
         messages.push({ role: "assistant", content: agentOutput });
 
         // Parse commands
@@ -182,6 +194,7 @@ DO NOT use interactive commands like 'git add -p' or 'git add -i'. Use 'git add 
               output.code,
               stdout,
               stderr,
+              { step },
             );
           } catch (e) {
             const errorMsg = e instanceof Error && e.name === "AbortError"
@@ -189,7 +202,7 @@ DO NOT use interactive commands like 'git add -p' or 'git add -i'. Use 'git add 
               : String(e);
             executedCommands += `ERROR: ${errorMsg}\n`;
             stepCommands += `ERROR: ${errorMsg}\n`;
-            await tracer.logCommand("script_block", -1, "", errorMsg);
+            await tracer.logCommand("script_block", -1, "", errorMsg, { step });
             if (e instanceof Error && e.name === "AbortError") break;
           }
           if (stepSignal?.aborted) break;
@@ -264,14 +277,18 @@ ${logStr}
 
     // 6. Judge
     console.log("  Judging results...");
-    const checklistResults = await judge(
+    const judgeOutput = await judge(
       scenario.userQuery,
       fullLog, // The conversation log
       evidence, // The file/system state changes
       scenario.checklist,
     );
+    const checklistResults = judgeOutput.results;
 
-    await tracer.logEvaluation(checklistResults, scenario.checklist);
+    await tracer.logEvaluation(checklistResults, scenario.checklist, {
+      messages: judgeOutput.messages,
+      response: judgeOutput.response,
+    });
 
     // 7. Calculate Score and Metrics
     const totalItems = scenario.checklist.length;
