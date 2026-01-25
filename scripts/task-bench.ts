@@ -13,6 +13,7 @@ import {
 import {
   PlanBasicBench,
   PlanContextBench,
+  PlanInteractiveBench,
 } from "./benchmarks/scenarios/af-plan.bench.ts";
 import { BenchmarkResult, BenchmarkScenario } from "./benchmarks/lib/types.ts";
 import { runScenario } from "./benchmarks/lib/runner.ts";
@@ -28,6 +29,7 @@ const SCENARIOS: BenchmarkScenario[] = [
   CommitCheckFailBench,
   PlanBasicBench,
   PlanContextBench,
+  PlanInteractiveBench,
 ];
 
 const DEFAULT_MODEL = "google/gemini-2.0-flash-001";

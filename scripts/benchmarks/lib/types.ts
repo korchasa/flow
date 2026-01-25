@@ -45,6 +45,12 @@ export interface BenchmarkScenario {
    * Defaults to no timeout.
    */
   stepTimeoutMs?: number;
+
+  /**
+   * List of simulated user replies to send when the agent pauses (issues no commands).
+   * Used for testing interactive flows.
+   */
+  userReplies?: string[];
 }
 
 export interface BenchmarkResult {

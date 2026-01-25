@@ -118,6 +118,7 @@ DO NOT use interactive commands like 'git add -p' or 'git add -i'. Use 'git add 
 
     const MAX_STEPS = scenario.maxSteps || 10;
     let step = 0;
+    let userReplyIndex = 0;
 
     while (step < MAX_STEPS) {
       step++;
@@ -191,6 +192,20 @@ DO NOT use interactive commands like 'git add -p' or 'git add -i'. Use 'git add 
         }
 
         if (!foundCommands) {
+          if (
+            scenario.userReplies &&
+            userReplyIndex < scenario.userReplies.length
+          ) {
+            const reply = scenario.userReplies[userReplyIndex];
+            console.log(`  Sending user reply: "${reply}"`);
+            messages.push({
+              role: "user",
+              content: reply,
+            });
+            userReplyIndex++;
+            continue;
+          }
+
           console.log("  No commands found. Agent finished.");
           break;
         }
