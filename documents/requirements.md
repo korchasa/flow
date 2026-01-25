@@ -136,7 +136,7 @@ The benchmarking system must cover all core AssistFlow skills to ensure reliabil
 | `af-init` | Project initialization | [ ] | |
 | `af-investigate` | Code investigation/debugging | [ ] | |
 | `af-maintenance` | Periodic project health checks | [ ] | |
-| `af-plan` | Task planning (GODS) | [ ] | |
+| `af-plan` | Task planning (GODS) | [x] | `af-plan-*` |
 | `af-qa` | Quality assurance session | [ ] | |
 | `af-reflect` | Self-reflection on task | [ ] | |
 | **Guides (af-skill-*)** | | | |
@@ -147,7 +147,7 @@ The benchmarking system must cover all core AssistFlow skills to ensure reliabil
 | `af-skill-eng-prompt-reas` | Prompt engineering (Reasoning)| [ ] | |
 | `af-skill-fix-tests` | Fixing broken tests | [ ] | |
 | `af-skill-manage-github` | Managing GitHub via MCP | [ ] | |
-| `af-skill-write-bench` | Writing agent benchmarks | [ ] | |
+| `af-skill-write-bench` | Writing agent benchmarks | [x] | |
 | `af-skill-write-dep` | Writing DEP documents | [ ] | |
 | `af-skill-write-gods` | Writing GODS tasks | [ ] | |
 | `af-skill-write-info` | Writing in info style | [ ] | |

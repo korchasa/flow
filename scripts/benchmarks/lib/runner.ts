@@ -127,6 +127,7 @@ DO NOT use interactive commands like 'git add -p' or 'git add -i'. Use 'git add 
     const MAX_STEPS = scenario.maxSteps || 10;
     let step = 0;
     let userReplyIndex = 0;
+    let maxStepsReached = false;
 
     while (step < MAX_STEPS) {
       step++;
@@ -227,6 +228,11 @@ DO NOT use interactive commands like 'git add -p' or 'git add -i'. Use 'git add 
           break;
         }
 
+        if (step === MAX_STEPS) {
+          console.log("  MAX_STEPS reached.");
+          maxStepsReached = true;
+        }
+
         // Feed back output
         messages.push({
           role: "user",
@@ -284,8 +290,23 @@ ${logStr}
       scenario.checklist,
     );
     const checklistResults = judgeOutput.results;
+    if (maxStepsReached) {
+      checklistResults["max_steps_reached"] = {
+        pass: false,
+        reason: `Scenario reached MAX_STEPS (${MAX_STEPS}) without finishing.`,
+      };
+    }
 
-    await tracer.logEvaluation(checklistResults, scenario.checklist, {
+    const checklistToJudge = [...scenario.checklist];
+    if (maxStepsReached) {
+      checklistToJudge.push({
+        id: "max_steps_reached",
+        description: "Scenario should finish within MAX_STEPS",
+        critical: true,
+      });
+    }
+
+    await tracer.logEvaluation(checklistResults, checklistToJudge, {
       messages: judgeOutput.messages,
       response: judgeOutput.response,
     });
@@ -300,7 +321,7 @@ ${logStr}
     let errorsCount = 0;
     let warningsCount = 0;
 
-    for (const item of scenario.checklist) {
+    for (const item of checklistToJudge) {
       const res = checklistResults[item.id];
       if (!res || !res.pass) {
         if (item.critical) {
