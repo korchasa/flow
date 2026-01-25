@@ -36,6 +36,7 @@ The trace is a structured HTML document designed for readability and detailed in
 *   **Source Attribution**: Clearly identifies the origin of every interaction (`agent`, `judge`, `user_emulation`, `system`).
 *   **Tool Context**: Includes definitions of tools or mocks available to the agent during the run.
 *   **Interactive Elements**: Collapsible sections for long content (LLM responses, command outputs).
+*   **Content Decoding**: Automatically decodes URL-encoded content in events for better readability.
 
 ## 4. Execution Flow
 

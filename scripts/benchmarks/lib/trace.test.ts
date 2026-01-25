@@ -54,7 +54,7 @@ Deno.test("TraceLogger should generate self-contained HTML", async () => {
   assertStringIncludes(content, "Hello world");
   assertStringIncludes(content, "Hello!");
   assertStringIncludes(content, "Judge Interaction");
-  assertStringIncludes(content, "Judge%20response");
+  assertStringIncludes(content, "Judge response");
 
   // Check for summary
   assertStringIncludes(content, "PASSED");

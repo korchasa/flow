@@ -55,7 +55,14 @@ export class TraceLogger {
           "tools_definition",
         ].includes(event.type) && isLong;
 
-        const content = event.content;
+        let content = event.content;
+        if (content.includes("%")) {
+          try {
+            content = decodeURIComponent(content);
+          } catch {
+            // If decoding fails, keep original content
+          }
+        }
 
         if (shouldCollapse) {
           return `
