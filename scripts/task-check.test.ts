@@ -10,7 +10,7 @@ Deno.test("buildCheckCommands returns expected steps", () => {
   assertEquals(commands[1].cmd, "deno");
   assertEquals(commands[1].args.join(" "), "lint scripts");
   assertEquals(commands[2].cmd, "deno");
-  assertEquals(commands[2].args.join(" "), "test scripts");
+  assertEquals(commands[2].args.join(" "), "test -A scripts");
   assertEquals(commands[3].cmd, "deno");
   assertEquals(commands[3].args.join(" "), "run -A scripts/check-skills.ts");
 });

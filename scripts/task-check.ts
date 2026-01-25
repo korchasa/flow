@@ -16,7 +16,7 @@ export function buildCheckCommands(): CommandSpec[] {
     },
     {
       cmd: "deno",
-      args: ["test", "scripts"],
+      args: ["test", "-A", "scripts"],
     },
     {
       cmd: "deno",
