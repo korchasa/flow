@@ -131,18 +131,21 @@ async function main() {
             }
           }
 
+          const dim = "\x1b[2m";
           console.log(
-            `    ${color}[${mark}] ${id}${label}: ${res.reason}\x1b[0m`,
+            `    ${color}[${mark}] ${id}${label}:\x1b[0m ${dim}${res.reason}\x1b[0m`,
           );
         }
 
         if (!result.success) {
-          console.log("\n  --- DEBUG INFO (FAILED) ---");
-          console.log("  Agent Output:");
-          console.log(result.logs);
-          console.log("\n  Evidence:");
-          console.log(result.evidence);
-          console.log("  ---------------------------\n");
+          console.log(
+            `\n  \x1b[31mSee trace for details: ${
+              join(workDir, result.scenarioId, "trace.html").replace(
+                Deno.cwd(),
+                ".",
+              )
+            }\x1b[0m\n`,
+          );
         }
       } catch (e) {
         console.error(`  Error running scenario ${scenario.id}:`, e);
@@ -150,45 +153,101 @@ async function main() {
     }
   }
 
+  const failedResults = results.filter((r) =>
+    r.errorsCount > 0 || r.warningsCount > 0
+  );
+  if (failedResults.length > 0) {
+    console.log("\n--- DETAILED ERRORS & WARNINGS ---");
+    for (const r of failedResults) {
+      const scenario = SCENARIOS.find((s) => s.id === r.scenarioId);
+      console.log(
+        `\nScenario: ${scenario?.name || r.scenarioId} (${r.scenarioId})`,
+      );
+      for (const [id, res] of Object.entries(r.checklistResults)) {
+        if (!res.pass) {
+          const item = scenario?.checklist.find((i) => i.id === id);
+          const isCritical = item?.critical ?? true;
+          const color = isCritical ? "\x1b[31m" : "\x1b[33m";
+          const label = isCritical ? "ERROR" : "WARNING";
+          const dim = "\x1b[2m";
+          console.log(
+            `  ${color}[${label}] ${id}:\x1b[0m ${dim}${res.reason}\x1b[0m`,
+          );
+        }
+      }
+      console.log(
+        `  \x1b[34mTrace: ${
+          join(workDir, r.scenarioId, "trace.html").replace(Deno.cwd(), ".")
+        }\x1b[0m`,
+      );
+    }
+  }
+
   console.log("\n--- SUMMARY ---");
   console.log(
-    `${"ID".padEnd(30)} | ${"Model".padEnd(30)} | ${
-      "Status".padEnd(
-        15,
-      )
-    } | ${"E/W".padEnd(6)} | ${"Steps".padEnd(6)} | ${
-      "Time (ms)".padEnd(10)
-    } | ${
-      "Tokens".padEnd(
-        10,
-      )
-    } | ${"Cost ($)"}`,
+    `${"ID".padEnd(30)} | ${"Model".padEnd(30)} | ${"Err".padStart(3)} | ${
+      "Wrn".padStart(3)
+    } | ${"Steps".padStart(6)} | ${"Time (s)".padStart(10)} | ${
+      "Tokens".padStart(12)
+    } | ${"Cost ($)".padStart(10)}`,
   );
-  console.log("-".repeat(140));
+  console.log("-".repeat(130));
+
+  let totalErrors = 0;
+  let totalWarnings = 0;
+  let totalSteps = 0;
+  let totalTimeMs = 0;
+  let totalTokens = 0;
 
   for (const r of results) {
-    let status = r.success ? "PASSED" : "FAILED";
-    let color = r.success ? "\x1b[32m" : "\x1b[31m"; // Green : Red
+    totalErrors += r.errorsCount;
+    totalWarnings += r.warningsCount;
+    totalSteps += r.toolCallsCount;
+    totalTimeMs += r.durationMs;
+    totalTokens += r.tokensUsed;
 
-    if (r.success && r.warningsCount > 0) {
-      status = "WARNING"; // Passed with non-critical failures
-      color = "\x1b[33m"; // Yellow
-    }
+    const nameColor = r.errorsCount > 0
+      ? "\x1b[31m"
+      : (r.warningsCount > 0 ? "\x1b[33m" : "\x1b[32m");
+    const errColor = r.errorsCount > 0 ? "\x1b[31m" : "";
+    const wrnColor = r.warningsCount > 0 ? "\x1b[33m" : "";
+    const reset = "\x1b[0m";
 
-    const statusStr = `${color}${status.padEnd(15)}\x1b[0m`;
-    const ewStr = `${r.errorsCount}/${r.warningsCount}`;
+    const formattedTokens = r.tokensUsed.toString().replace(
+      /\B(?=(\d{3})+(?!\d))/g,
+      " ",
+    );
 
     console.log(
-      `${r.scenarioId.padEnd(30)} | ${r.model.padEnd(30)} | ${statusStr} | ${
-        ewStr.padEnd(6)
-      } | ${r.toolCallsCount.toString().padEnd(6)} | ${
-        r.durationMs.toFixed(0).padEnd(10)
-      } | ${r.tokensUsed.toString().padEnd(10)} | $${r.totalCost.toFixed(6)}`,
+      `${nameColor}${r.scenarioId.padEnd(30)}${reset} | ${
+        r.model.padEnd(30)
+      } | ${errColor}${
+        r.errorsCount.toString().padStart(3)
+      }${reset} | ${wrnColor}${
+        r.warningsCount.toString().padStart(3)
+      }${reset} | ${r.toolCallsCount.toString().padStart(6)} | ${
+        (r.durationMs / 1000).toFixed(1).padStart(10)
+      } | ${formattedTokens.padStart(12)} | $${
+        r.totalCost.toFixed(6).padStart(10)
+      }`,
     );
   }
 
-  console.log("-".repeat(140));
-  console.log(`TOTAL COST: $${totalCostAll.toFixed(6)}`);
+  console.log("-".repeat(130));
+  const totalTokensFormatted = totalTokens.toString().replace(
+    /\B(?=(\d{3})+(?!\d))/g,
+    " ",
+  );
+  console.log(
+    `${"TOTAL".padEnd(30)} | ${"".padEnd(30)} | ${
+      totalErrors.toString().padStart(3)
+    } | ${totalWarnings.toString().padStart(3)} | ${
+      totalSteps.toString().padStart(6)
+    } | ${(totalTimeMs / 1000).toFixed(1).padStart(10)} | ${
+      totalTokensFormatted.padStart(12)
+    } | $${totalCostAll.toFixed(6).padStart(10)}`,
+  );
+  console.log("-".repeat(130));
 
   if (runs > 1) {
     console.log("\n--- PASS RATES ---");
