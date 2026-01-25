@@ -18,6 +18,10 @@ export function buildCheckCommands(): CommandSpec[] {
       cmd: "deno",
       args: ["test", "scripts"],
     },
+    {
+      cmd: "deno",
+      args: ["run", "-A", "scripts/check-skills.ts"],
+    },
   ];
 }
 
