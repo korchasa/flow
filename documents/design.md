@@ -67,9 +67,9 @@
   - **Evaluation Metrics**: Uses Errors (critical failures), Warnings
     (non-critical failures), Steps, Time, and Cost for objective assessment.
   - **Evaluation Modes**:
-    - **Quality**: Checklist-based verification (Pass/Fail).
-    - **Model Selection**: Pairwise comparison (SBS) with ELO ratings.
-    - **Version Comparison**: Delta analysis between versions.
+    - **Quality**: Checklist-based verification (Pass/Fail). Uses LLM-Judge to verify evidence against criteria.
+    - **Model Selection (SBS)**: Pairwise comparison (Side-by-Side). The Judge receives two sets of logs and evidence and must choose the winner based on efficiency, correctness, and style. Results contribute to ELO ratings.
+    - **Version Comparison (Deltas)**: Automatic comparison of the current run against a baseline (stored in `benchmarks/history.json`). Reports changes in Cost, Time, and Score.
 
 ## 4. Data and Storage
 

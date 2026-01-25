@@ -112,10 +112,46 @@
   - [x] LLM-based Judge for semantic verification.
   - [x] Financial cost calculation per scenario and per run.
   - [x] Meaningful metrics: Errors, Warnings, Steps, Time, and Cost.
-  - [ ] Three evaluation modes: Quality (Checklist), Model Selection (ELO), and Version Comparison (Deltas).
+  - [ ] Three evaluation modes:
+    - **Quality (Checklist)**: Binary/Semantic verification of requirements.
+    - **Model Selection (SBS/ELO)**: Side-by-Side comparison of two models to determine the superior one.
+    - **Version Comparison (Deltas)**: Tracking performance changes (Cost, Time, Quality) between agent versions.
+  - [ ] Comprehensive coverage: Scenarios for all core agents (`af-plan`, `af-init`, `af-investigate`, etc.).
 
+### 3.8 Skill Coverage Matrix
 
-- **Performance:** Rules and commands must be concise to fit within the context
+The benchmarking system must cover all core AssistFlow skills to ensure reliability across all workflows.
+
+| Skill ID | Description | Benchmarked | Scenario ID |
+| :--- | :--- | :---: | :--- |
+| **Commands (af-*)** | | | |
+| `af-answer` | Answering user questions | [ ] | |
+| `af-commit` | Atomic commits and QA | [x] | `af-commit-*` |
+| `af-create-vision-doc` | Creating VISION.md | [ ] | |
+| `af-do` | General task execution | [ ] | |
+| `af-engineer-command` | Creating new AF commands | [ ] | |
+| `af-execute` | Executing planned tasks | [ ] | |
+| `af-init` | Project initialization | [ ] | |
+| `af-investigate` | Code investigation/debugging | [ ] | |
+| `af-maintenance` | Periodic project health checks | [ ] | |
+| `af-plan` | Task planning (GODS) | [ ] | |
+| `af-qa` | Quality assurance session | [ ] | |
+| `af-reflect` | Self-reflection on task | [ ] | |
+| **Guides (af-skill-*)** | | | |
+| `af-skill-conduct-qa` | Conducting QA sessions | [ ] | |
+| `af-skill-debug-playwright`| Debugging with Playwright | [ ] | |
+| `af-skill-draw-mermaid` | Drawing Mermaid diagrams | [ ] | |
+| `af-skill-eng-prompt-inst` | Prompt engineering (Instant) | [ ] | |
+| `af-skill-eng-prompt-reas` | Prompt engineering (Reasoning)| [ ] | |
+| `af-skill-fix-tests` | Fixing broken tests | [ ] | |
+| `af-skill-manage-github` | Managing GitHub via MCP | [ ] | |
+| `af-skill-write-bench` | Writing agent benchmarks | [ ] | |
+| `af-skill-write-dep` | Writing DEP documents | [ ] | |
+| `af-skill-write-gods` | Writing GODS tasks | [ ] | |
+| `af-skill-write-info` | Writing in info style | [ ] | |
+| `af-skill-write-prd` | Writing PRDs | [ ] | |
+
+## 4. Non-functional requirements
   window.
 - **Reliability:** Benchmarks must use isolated sandboxes and evidence-based
   verification.
