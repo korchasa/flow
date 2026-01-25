@@ -8,7 +8,8 @@
     "jsr:@std/path@*": "1.1.4",
     "jsr:@std/path@0.224": "0.224.0",
     "jsr:@std/path@^1.1.4": "1.1.4",
-    "jsr:@std/yaml@*": "1.0.10"
+    "jsr:@std/yaml@*": "1.0.10",
+    "jsr:@std/yaml@0.224": "0.224.3"
   },
   "jsr": {
     "@std/assert@0.224.0": {
@@ -41,6 +42,9 @@
       "dependencies": [
         "jsr:@std/internal"
       ]
+    },
+    "@std/yaml@0.224.3": {
+      "integrity": "9da1ed0094f42ba24570b4d88a094b44a793ac7f2bc085c1939d3ac7e11cc0bb"
     },
     "@std/yaml@1.0.10": {
       "integrity": "245706ea3511cc50c8c6d00339c23ea2ffa27bd2c7ea5445338f8feff31fa58e"
