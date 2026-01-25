@@ -25,6 +25,10 @@
 ## File Organization Patterns
 
 - **Skills:** Stored in `.cursor/skills/` as directories containing `SKILL.md`.
+  - `SKILL.md`: Main instructions and workflows.
+  - `examples/`: (Optional) Concrete usage examples or templates.
+  - `reference/`: (Optional) Detailed documentation or specifications.
+  - `scripts/`: (Optional) Utility scripts for the skill.
 - **Agents:** Stored in `.cursor/agents/` as `.md` files.
 - **Scripts:** Deno task scripts in `./scripts/` with tasks configured in
   `deno.json`.
