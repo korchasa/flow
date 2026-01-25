@@ -36,7 +36,7 @@ Use this workflow if the project lacks a benchmarking system.
    - See [Adapting to Other Stacks](#adapting-to-other-stacks) for language-specific tips.
 4. **Configure Task**: Add a command (e.g., `deno task bench`, `npm run bench`, or `pytest benchmarks/`) to run the benchmarks.
 
-**Reference**: See [REQUIREMENTS.md](REQUIREMENTS.md) for detailed specifications.
+**Reference**: See [reference/REQUIREMENTS.md](reference/REQUIREMENTS.md) for detailed specifications.
 
 ### 2. Implement Core Modules (Reference Implementation: Deno)
 
@@ -211,44 +211,7 @@ Use this workflow to add a new test case.
    - **Semantic**: LLM Judge checks (e.g., "commit message is descriptive").
 5. **Register**: Ensure the runner imports/discovers the new scenario.
 
-**Scenario Template (Pseudocode Example)**:
-
-```pseudocode
-// Define a test case for a Smart Home Agent
-Scenario smart-home-evening-scene:
-    id: "smart-home-evening"
-    name: "Evening Scene Activation"
-    description: "Agent must set up the living room for a movie night."
-    targetAgentPath: "agents/smart_home_controller.md"
-
-    Setup(sandboxPath):
-        // 1. Initialize device states in a mock database or config file
-        WriteFile(sandboxPath + "/devices.json", {
-            "lights": {"living_room": "bright"},
-            "curtains": {"living_room": "open"},
-            "tv": {"state": "off"}
-        })
-
-    userQuery: "It's movie time! Dim the living room lights, close the curtains, and turn on the TV."
-
-    checklist: [
-        {
-            id: "lights_dimmed",
-            description: "Living room lights are set to 'dimmed' or 'off'",
-            critical: true
-        },
-        {
-            id: "curtains_closed",
-            description: "Living room curtains are 'closed'",
-            critical: true
-        },
-        {
-            id: "tv_on",
-            description: "TV state is 'on'",
-            critical: true
-        }
-    ]
-```
+**Scenario Template**: See [examples/scenario-example.md](examples/scenario-example.md) for a concrete example.
 
 ### 5. Run and Debug
 
@@ -277,5 +240,5 @@ Use this workflow to evaluate agents and debug failures.
 
 ## Assets
 
-- **[REQUIREMENTS.md](REQUIREMENTS.md)**: Full System Requirements Specification (SRS).
-- **[PROMPTS.md](PROMPTS.md)**: Reference prompts for the Judge component (Optional).
+- **[reference/REQUIREMENTS.md](reference/REQUIREMENTS.md)**: Full System Requirements Specification (SRS).
+- **[reference/PROMPTS.md](reference/PROMPTS.md)**: Reference prompts for the Judge component (Optional).
