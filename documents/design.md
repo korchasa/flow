@@ -51,6 +51,7 @@
 
 - **Maintenance & Benchmarking**:
   - `deno task bench`: Evaluates agents via evidence-based scenarios.
+  - **Docker Isolation**: Benchmarks run inside a Docker container (`Dockerfile` based on `denoland/deno:alpine`) with `git` and `bash` installed. The project directory is mounted as a volume.
   - **Hierarchical Scenarios**: Scenarios are organized as `scripts/benchmarks/scenarios/<skill>/<scenario>/mod.ts`.
   - **JSON Configuration**: `benchmarks.config.json` stores unified model presets for agents and judges, enabling fail-fast initialization and CLI selection.
   - **Side-Effect Validation**: System checks sandbox state (files, git) using LLM-Judge.

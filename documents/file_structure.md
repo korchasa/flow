@@ -15,6 +15,7 @@
     - `work/` - Runtime sandboxes (git-ignored).
 - `benchmarks.config.json` - Unified model presets for agent and judge.
 - `AGENTS.md` - Persistent project-wide agent rules.
+- `Dockerfile` - Environment definition for secure benchmark execution.
 - `README.md` - Project entry point and overview.
 - `.gitignore` - Git ignore rules.
 - `deno.json` - Deno task configuration.

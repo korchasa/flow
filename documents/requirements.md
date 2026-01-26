@@ -119,6 +119,8 @@
       (user_info, project_layout, git_status, AGENTS.md, available_skills).
 - [x] **Mandatory AGENTS.md**: Every scenario must have an `AGENTS.md` file in its
       fixtures or provided via config.
+- [x] **Secure Execution**: Benchmarks run in an isolated Docker container by default to prevent host system damage.
+- [x] **Automatic Environment**: `deno task bench` automatically builds and runs the required Docker image.
 
 ### 3.8 Skill Coverage Matrix
 
