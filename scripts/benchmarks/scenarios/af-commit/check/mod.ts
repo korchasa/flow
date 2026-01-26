@@ -11,7 +11,7 @@ export const CommitCheckBench: BenchmarkScenario = {
   setup: async (sandboxPath: string) => {
     await setupGitRepo(sandboxPath);
 
-    // Initial commit
+    // Initial commit with all files
     await runGit(sandboxPath, ["add", "."]);
     await runGit(sandboxPath, ["commit", "-m", "Initial commit"]);
 

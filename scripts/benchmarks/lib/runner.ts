@@ -268,6 +268,13 @@ DO NOT use interactive commands like 'git add -p' or 'git add -i'. Use 'git add 
               stepCommands += `STDERR: ${stderr}\n`;
             }
 
+            // Cleanup the script file immediately after execution
+            try {
+              await Deno.remove(scriptPath);
+            } catch (e) {
+              console.warn(`  Warning: Failed to cleanup script at ${scriptPath}: ${e}`);
+            }
+
             await tracer.logCommand(
               "script_block",
               output.code,

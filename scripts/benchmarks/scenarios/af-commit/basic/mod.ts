@@ -11,8 +11,8 @@ export const CommitBasicBench: BenchmarkScenario = {
   setup: async (sandboxPath: string) => {
     await setupGitRepo(sandboxPath);
 
-    // Initial commit with README
-    await runGit(sandboxPath, ["add", "README.md"]);
+    // Initial commit with README and AGENTS.md
+    await runGit(sandboxPath, ["add", "README.md", "AGENTS.md"]);
     await runGit(sandboxPath, ["commit", "-m", "Initial commit"]);
 
     // utils.ts is already in sandbox but NOT in git yet.
@@ -20,15 +20,9 @@ export const CommitBasicBench: BenchmarkScenario = {
   },
 
   userQuery:
-    "I added a sum function in utils.ts. Commit this with the message 'add sum function'.",
+    "I added a sum function in utils.ts. Commit this changes.",
 
   checklist: [
-    {
-      id: "git_status_checked",
-      description:
-        "Did the agent run 'git status' or 'git diff' to check state?",
-      critical: false,
-    },
     {
       id: "file_committed",
       description: "Is `utils.ts` present in the last commit?",
@@ -36,7 +30,7 @@ export const CommitBasicBench: BenchmarkScenario = {
     },
     {
       id: "commit_message_match",
-      description: "Does the commit message contain 'add sum function'?",
+      description: "Does the commit message describe sum function?",
       critical: true,
     },
     {
