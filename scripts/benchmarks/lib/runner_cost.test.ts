@@ -2,6 +2,8 @@ import { assertEquals } from "@std/assert";
 import { join } from "@std/path";
 import { runScenario } from "./runner.ts";
 import { BenchmarkScenario, LLMMessage, LLMResponse } from "./types.ts";
+import { chatCompletion } from "./llm.ts";
+import { evaluateChecklist } from "./judge.ts";
 
 Deno.test("Runner - should aggregate cost from multiple turns", async () => {
   const tempDir = await Deno.makeTempDir();
@@ -56,10 +58,11 @@ Deno.test("Runner - should aggregate cost from multiple turns", async () => {
 
   try {
     const result = await runScenario(scenario, {
-      model: "test-model",
+      agentConfig: { model: "test-model" },
+      judgeConfig: { model: "judge-model" },
       workDir: tempDir,
-      llmClient,
-      judgeClient,
+      llmClient: llmClient as unknown as typeof chatCompletion,
+      judgeClient: judgeClient as unknown as typeof evaluateChecklist,
     });
 
     assertEquals(result.totalCost, 0.0015);

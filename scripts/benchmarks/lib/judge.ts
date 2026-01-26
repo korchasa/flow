@@ -1,4 +1,4 @@
-import { chatCompletion } from "./llm.ts";
+import { chatCompletion, ModelConfig } from "./llm.ts";
 import { BenchmarkChecklistItem, LLMMessage } from "./types.ts";
 
 export async function evaluateChecklist(
@@ -6,6 +6,7 @@ export async function evaluateChecklist(
   agentLogs: string,
   fileDiffs: string,
   checklist: BenchmarkChecklistItem[],
+  judgeConfig: ModelConfig,
 ): Promise<{
   results: Record<string, { pass: boolean; reason: string }>;
   messages: LLMMessage[];
@@ -89,11 +90,9 @@ Evaluate the agent performance now.
   ];
 
   try {
-    // Using a slightly smarter model for judging if needed, but flash is usually good for this
     const response = await chatCompletion(
       messages,
-      "google/gemini-2.0-flash-001",
-      0,
+      judgeConfig,
     );
 
     // Clean up potential markdown code blocks

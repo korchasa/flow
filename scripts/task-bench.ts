@@ -2,6 +2,7 @@ import { join } from "@std/path";
 import { parse } from "@std/flags";
 import { BenchmarkResult, BenchmarkScenario } from "./benchmarks/lib/types.ts";
 import { runScenario } from "./benchmarks/lib/runner.ts";
+import { loadConfig, ModelConfig } from "./benchmarks/lib/llm.ts";
 
 // Import scenarios from the new structure
 import { CommitBasicBench } from "./benchmarks/scenarios/af-commit/basic/mod.ts";
@@ -37,29 +38,30 @@ const SCENARIOS: BenchmarkScenario[] = [
   PlanDbFeatureBench,
 ];
 
-const DEFAULT_MODEL = "google/gemini-2.0-flash-001";
-
-function printHelp() {
+function printHelp(defaultAgentPreset: string, defaultJudgePreset: string) {
   console.log(`
 Usage: deno task bench [options]
 
 Options:
-  -f, --filter <string>  Filter scenarios by ID (substring match)
-  -m, --model <string>   Model to use (default: ${DEFAULT_MODEL})
-  -n, --runs <number>    Number of runs per scenario (default: 1)
-  --help                 Show this help message
+  -f, --filter <string>        Filter scenarios by ID (substring match)
+  -p, --preset <string>        Agent preset to use (default: ${defaultAgentPreset})
+  --judge-preset <string>      Judge preset to use (default: ${defaultJudgePreset})
+  -n, --runs <number>          Number of runs per scenario (default: 1)
+  --help                       Show this help message
   `);
 }
 
 async function main() {
+  const config = await loadConfig();
+
   const args = parse(Deno.args, {
-    string: ["model", "filter", "runs"],
+    string: ["filter", "runs", "preset", "judge-preset"],
     boolean: ["help"],
-    alias: { m: "model", f: "filter", n: "runs", h: "help" },
+    alias: { f: "filter", n: "runs", h: "help", p: "preset" },
     unknown: (arg) => {
       if (arg.startsWith("-")) {
         console.error(`Unknown argument: ${arg}`);
-        printHelp();
+        printHelp(config.default_agent_preset, config.default_judge_preset);
         Deno.exit(1);
       }
       return true;
@@ -67,18 +69,35 @@ async function main() {
   });
 
   if (args.help) {
-    printHelp();
+    printHelp(config.default_agent_preset, config.default_judge_preset);
     Deno.exit(0);
   }
 
   if (args._.length > 0) {
     console.error(`Unexpected positional arguments: ${args._.join(", ")}`);
-    printHelp();
+    printHelp(config.default_agent_preset, config.default_judge_preset);
     Deno.exit(1);
   }
 
+  const agentPresetName = args.preset || config.default_agent_preset;
+  const agentPreset = config.presets[agentPresetName];
+  if (!agentPreset) {
+    console.error(`Unknown agent preset: ${agentPresetName}`);
+    Deno.exit(1);
+  }
+
+  const agentConfig: ModelConfig = { ...agentPreset };
+
+  const judgePresetName = args["judge-preset"] || config.default_judge_preset;
+  const judgePreset = config.presets[judgePresetName];
+  if (!judgePreset) {
+    console.error(`Unknown judge preset: ${judgePresetName}`);
+    Deno.exit(1);
+  }
+
+  const judgeConfig: ModelConfig = { ...judgePreset };
+
   const filter = args.filter;
-  const model = args.model || DEFAULT_MODEL;
   const runs = parseInt(args.runs || "1", 10);
 
   const scenariosToRun = filter
@@ -86,7 +105,10 @@ async function main() {
     : SCENARIOS;
 
   console.log(`Found ${scenariosToRun.length} scenarios.`);
-  console.log(`Using model: ${model}`);
+  console.log(`Using agent preset: ${agentPresetName}`);
+  console.log(`Using agent model: ${agentConfig.model}`);
+  console.log(`Using judge preset: ${judgePresetName}`);
+  console.log(`Using judge model: ${judgeConfig.model}`);
   console.log(`Runs per scenario: ${runs}`);
 
   const results: BenchmarkResult[] = [];
@@ -100,7 +122,11 @@ async function main() {
         console.log(`\n--- Run ${i + 1}/${runs} for ${scenario.id} ---`);
       }
       try {
-        const result = await runScenario(scenario, { model, workDir });
+        const result = await runScenario(scenario, {
+          agentConfig,
+          judgeConfig,
+          workDir,
+        });
         results.push(result);
         totalCostAll += result.totalCost;
 

@@ -1,11 +1,45 @@
 import { LLMMessage, LLMResponse } from "./types.ts";
 
-const DEFAULT_MODEL = "google/gemini-2.0-flash-001"; // Fast and cheap for the agent
+export interface ModelConfig {
+  model: string;
+  temperature?: number;
+  provider?: {
+    order?: string[];
+    allow_fallbacks?: boolean;
+    require_parameters?: boolean;
+    data_collection?: "allow" | "deny";
+  };
+  [key: string]: unknown;
+}
+
+export interface BenchmarkConfig {
+  presets: Record<string, ModelConfig>;
+  default_agent_preset: string;
+  default_judge_preset: string;
+}
+
+export const DEFAULT_CONFIG: BenchmarkConfig | null = null;
+
+export async function loadConfig(
+  path = "benchmarks.config.json",
+): Promise<BenchmarkConfig> {
+  try {
+    const content = await Deno.readTextFile(path);
+    return JSON.parse(content);
+  } catch (e) {
+    if (e instanceof Deno.errors.NotFound) {
+      throw new Error(
+        `Configuration file not found at ${path}. Please create it to run benchmarks.`,
+      );
+    }
+    throw e;
+  }
+}
 
 export async function chatCompletion(
   messages: LLMMessage[],
-  model: string = DEFAULT_MODEL,
-  temperature: number = 0,
+  configOrModel: ModelConfig | string,
+  temperature?: number,
   signal?: AbortSignal,
 ): Promise<LLMResponse> {
   const OPENROUTER_API_KEY = Deno.env.get("OPENROUTER_API_KEY");
@@ -15,6 +49,15 @@ export async function chatCompletion(
       "WARNING: OPENROUTER_API_KEY is not set. LLM calls will fail.",
     );
     throw new Error("OPENROUTER_API_KEY is not set.");
+  }
+
+  const config: ModelConfig = typeof configOrModel === "string"
+    ? { model: configOrModel, temperature: temperature ?? 0 }
+    : { ...configOrModel };
+
+  // If temperature was passed explicitly, override the one in config
+  if (temperature !== undefined) {
+    config.temperature = temperature;
   }
 
   const response = await fetch(
@@ -28,9 +71,8 @@ export async function chatCompletion(
         "X-Title": "Cursor IDE Rules Benchmark", // Optional
       },
       body: JSON.stringify({
-        model,
         messages,
-        temperature,
+        ...config,
       }),
       signal,
     },

@@ -1,23 +1,14 @@
 import { join } from "@std/path";
-import {
-  BenchmarkResult,
-  BenchmarkScenario,
-  LLMMessage,
-  LLMResponse,
-} from "./types.ts";
-import { chatCompletion } from "./llm.ts";
+import { BenchmarkResult, BenchmarkScenario, LLMMessage } from "./types.ts";
+import { chatCompletion, ModelConfig } from "./llm.ts";
 import { evaluateChecklist } from "./judge.ts";
 import { TraceLogger } from "./trace.ts";
 
 export interface RunnerOptions {
-  model: string;
+  agentConfig: ModelConfig;
+  judgeConfig: ModelConfig;
   workDir: string;
-  llmClient?: (
-    messages: LLMMessage[],
-    model?: string,
-    temperature?: number,
-    signal?: AbortSignal,
-  ) => Promise<LLMResponse>;
+  llmClient?: typeof chatCompletion;
   judgeClient?: typeof evaluateChecklist;
 }
 
@@ -53,7 +44,7 @@ export async function runScenario(
   await tracer.init(
     scenario.name,
     scenario.id,
-    options.model,
+    options.agentConfig.model,
     scenario.targetAgentPath,
     scenario.userQuery,
   );
@@ -138,7 +129,12 @@ DO NOT use interactive commands like 'git add -p' or 'git add -i'. Use 'git add 
         : undefined;
 
       try {
-        const response = await llm(messages, options.model, 0, stepSignal);
+        const response = await llm(
+          messages,
+          options.agentConfig,
+          undefined,
+          stepSignal,
+        );
         tokensUsed += response.usage?.total_tokens || 0;
         totalCost += response.usage?.cost || 0;
         const agentOutput = response.content;
@@ -147,7 +143,7 @@ DO NOT use interactive commands like 'git add -p' or 'git add -i'. Use 'git add 
         await tracer.logLLMInteraction(messages, agentOutput, {
           step,
           source: "agent",
-          model: options.model,
+          model: options.agentConfig.model,
         });
         messages.push({ role: "assistant", content: agentOutput });
 
@@ -288,6 +284,7 @@ ${logStr}
       fullLog, // The conversation log
       evidence, // The file/system state changes
       scenario.checklist,
+      options.judgeConfig,
     );
     const checklistResults = judgeOutput.results;
     if (maxStepsReached) {
@@ -346,7 +343,7 @@ ${logStr}
       toolCallsCount,
       checklistResults,
       logs: fullLog,
-      model: options.model,
+      model: options.agentConfig.model,
       evidence, // Attach evidence to result for debugging
     } as BenchmarkResult & { evidence: string };
 
