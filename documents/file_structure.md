@@ -8,6 +8,7 @@
   - `benchmarks/` - Agent benchmarking system.
     - `lib/` - Core benchmarking logic.
     - `scenarios/` - Test scenario definitions grouped by skill (e.g., `af-commit/basic/mod.ts`).
+      - `<scenario_id>/fixture/` - Initial file state for the scenario.
     - `work/` - Runtime sandboxes (git-ignored).
 - `benchmarks.config.json` - Unified model presets for agent and judge.
 - `AGENTS.md` - Persistent project-wide agent rules.

@@ -111,7 +111,17 @@ If a benchmark fails, check the **Trace**:
 3.  **Did the Tool fail?** Check stderr of the commands.
 4.  **Did the Judge hallucinate?** Check the Judge's reasoning against the actual file diff.
 
-## 6. Data Model Reference
+## 6. Configuration Principles
+
+The benchmarking system uses a centralized configuration to manage LLM parameters and execution defaults.
+
+### Key Principles
+1.  **Preset-Based Management**: LLM configurations (model, temperature, provider settings) are managed as named presets. This allows switching between different models or providers without changing the scenario definitions.
+2.  **Role Separation**: The system distinguishes between the **Agent** (the model being tested) and the **Judge** (the model evaluating the results). Different presets can be assigned to each role to optimize for cost or intelligence.
+3.  **Reproducibility**: Configuration should enforce deterministic behavior (e.g., `temperature: 0`) to ensure benchmark results are consistent across runs.
+4.  **Provider Flexibility**: Support for provider-specific routing (e.g., OpenRouter provider order) allows for fallback mechanisms and cost optimization during large-scale runs.
+
+## 7. Data Model Reference
 
 ### Scenario Definition
 ```pseudocode
@@ -135,6 +145,7 @@ Structure ChecklistItem:
     type: Enum              // Optional: "static" (regex/grep) or "semantic" (LLM judge)
 ```
 
-## 7. Assets & References
+## 8. Assets & References
 
 *   **[examples/scenario-example.md](examples/scenario-example.md)**: Template for defining scenarios.
+*   **[benchmarks.config.json](benchmarks.config.json)**: Main configuration file for models and presets.
