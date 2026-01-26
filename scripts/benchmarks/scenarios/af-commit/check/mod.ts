@@ -1,5 +1,5 @@
 import { BenchmarkScenario } from "../../../lib/types.ts";
-import { join } from "@std/path";
+import { runGit, setupGitRepo } from "../../../lib/utils.ts";
 
 const AGENT_PATH = ".cursor/skills/af-commit/SKILL.md";
 
@@ -10,16 +10,16 @@ export const CommitCheckBench: BenchmarkScenario = {
 
   setup: async (sandboxPath: string) => {
     await setupGitRepo(sandboxPath);
-    await Deno.writeTextFile(
-      join(sandboxPath, "deno.json"),
-      `{ "tasks": { "check": "echo 'checking...'" } }`,
-    );
-    await Deno.writeTextFile(join(sandboxPath, "file.ts"), "const x = 1;");
+
+    // Initial commit
     await runGit(sandboxPath, ["add", "."]);
     await runGit(sandboxPath, ["commit", "-m", "Initial commit"]);
 
     // Make a change
-    await Deno.writeTextFile(join(sandboxPath, "file.ts"), "const x = 2;");
+    await Deno.writeTextFile(
+      new URL("file.ts", `file://${sandboxPath}/`).pathname,
+      "const x = 2;",
+    );
   },
 
   userQuery: "Commit changes in file.ts.",
@@ -37,21 +37,3 @@ export const CommitCheckBench: BenchmarkScenario = {
     },
   ],
 };
-
-// --- Helpers ---
-
-async function setupGitRepo(path: string) {
-  await runGit(path, ["init"]);
-  await runGit(path, ["config", "user.name", "Benchmark Bot"]);
-  await runGit(path, ["config", "user.email", "bot@example.com"]);
-}
-
-async function runGit(cwd: string, args: string[]) {
-  const cmd = new Deno.Command("git", {
-    args,
-    cwd,
-    stdout: "null",
-    stderr: "null",
-  });
-  await cmd.output();
-}

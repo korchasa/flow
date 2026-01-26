@@ -1,5 +1,4 @@
 import { BenchmarkScenario } from "../../../lib/types.ts";
-import { join } from "@std/path";
 
 const AGENT_PATH = ".cursor/skills/af-plan/SKILL.md";
 
@@ -8,36 +7,8 @@ export const PlanDbFeatureBench: BenchmarkScenario = {
   name: "Plan Database Feature",
   targetAgentPath: AGENT_PATH,
 
-  setup: async (sandboxPath: string) => {
-    await Deno.mkdir(join(sandboxPath, "prisma"), { recursive: true });
-    await Deno.mkdir(join(sandboxPath, "src"), { recursive: true });
-    await Deno.mkdir(join(sandboxPath, "documents"), { recursive: true });
-
-    const schema = `
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
-
-model User {
-  id    Int     @id @default(autoincrement())
-  email String  @unique
-  name  String?
-}
-`;
-    await Deno.writeTextFile(join(sandboxPath, "prisma/schema.prisma"), schema);
-
-    const service = `
-import { PrismaClient } from '@prisma/client';
-const prisma = new PrismaClient();
-
-export async function register(email: string, name: string) {
-  return prisma.user.create({
-    data: { email, name },
-  });
-}
-`;
-    await Deno.writeTextFile(join(sandboxPath, "src/user.service.ts"), service);
+  setup: async (_sandboxPath: string) => {
+    // Schema and service are now in fixture/
   },
 
   userQuery:

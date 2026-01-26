@@ -1,5 +1,4 @@
 import { BenchmarkScenario } from "../../../lib/types.ts";
-import { join } from "@std/path";
 
 const AGENT_PATH = ".cursor/skills/af-plan/SKILL.md";
 
@@ -8,8 +7,8 @@ export const PlanInteractiveBench: BenchmarkScenario = {
   name: "Plan with Interactive Variant Selection",
   targetAgentPath: AGENT_PATH,
 
-  setup: async (sandboxPath: string) => {
-    await Deno.mkdir(join(sandboxPath, "documents"), { recursive: true });
+  setup: async (_sandboxPath: string) => {
+    // documents/ directory is now in fixture/
   },
 
   userQuery: "Plan a simple CLI tool that prints 'Hello World'.",
@@ -32,7 +31,7 @@ export const PlanInteractiveBench: BenchmarkScenario = {
     {
       id: "todo_used",
       description: "Did the logs contain 'todo_write'?",
-      critical: false, // Warning only, as it's a process requirement
+      critical: false,
       type: "static",
     },
     {

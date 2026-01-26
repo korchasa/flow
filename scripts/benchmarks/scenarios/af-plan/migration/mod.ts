@@ -1,5 +1,4 @@
 import { BenchmarkScenario } from "../../../lib/types.ts";
-import { join } from "@std/path";
 
 const AGENT_PATH = ".cursor/skills/af-plan/SKILL.md";
 
@@ -8,31 +7,8 @@ export const PlanMigrationBench: BenchmarkScenario = {
   name: "Plan Async Migration",
   targetAgentPath: AGENT_PATH,
 
-  setup: async (sandboxPath: string) => {
-    await Deno.mkdir(join(sandboxPath, "src"), { recursive: true });
-    await Deno.mkdir(join(sandboxPath, "documents"), { recursive: true });
-
-    const legacyCode = `
-const fs = require('fs');
-const request = require('request');
-
-function getData(url, callback) {
-  request(url, (err, res, body) => {
-    if (err) return callback(err);
-    
-    fs.writeFile('cache.json', body, (err) => {
-      if (err) return callback(err);
-      callback(null, body);
-    });
-  });
-}
-
-module.exports = { getData };
-`;
-    await Deno.writeTextFile(
-      join(sandboxPath, "src/data-loader.js"),
-      legacyCode,
-    );
+  setup: async (_sandboxPath: string) => {
+    // Legacy code is now in fixture/
   },
 
   userQuery:

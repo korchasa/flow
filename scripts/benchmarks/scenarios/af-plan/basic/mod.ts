@@ -1,5 +1,4 @@
 import { BenchmarkScenario } from "../../../lib/types.ts";
-import { join } from "@std/path";
 
 const AGENT_PATH = ".cursor/skills/af-plan/SKILL.md";
 
@@ -8,9 +7,8 @@ export const PlanBasicBench: BenchmarkScenario = {
   name: "Basic Plan Generation",
   targetAgentPath: AGENT_PATH,
 
-  setup: async (sandboxPath: string) => {
-    // Create documents directory as it's expected
-    await Deno.mkdir(join(sandboxPath, "documents"), { recursive: true });
+  setup: async (_sandboxPath: string) => {
+    // Documents directory is now created automatically by fixture copying
   },
 
   userQuery:
@@ -32,7 +30,7 @@ export const PlanBasicBench: BenchmarkScenario = {
       id: "variants_presented",
       description: "Did the agent present implementation variants in the chat?",
       critical: true,
-      type: "semantic", // This implies we might need LLM judging, but regex might suffice for "Variant"
+      type: "semantic",
     },
   ],
 };

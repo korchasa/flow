@@ -1,5 +1,5 @@
 import { BenchmarkScenario } from "../../../lib/types.ts";
-import { join } from "@std/path";
+import { runGit, setupGitRepo } from "../../../lib/utils.ts";
 
 const AGENT_PATH = ".cursor/skills/af-commit/SKILL.md";
 
@@ -10,16 +10,13 @@ export const CommitBasicBench: BenchmarkScenario = {
 
   setup: async (sandboxPath: string) => {
     await setupGitRepo(sandboxPath);
-    // Create initial file
-    await Deno.writeTextFile(join(sandboxPath, "README.md"), "# Test Project");
-    await runGit(sandboxPath, ["add", "."]);
+
+    // Initial commit with README
+    await runGit(sandboxPath, ["add", "README.md"]);
     await runGit(sandboxPath, ["commit", "-m", "Initial commit"]);
 
-    // Create the "change"
-    await Deno.writeTextFile(
-      join(sandboxPath, "utils.ts"),
-      "export const add = (a: number, b: number) => a + b; // New feature",
-    );
+    // utils.ts is already in sandbox but NOT in git yet.
+    // This makes it an untracked file, which is what the scenario expects.
   },
 
   userQuery:
@@ -54,21 +51,3 @@ export const CommitBasicBench: BenchmarkScenario = {
     },
   ],
 };
-
-// --- Helpers ---
-
-async function setupGitRepo(path: string) {
-  await runGit(path, ["init"]);
-  await runGit(path, ["config", "user.name", "Benchmark Bot"]);
-  await runGit(path, ["config", "user.email", "bot@example.com"]);
-}
-
-async function runGit(cwd: string, args: string[]) {
-  const cmd = new Deno.Command("git", {
-    args,
-    cwd,
-    stdout: "null",
-    stderr: "null",
-  });
-  await cmd.output();
-}

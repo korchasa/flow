@@ -1,4 +1,5 @@
 import { BenchmarkScenario } from "../../../lib/types.ts";
+import { runGit, setupGitRepo } from "../../../lib/utils.ts";
 import { join } from "@std/path";
 
 const AGENT_PATH = ".cursor/skills/af-commit/SKILL.md";
@@ -10,15 +11,8 @@ export const CommitSyncDocsBench: BenchmarkScenario = {
 
   setup: async (sandboxPath: string) => {
     await setupGitRepo(sandboxPath);
-    await Deno.mkdir(join(sandboxPath, "documents"), { recursive: true });
-    await Deno.writeTextFile(
-      join(sandboxPath, "documents/README.md"),
-      "# Docs\nOld content",
-    );
-    await Deno.writeTextFile(
-      join(sandboxPath, "src.ts"),
-      "console.log('old');",
-    );
+
+    // Initial commit
     await runGit(sandboxPath, ["add", "."]);
     await runGit(sandboxPath, ["commit", "-m", "Initial commit"]);
 
@@ -45,21 +39,3 @@ export const CommitSyncDocsBench: BenchmarkScenario = {
     },
   ],
 };
-
-// --- Helpers ---
-
-async function setupGitRepo(path: string) {
-  await runGit(path, ["init"]);
-  await runGit(path, ["config", "user.name", "Benchmark Bot"]);
-  await runGit(path, ["config", "user.email", "bot@example.com"]);
-}
-
-async function runGit(cwd: string, args: string[]) {
-  const cmd = new Deno.Command("git", {
-    args,
-    cwd,
-    stdout: "null",
-    stderr: "null",
-  });
-  await cmd.output();
-}

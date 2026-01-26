@@ -1,5 +1,4 @@
 import { BenchmarkScenario } from "../../../lib/types.ts";
-import { join } from "@std/path";
 
 const AGENT_PATH = ".cursor/skills/af-plan/SKILL.md";
 
@@ -8,12 +7,8 @@ export const PlanContextBench: BenchmarkScenario = {
   name: "Plan with Context Gathering",
   targetAgentPath: AGENT_PATH,
 
-  setup: async (sandboxPath: string) => {
-    await Deno.mkdir(join(sandboxPath, "documents"), { recursive: true });
-    await Deno.writeTextFile(
-      join(sandboxPath, "documents/requirements.md"),
-      "# Requirements\n\nRequirement: The system must support dark mode preference.",
-    );
+  setup: async (_sandboxPath: string) => {
+    // Context is now in fixture/
   },
 
   userQuery:
