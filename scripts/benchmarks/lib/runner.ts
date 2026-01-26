@@ -3,6 +3,7 @@ import { BenchmarkResult, BenchmarkScenario, LLMMessage } from "./types.ts";
 import { chatCompletion, ModelConfig } from "./llm.ts";
 import { evaluateChecklist } from "./judge.ts";
 import { TraceLogger } from "./trace.ts";
+import { copyRecursive } from "./utils.ts";
 
 export interface RunnerOptions {
   agentConfig: ModelConfig;
@@ -60,6 +61,34 @@ export async function runScenario(
   let result: (BenchmarkResult & { evidence: string }) | undefined;
 
   try {
+    // 1.5 Copy fixtures if exist
+    const scenarioPathParts = scenario.id.split("-");
+    if (scenarioPathParts[0] === "af") {
+      const skill = scenarioPathParts[1];
+      const id = scenarioPathParts.slice(2).join("-");
+      const fixturePath = join(
+        Deno.cwd(),
+        "scripts/benchmarks/scenarios",
+        `af-${skill}`,
+        id,
+        "fixture",
+      );
+
+      try {
+        const fixtureStat = await Deno.stat(fixturePath);
+        if (fixtureStat.isDirectory) {
+          console.log(`  Copying fixtures from: ${fixturePath}`);
+          await copyRecursive(fixturePath, sandboxPath);
+        }
+      } catch (e) {
+        if (!(e instanceof Deno.errors.NotFound)) {
+          console.warn(
+            `  Warning: Failed to check fixtures at ${fixturePath}: ${e}`,
+          );
+        }
+      }
+    }
+
     await scenario.setup(sandboxPath);
 
     // 2. Load Agent Prompt
