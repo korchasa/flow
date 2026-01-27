@@ -1,105 +1,97 @@
 # Software Design Specification (SDS)
 
 ## 1. Introduction
-- **Document purpose:** Detail the implementation and architecture of the AI-First IDE Rules and Commands project.
-- **Relation to SRS:** Implements requirements defined in `documents/requirements.md`.
+
+- **Document purpose:** Detail the implementation and architecture of the
+  AI-First IDE Rules and Skills project.
+- **Relation to SRS:** Implements requirements defined in
+  `documents/requirements.md`.
 
 ## 2. System Architecture
+
 - **Overview diagram:**
   ```mermaid
   graph TD
     User[User] -->|Chat Input| Cursor[Cursor IDE]
-    Cursor -->|Reads| Commands[.cursor/commands/*.md]
-    Cursor -->|Reads| Rules[.cursor/rules/*/RULE.md]
+    Cursor -->|Reads| Skills[.cursor/skills/*/SKILL.md]
+    Cursor -->|Reads| Agents[.cursor/agents/*.md]
     Cursor -->|Updates| Docs[documents/*.md]
     Cursor -->|Executes| Actions[Code/Git/MCP]
   ```
 - **Main subsystems and their roles:**
-  - **Commands Subsystem:** Defines procedural workflows (tasks).
-  - **Rules Subsystem:** Defines static constraints and knowledge (context).
+  - **Skills Subsystem:** Defines procedural workflows and capabilities.
+  - **Agents Subsystem:** Defines specialized agent roles and prompts.
   - **Documentation Subsystem:** Stores project state and memory.
 
 ## 3. Components
-### 3.1 Task Commands (`.cursor/commands/`)
-- **Purpose:** Provide step-by-step instructions for specific development activities.
-- **Interfaces:** Markdown files without the `task-` prefix (e.g., `check-and-fix.md`).
-- **Dependencies:** User input, existing codebase.
-- **Key Files:**
-  - `answer.md`: Question answering with codebase context.
-  - `check-and-fix.md`: Iterative project validation and repair.
-  - `commit.md`: Conventional Commits workflow.
-  - `create-scripts.md`: Maintenance script generation.
-  - `create-vision-doc.md`: Vision document creation workflow.
-  - `do.md`: General task execution workflow.
-  - `docs-check.md`: Documentation consistency and integrity check.
-  - `engineer-command.md`: Command engineering (Create/Edit) utility.
-  - `engineer-prompt.md`: Prompt engineering utility.
-  - `engineer-rule.md`: Rule creation utility.
-  - `execute.md`: Task implementation workflow with TDD and gap analysis.
-  - `init.md`: Project initialization workflow.
-  - `investigate.md`: Deep investigation and root cause diagnosis.
-  - `maintenance.md`: Project maintenance and health audit.
-  - `migrate-run-ts.md`: Migration workflow to Deno tasks.
-  - `plan-next-version.md`: Task planning using GODS framework with proactive uncertainty resolution.
-  - `plan.md`: Task planning using GODS framework and chat-first reasoning.
-  - `update-docs.md`: Documentation maintenance.
 
-### 3.2 Context Rules (`.cursor/rules/`)
-- **Purpose:** Provide automatic context to the LLM for code generation, style, and behavior.
-- **Interfaces:** Directory-based `RULE.md` files with YAML frontmatter, loaded by Cursor based on file globs or context.
-- **Dependencies:** None.
-- **Key Directories:**
-  - `rules-code-style-*/`: Language-specific coding standards (TypeScript strict/deno, Swift, Go, Fullstack).
-  - `rules-*/`: Core behavioral frameworks (Autonomous, TDD, Zen, PoC).
-  - `rules-design-style-guide/`: Design principles and guidelines.
-  - `howto-*/`: Practical guides for workflows and tools (13 guides total).
-  - `docs-schema-*/`: Documentation templates and schemas (RDS-SDS, vision RDS-SDS).
-  - `rules-run-commands/`: Command execution rules.
-  - `skill-creator/`: Skill authoring guide with templates and scripts.
+### 3.1 Skills (`.cursor/skills/`)
+
+- **Purpose:** Provide specialized capabilities and workflows.
+- **Interfaces:** Directories containing `SKILL.md` files.
+- **Categories:**
+  - `af-*`: Command-like skills (e.g., `af-check-and-fix`, `af-commit`).
+  - `af-skill-*`: Practical guides (e.g., `af-skill-fix-tests`).
+  - `rules-*`: Behavioral frameworks (e.g., `rules-tdd`).
+
+### 3.2 Agents (`.cursor/agents/`)
+
+- **Purpose:** Define specialized AI personas and roles.
+- **Interfaces:** Markdown files in `.cursor/agents/`.
+- **Key Agents:**
+  - `af-commit.md`: Specialist in QA, documentation updates, and atomic commits.
+  - `interviewer.md`: Specialist in gathering information.
+  - `project-checker.md`: Specialist in running project checks.
 
 ### 3.3 Project Documentation (`documents/`)
+
 - **Purpose:** Serve as the long-term memory of the project.
 - **Interfaces:** Markdown files following SRS/SDS or Cline-bank schema.
-- **Dependencies:** Updated by `update-docs`.
+- **Dependencies:** Updated by `af-update-docs`.
 
-### 3.4 Project Maintenance
-- **Purpose:** Provide automated project maintenance and quality assurance.
-- **Status:** Implemented - Deno tasks and scripts available.
-- **Interfaces:** Deno tasks (`deno task check`, `deno task test`, `deno task dev`).
-- **Dependencies:** Deno runtime, scripts in `./scripts/`.
-- **Features:**
-  - Automated code checking and validation
-  - Test execution framework
-  - Development server management
+- **Maintenance & Benchmarking**:
+  - `deno task bench`: Evaluates agents via evidence-based scenarios.
+  - **Docker Isolation**: Benchmarks run inside a Docker container (`Dockerfile` based on `denoland/deno:alpine`) with `git` and `bash` installed. The project directory is mounted as a volume.
+  - **Hierarchical Scenarios**: Scenarios are organized as `scripts/benchmarks/scenarios/<skill>/<scenario>/mod.ts`.
+  - **JSON Configuration**: `benchmarks.config.json` stores unified model presets for agents and judges, enabling fail-fast initialization and CLI selection.
+  - **Side-Effect Validation**: System checks sandbox state (files, git) using LLM-Judge.
+  - **Realistic Context**: `system-prompt-generator.ts` assembles system prompts using `system-prompt.template.md`, simulating Cursor's context (including dynamic project layout, git status, and user query).
+  - **Single-Turn Query**: User query is embedded directly into the system prompt's `<user_query>` section, mimicking a single-turn interaction for benchmarks.
+  - **Skill Integration**: Automatically includes all skills from `.cursor/skills` (excluding those with `disable-model-invocation: true`).
+  - **Rich Tracing**: Generates `trace.html` with step-by-step timeline, syntax highlighting, and floating navigation.
+  - **Unified Data UI**: All technical data (logs, scripts, prompts) use a consistent `.data-block` component with line numbers, word wrap, and smart expand/collapse.
 
 ## 4. Data and Storage
+
 - **Entities and attributes:**
-  - **Rule:** Name, Content, Glob Pattern.
-  - **Command:** Name, Steps, Checklist.
+  - **Skill:** Name, Content, Path.
+  - **Agent:** Name, Prompt, Capabilities.
 - **ER diagram:** N/A (File-based storage).
 - **Migration policies:** Manual updates via git.
 
 ## 5. Algorithms and Logic
+
 - **Key algorithms:**
-  - **Command Parsing:** Cursor detects `/` and matches against `.cursor/commands` filenames.
-  - **Rule Matching:** Cursor matches open files/context against RULE.md globs.
+  - **Skill Matching:** Cursor matches user intent to available skills.
+  - **Agent Selection:** Cursor selects appropriate agents based on task.
 - **Business rules:**
-  - All commands must start with `/` and match `.cursor/commands` filenames.
   - Documentation must be kept up-to-date with code changes.
   - Code changes must follow defined style rules.
 
 ## 6. Non-functional Aspects
-- **Scalability:** Modular file structure allows easy addition of new rules.
-- **Fault tolerance:** Text-based instructions are robust; agent error recovery is handled via interactive chat.
-- **Security:** Rules are local to the project; no external data leakage unless explicitly configured via MCP.
-- **Monitoring and logging:** Git history tracks changes to rules and docs.
+
+- **Scalability:** Modular file structure allows easy addition of new skills and
+  agents.
+- **Fault tolerance:** Text-based instructions are robust.
+- **Security:** Skills are local to the project.
+- **Monitoring and logging:** Git history tracks changes.
 
 ## 7. Constraints and Trade-offs
+
 - **Simplified:** No centralized database; relies on file system.
-- **Deferred:** Automated regression testing of rules (currently manual/heuristic).
+- **Deferred:** Automated regression testing of skills.
 
 ## 8. Future Extensions
-- Integration with other AI IDEs.
-- Automated validation scripts for rule syntax.
-- Dynamic rule generation based on project analysis.
 
+- Integration with other AI IDEs.
+- Automated validation scripts for skill syntax.
