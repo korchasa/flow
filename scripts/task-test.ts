@@ -5,7 +5,7 @@ import type { CommandSpec } from "./utils.ts";
  * Builds the command to run tests, forwarding any additional arguments.
  */
 export function buildTestCommand(args: string[]): CommandSpec {
-  const baseArgs = ["test"];
+  const baseArgs = ["test", "-A"];
   if (args.length === 0) {
     baseArgs.push("scripts");
   } else {
