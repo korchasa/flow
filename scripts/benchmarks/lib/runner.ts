@@ -116,7 +116,9 @@ export async function runScenario(
         // If not in sandbox after fixture copy, try to find it in the fixture source
         if (fixturePath) {
           try {
-            agentsMarkdown = await Deno.readTextFile(join(fixturePath, "AGENTS.md"));
+            agentsMarkdown = await Deno.readTextFile(
+              join(fixturePath, "AGENTS.md"),
+            );
           } catch (_) {
             // Still not found
           }
@@ -143,6 +145,7 @@ export async function runScenario(
       sandboxPath,
       skillContent,
       agentsMarkdown: agentsMarkdown || "",
+      userQuery: scenario.userQuery,
     });
 
     await tracer.logSystemPrompt(systemMessage);
@@ -150,7 +153,6 @@ export async function runScenario(
     // 3. Run Agent (Simulation)
     const messages: LLMMessage[] = [
       { role: "system", content: systemMessage },
-      { role: "user", content: scenario.userQuery },
     ];
 
     messages[0].content += `\n\nIMPORTANT FOR BENCHMARK:
@@ -272,7 +274,9 @@ DO NOT use interactive commands like 'git add -p' or 'git add -i'. Use 'git add 
             try {
               await Deno.remove(scriptPath);
             } catch (e) {
-              console.warn(`  Warning: Failed to cleanup script at ${scriptPath}: ${e}`);
+              console.warn(
+                `  Warning: Failed to cleanup script at ${scriptPath}: ${e}`,
+              );
             }
 
             await tracer.logCommand(

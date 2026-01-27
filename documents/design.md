@@ -55,7 +55,8 @@
   - **Hierarchical Scenarios**: Scenarios are organized as `scripts/benchmarks/scenarios/<skill>/<scenario>/mod.ts`.
   - **JSON Configuration**: `benchmarks.config.json` stores unified model presets for agents and judges, enabling fail-fast initialization and CLI selection.
   - **Side-Effect Validation**: System checks sandbox state (files, git) using LLM-Judge.
-  - **Realistic Context**: `system-prompt-generator.ts` assembles system prompts using `system-prompt.template.md`, simulating Cursor's context (including dynamic project layout and git status).
+  - **Realistic Context**: `system-prompt-generator.ts` assembles system prompts using `system-prompt.template.md`, simulating Cursor's context (including dynamic project layout, git status, and user query).
+  - **Single-Turn Query**: User query is embedded directly into the system prompt's `<user_query>` section, mimicking a single-turn interaction for benchmarks.
   - **Skill Integration**: Automatically includes all skills from `.cursor/skills` (excluding those with `disable-model-invocation: true`).
   - **Rich Tracing**: Generates `trace.html` with step-by-step timeline, syntax highlighting, and floating navigation.
   - **Unified Data UI**: All technical data (logs, scripts, prompts) use a consistent `.data-block` component with line numbers, word wrap, and smart expand/collapse.

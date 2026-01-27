@@ -6,6 +6,7 @@ export interface SystemMessageContext {
   sandboxPath: string;
   skillContent: string;
   agentsMarkdown: string;
+  userQuery: string;
 }
 
 /**
@@ -14,7 +15,8 @@ export interface SystemMessageContext {
 export async function generateSystemMessage(
   ctx: SystemMessageContext,
 ): Promise<string> {
-  const { scenario, sandboxPath, skillContent, agentsMarkdown } = ctx;
+  const { scenario, sandboxPath, skillContent, agentsMarkdown, userQuery } =
+    ctx;
 
   // 1. Load Template
   const templatePath = join(
@@ -57,7 +59,18 @@ export async function generateSystemMessage(
     .replace("{{PROJECT_LAYOUT}}", projectLayout)
     .replace("{{GIT_STATUS}}", gitStatus)
     .replace("{{AGENTS}}", agentsMarkdown)
-    .replace("{{AVAILABLE_SKILLS}}", availableSkills);
+    .replace("{{AVAILABLE_SKILLS}}", availableSkills)
+    .replace("{{USER_QUERY}}", userQuery)
+    .replace(
+      "{{TODAY}}",
+      new Date().toLocaleDateString("en-US", {
+        weekday: "long",
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      }),
+    )
+    .replace("{{RECENT_FILES}}", "No recently viewed files.");
 
   return template.trim();
 }
@@ -87,9 +100,11 @@ async function generateSkillsSection(
         }
 
         const relativePath = `.cursor/skills/${entry.name}/SKILL.md`;
-        
+
         // Use provided content for the target skill (it might be modified for benchmark)
-        const finalContent = relativePath === targetSkillPath ? targetSkillContent : content;
+        const finalContent = relativePath === targetSkillPath
+          ? targetSkillContent
+          : content;
 
         result += `
 <agent_skill fullPath="/sandbox/${relativePath}">

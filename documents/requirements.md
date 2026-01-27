@@ -116,7 +116,8 @@
 - [x] Unified data block UI with smart blur, line numbering, and word wrap.
 - [x] JSON-based configuration for model presets (agent and judge).
 - [x] **Realistic Context Assembly**: System prompts mimic Cursor's real context
-      (user_info, project_layout, git_status, AGENTS.md, available_skills).
+      (user_info, project_layout, git_status, AGENTS.md, available_skills, user_query).
+- [x] **Single-Turn Benchmark**: User query is embedded in the system prompt to simulate real-world single-turn agent invocation.
 - [x] **Mandatory AGENTS.md**: Every scenario must have an `AGENTS.md` file in its
       fixtures or provided via config.
 - [x] **Secure Execution**: Benchmarks run in an isolated Docker container by default to prevent host system damage.
