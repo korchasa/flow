@@ -63,11 +63,16 @@ The user wants to bootstrap an AI agent's understanding of the project. The agen
 
 4. **Brownfield Workflow (Discovery)**
    - **Condition**: Only if **Brownfield**.
-   - **Action**: Create an empty `interview_data.json` (discovery happens in
-     generation script).
-     ```bash
-     echo "{}" > interview_data.json
-     ```
+   - **Action**: Analyze the project to infer architecture and key decisions.
+     - Read `project_info.json` and key config files (`package.json`, `deno.json`, `README.md`, etc.).
+     - Infer:
+       - **Architecture**: (e.g., "React SPA", "Express API", "CLI Tool").
+       - **Key Decisions**: (e.g., "Tailwind for styling", "Jest for testing").
+     - **Create `interview_data.json`**:
+       ```bash
+       # Example of what you should generate (do not run this exact command, use the tool to write your findings)
+       echo '{ "architecture": "- ...", "key_decisions": "- ..." }' > interview_data.json
+       ```
 
 5. **Generate Assets & Scaffolding**
    - Run the generation script. This script handles:
