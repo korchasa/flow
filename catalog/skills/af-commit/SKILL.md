@@ -29,6 +29,9 @@ The project follows Conventional Commits 1.0.0 and uses a structured documentati
    - **Generated Files**: Generated artifacts separate from logic source.
 2. **Automation**: Automatically group and commit changes. DO NOT ask the user for permission to split commits.
 3. **Strict Commits**: Compose messages in **English** per Conventional Commits 1.0.0.
+   - **MANDATORY**: ALWAYS prefix commit messages with a type (e.g., `feat:`, `fix:`, `chore:`, `docs:`, `style:`, `refactor:`, `test:`, `build:`).
+   - **Example**: `feat: add user authentication` or `chore: bump version to 1.1.0`.
+   - **CRITICAL**: Commits without these prefixes are STRICTLY FORBIDDEN.
 4. **Git Pager**: Use `GIT_PAGER=cat` for all git commands.
 5. **Planning**: The agent MUST use `todo_write` to track the execution steps.
 6. **Documentation First**: Every logical change MUST be reflected in documentation. Commits without corresponding documentation updates (if applicable) are forbidden.
