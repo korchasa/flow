@@ -36,10 +36,11 @@ Example: `deno task bench -f af-commit-basic`
 
 If the benchmark fails, perform a root cause analysis:
 
-1. **Check the Trace**: Read the `trace.html` (or `trace.md` if available) in `benchmarks/<scenario-id>/`.
-2. **Examine Evidence**: Look at the "EVIDENCE" section in the trace which includes `git status`, `git diff`, and logs.
-3. **Inspect Sandbox**: The sandbox directory `benchmarks/<scenario-id>/sandbox/` is preserved for manual inspection.
-4. **Compare Logs**: Compare the agent's actions in the log with the expected behavior defined in the scenario's `checklist`.
+1. **Analyze**: Read the prompt, codebase, and local documentation.
+2. **Check the Trace**: Read the `trace.html` (or `trace.md` if available) in `benchmarks/<scenario-id>/`.
+3. **Examine Evidence**: Look at the "EVIDENCE" section in the trace which includes `git status`, `git diff`, and logs.
+4. **Inspect Sandbox**: The sandbox directory `benchmarks/<scenario-id>/sandbox/` is preserved for manual inspection.
+5. **Compare Logs**: Compare the agent's actions in the log with the expected behavior defined in the scenario's `checklist`.
 
 ### 4. Determine Root Cause
 
