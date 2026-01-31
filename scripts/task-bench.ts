@@ -56,13 +56,13 @@ const SCENARIOS: BenchmarkScenario[] = [
   MaintenanceBasicBench,
 ];
 
-function printHelp(defaultAgentPreset: string, defaultJudgePreset: string) {
+function printHelp(defaultAgentModel: string, defaultJudgePreset: string) {
   console.log(`
 Usage: deno task bench [options]
 
 Options:
   -f, --filter <string>        Filter scenarios by ID (substring match)
-  -p, --preset <string>        Agent preset to use (default: ${defaultAgentPreset})
+  -m, --model <string>         Agent model to use (default: ${defaultAgentModel})
   --judge-preset <string>      Judge preset to use (default: ${defaultJudgePreset})
   -n, --runs <number>          Number of runs per scenario (default: 1)
   --help                       Show this help message
@@ -107,9 +107,9 @@ async function main() {
   const config = await loadConfig();
 
   const args = parse(Deno.args, {
-    string: ["filter", "runs", "preset", "judge-preset"],
+    string: ["filter", "runs", "model", "judge-preset"],
     boolean: ["help"],
-    alias: { f: "filter", n: "runs", h: "help", p: "preset" },
+    alias: { f: "filter", n: "runs", h: "help", m: "model" },
     unknown: (arg) => {
       if (arg.startsWith("-")) {
         console.error(`Unknown argument: ${arg}`);
@@ -131,11 +131,7 @@ async function main() {
     Deno.exit(1);
   }
 
-  const agentPresetName = args.preset || config.default_agent_model;
-  const agentPreset = config.presets[agentPresetName];
-
-  // If preset exists, use its model, otherwise use preset name as model ID
-  const agentModel = agentPreset ? agentPreset.model : agentPresetName;
+  const agentModel = args.model || config.default_agent_model;
 
   const judgePresetName = args["judge-preset"] || config.default_judge_preset;
   const judgePreset = config.presets[judgePresetName];
@@ -154,7 +150,6 @@ async function main() {
     : SCENARIOS;
 
   console.log(`Found ${scenariosToRun.length} scenarios.`);
-  console.log(`Using agent preset: ${agentPresetName}`);
   console.log(`Using agent model: ${agentModel}`);
   console.log(`Using judge preset: ${judgePresetName}`);
   console.log(`Using judge model: ${judgeConfig.model}`);
