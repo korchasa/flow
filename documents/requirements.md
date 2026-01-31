@@ -117,8 +117,7 @@
 - [x] Unified data block UI with smart blur, line numbering, and word wrap.
 - [x] JSON-based configuration for model presets (agent and judge).
 - [x] **Support for direct model names**: Allows using model names directly if no preset matches.
-- [x] **Realistic Context Assembly**: System prompts mimic Cursor's real context
-      (user_info, project_layout, git_status, AGENTS.md, available_skills, user_query).
+- [x] **Native Context Discovery**: Benchmarks rely on `cursor-agent`'s native context discovery by ensuring the sandbox structure mimics a real project (including `.cursor/` folder).
 - [x] **Single-Turn Benchmark**: User query is embedded in the system prompt to simulate real-world single-turn agent invocation.
 - [x] **Mandatory AGENTS.md**: Every scenario must have an `AGENTS.md` file in its
       fixtures or provided via config.
@@ -130,37 +129,39 @@
 
 The benchmarking system must cover all core AssistFlow skills to ensure reliability across all workflows.
 
-| Skill ID | Description | Benchmarked | Scenario ID |
-| :--- | :--- | :---: | :--- |
-| **Commands (af-*)** | | | |
-| `af-answer` | Answering user questions | [ ] | |
-| `af-commit` | Atomic commits and QA | [x] | `af-commit-*` |
-| `af-create-vision-doc` | Creating VISION.md | [ ] | |
-| `af-do` | General task execution | [ ] | |
-| `af-engineer-command` | Creating new AF commands | [ ] | |
-| `af-execute` | Executing planned tasks | [ ] | |
-| `af-init` | Project initialization | [x] | `af-init-*` |
-| `af-investigate` | Code investigation/debugging | [ ] | |
-| `af-maintenance` | Periodic project health checks | [ ] | |
-| `af-plan` | Task planning (GODS) | [x] | `af-plan-*` |
-| `af-qa` | Quality assurance session | [ ] | |
-| `af-reflect` | Self-reflection on task | [ ] | |
-| **Guides (af-skill-*)** | | | |
-| `af-skill-conduct-qa` | Conducting QA sessions | [ ] | |
-| `af-skill-debug-playwright`| Debugging with Playwright | [ ] | |
-| `af-skill-draw-mermaid` | Drawing Mermaid diagrams | [ ] | |
-| `af-skill-eng-prompt-inst` | Prompt engineering (Instant) | [ ] | |
-| `af-skill-eng-prompt-reas` | Prompt engineering (Reasoning)| [ ] | |
-| `af-skill-fix-tests` | Fixing broken tests | [ ] | |
-| `af-skill-manage-github` | Managing GitHub via MCP | [ ] | |
-| `af-skill-write-bench` | Writing agent benchmarks | [x] | |
-| `af-skill-write-dep` | Writing DEP documents | [ ] | |
-| `af-skill-write-gods` | Writing GODS tasks | [ ] | |
-| `af-skill-write-info` | Writing in info style | [ ] | |
-| `af-skill-write-prd` | Writing PRDs | [ ] | |
+| Skill ID                    | Description                    | Benchmarked | Scenario ID   |
+| :-------------------------- | :----------------------------- | :---------: | :------------ |
+| **Commands (af-*)**         |                                |             |               |
+| `af-answer`                 | Answering user questions       |     [ ]     |               |
+| `af-commit`                 | Atomic commits and QA          |     [x]     | `af-commit-*` |
+| `af-create-vision-doc`      | Creating VISION.md             |     [ ]     |               |
+| `af-do`                     | General task execution         |     [ ]     |               |
+| `af-engineer-command`       | Creating new AF commands       |     [ ]     |               |
+| `af-execute`                | Executing planned tasks        |     [ ]     |               |
+| `af-init`                   | Project initialization         |     [x]     | `af-init-*`   |
+| `af-investigate`            | Code investigation/debugging   |     [ ]     |               |
+| `af-maintenance`            | Periodic project health checks |     [ ]     |               |
+| `af-plan`                   | Task planning (GODS)           |     [x]     | `af-plan-*`   |
+| `af-qa`                     | Quality assurance session      |     [ ]     |               |
+| `af-reflect`                | Self-reflection on task        |     [ ]     |               |
+| **Guides (af-skill-*)**     |                                |             |               |
+| `af-skill-conduct-qa`       | Conducting QA sessions         |     [ ]     |               |
+| `af-skill-debug-playwright` | Debugging with Playwright      |     [ ]     |               |
+| `af-skill-draw-mermaid`     | Drawing Mermaid diagrams       |     [ ]     |               |
+| `af-skill-eng-prompt-inst`  | Prompt engineering (Instant)   |     [ ]     |               |
+| `af-skill-eng-prompt-reas`  | Prompt engineering (Reasoning) |     [ ]     |               |
+| `af-skill-fix-tests`        | Fixing broken tests            |     [ ]     |               |
+| `af-skill-manage-github`    | Managing GitHub via MCP        |     [ ]     |               |
+| `af-skill-write-bench`      | Writing agent benchmarks       |     [x]     |               |
+| `af-skill-write-dep`        | Writing DEP documents          |     [ ]     |               |
+| `af-skill-write-gods`       | Writing GODS tasks             |     [ ]     |               |
+| `af-skill-write-info`       | Writing in info style          |     [ ]     |               |
+| `af-skill-write-prd`        | Writing PRDs                   |     [ ]     |               |
 
 ## 4. Non-functional requirements
-  window.
+
+window.
+
 - **Reliability:** Benchmarks must use isolated sandboxes and evidence-based
   verification.
 - **Scalability:** The benchmarking system must support multiple evaluation modes

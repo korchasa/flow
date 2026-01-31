@@ -45,10 +45,10 @@ AFTER EACH MEMORY RESET, YOU START COMPLETELY FROM SCRATCH. DOCUMENTATION IS THE
 - `catalog/agents/` stores the source of truth for all agents (product).
 - `documents/` stores SRS/SDS and supporting documentation.
 - `scripts/` stores Deno task scripts used by `deno task`.
-    - `scripts/benchmarks/` stores agent benchmarking infrastructure.
-      - `README.md` describes the benchmarking scheme, context assembly, and isolation.
-      - `lib/` stores shared benchmarking logic and utilities.
-    - `scenarios/` stores benchmark scenarios with their `mod.ts` and `fixture/` directories.
+  - `scripts/benchmarks/` stores agent benchmarking infrastructure.
+    - `README.md` describes the benchmarking scheme, environment setup, and isolation.
+    - `lib/` stores shared benchmarking logic and utilities.
+  - `scenarios/` stores benchmark scenarios with their `mod.ts` and `fixture/` directories.
 
 ## Key Decisions
 
@@ -85,6 +85,12 @@ The benchmarking system (`scripts/task-bench.ts`) is designed to evaluate agent 
    - The evaluation logic must be robust enough to handle variations in model
      output (e.g., different command formatting) as long as the functional
      result is correct.
+
+5. **Full Environment Simulation**:
+   - The runner injects the full `catalog` into `sandbox/.cursor` to ensure agents
+     have access to all skills and rules, mimicking a real user environment.
+   - Benchmarks rely on `cursor-agent`'s native context discovery rather than
+     manual prompt assembly.
 
 ## DOCUMENTATION STRUCTURE AND RULES (directory `documents`)
 

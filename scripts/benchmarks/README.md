@@ -33,14 +33,15 @@ Manages the test lifecycle:
 4. **Evidence Collection**: Collecting `git status`, `git log`, and command outputs after the agent's work.
 5. **Judging**: Evaluating results using an LLM judge.
 
-## Context Assembly
+## Environment Setup & Context
 
-The Runner forms a system prompt using `scripts/benchmarks/lib/system-prompt-generator.ts` and `system-prompt.template.md`, which is as close as possible to reality in Cursor:
+The Runner prepares a realistic environment for the `cursor-agent`:
 
-1. **Environment Data**: Includes `user_info` (OS, Shell, Date), `project_layout` (recursive file tree of the sandbox), and `git_status`.
-2. **AGENTS.md**: **Mandatory** for each scenario. It defines general behavior rules and project context.
-3. **Available Skills**: Automatically includes all skills from `.cursor/skills/` (excluding those with `disable-model-invocation: true`).
-4. **Single-Turn Query**: The user query is embedded directly into the system prompt's `<user_query>` section to simulate a real-world single-turn agent invocation.
+1. **Sandbox Creation**: A clean directory is created for each run.
+2. **Fixture Injection**: Files from the scenario's `fixture/` directory are copied.
+3. **Catalog Injection**: The full project `catalog/` is copied to `sandbox/.cursor/` so the agent can discover all skills and rules natively.
+4. **Native Context**: We rely on `cursor-agent` to read the file system, `AGENTS.md`, and `.cursor/` directory to form its own context, just like in the real IDE.
+5. **Explicit Commands**: Scenarios use explicit commands (e.g., `/af-plan`) to trigger specific skills.
 
 ## Agent Response Handling
 
