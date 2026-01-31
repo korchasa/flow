@@ -47,9 +47,28 @@
 
 ### 3.3 Project Documentation (`documents/`)
 
-- **Purpose:** Serve as the long-term memory of the project.
-- **Interfaces:** Markdown files following SRS/SDS or Cline-bank schema.
-- **Dependencies:** Updated by `af-update-docs`.
+...
+
+### 3.4 User Management System (Refactored)
+
+- **Purpose:** Manage user lifecycle with separated concerns.
+- **Components:**
+  - `UserManager`: Orchestrates the user creation/deletion process.
+  - `UserRepository`: Handles JSON file persistence.
+  - `EmailService`: Handles sending notifications.
+  - `Logger`: Handles application logging.
+  - `UserValidator`: Handles input validation.
+
+- **Interfaces:**
+  - `User`: `{ id: number, name: string, email: string }`
+
+- **Proposed Structure:**
+  - `src/UserManager.ts` (Orchestrator)
+  - `src/UserRepository.ts` (Data Access)
+  - `src/EmailService.ts` (Notifications)
+  - `src/Logger.ts` (Logging)
+  - `src/UserValidator.ts` (Validation)
+  - `src/types.ts` (Common types)
 
 - **Maintenance & Benchmarking**:
   - `deno task bench`: Evaluates agents via evidence-based scenarios. Supports direct model selection via `-m, --model` flag.

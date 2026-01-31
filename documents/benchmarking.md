@@ -56,7 +56,7 @@ The trace is a structured HTML document designed for readability and detailed in
 | `af-plan-basic` | PASSED | 0 | 0 | 39.0 | Fixed runner.ts to include whiteboard.md in evidence |
 | `af-plan-context` | PASSED | 0 | 0 | 25.5 | |
 | `af-plan-db` | PASSED | 0 | 0 | 22.7 | Generalized environment side-effects rule |
-| `af-plan-interactive` | FAILED | 3 | 0 | 22.9 | No variants, no whiteboard, no selection question |
+| `af-plan-interactive` | PASSED | 0 | 0 | 35.9 | Full multi-turn flow with SimulatedUser and resume |
 | `af-plan-migration` | PASSED | 0 | 0 | 19.0 | Correctly proposed fetch and async/await |
 | `af-plan-refactor` | FAILED | 1 | 0 | 17.9 | Missing test preservation step |
 | `af-plan-variants-complex` | FAILED | 3 | 0 | 30.5 | No whiteboard, no variants, no tradeoffs |
