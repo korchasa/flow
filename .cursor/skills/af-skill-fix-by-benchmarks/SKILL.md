@@ -44,17 +44,21 @@ Based on the subagent's report and your own analysis of the skill:
 
 ### 4. Propose and Argument Fixes
 
-Present the findings:
-- **Finding**: Root cause of the failure.
-- **Proposed Fix**: Specific changes to `SKILL.md` or code.
-- **Argumentation**: Why this fix works.
+Present the findings to the user:
+
+- **Finding**: Clearly state what failed and why (the root cause).
+- **Proposed Fix**: Describe the specific changes needed (e.g., "Add a step to check git status before committing in SKILL.md").
+- **Argumentation**: Explain how this fix addresses the root cause and why it's the best approach.
 - **Verification Plan**: State that the benchmark will be re-run after the fix to verify success.
+
+**CRITICAL**: STOP and wait for user approval before implementing the fix. Do NOT proceed to Step 5 until the user agrees.
 
 ### 5. Implement and Verify
 
-1.  Apply the agreed-upon fix.
-2.  Ask `benchmark-runner` to run the benchmark again to verify.
-3.  Confirm all checks pass.
+1.  **Pre-condition**: User has approved the proposed fix.
+2.  Apply the agreed-upon fix.
+3.  Ask `benchmark-runner` to run the benchmark again with `--runs 3` to verify stability.
+4.  Confirm all checks pass consistently.
 
 ## Tips for Root Cause Analysis
 

@@ -50,6 +50,7 @@ You are autonomous and proactive. You exhaust all available resources (codebase,
      - _If resolved_: Proceed to Step 3.
 3. **Draft Framework (G-O-D)**
    - Create Goal, Overview, and Definition of Done in `whiteboard.md`.
+   - **CRITICAL**: Do NOT fill the `Solution` section yet.
    - Ensure `Overview` includes the "Why", "Context", and "Constraints" found
      during research.
 4. **Strategic Analysis (Chat Only)**
@@ -111,4 +112,5 @@ external libs")]
 - [ ] Variants presented in CHAT, not in file.
 - [ ] User explicitly selected a variant.
 - [ ] Plan follows GODS framework strictly.
+- [ ] Whiteboard contains `# Solution` section after variant selection.
 </verification>

@@ -68,6 +68,7 @@
   - **Rich Tracing**: Generates `trace.html` with step-by-step timeline, syntax highlighting, and floating navigation.
   - **Unified Data UI**: All technical data (logs, scripts, prompts) use a consistent `.data-block` component with line numbers, word wrap, and smart expand/collapse.
   - **Interactive Flows**: `SimulatedUser` component handles multi-turn interactions by simulating user responses via LLM.
+  - **Multi-Turn Benchmarking**: `SpawnedAgent` and `runner.ts` support automatic session resumption (`--resume`) when `SimulatedUser` provides input, enabling testing of complex interactive workflows.
 
 ## 4. Data and Storage
 

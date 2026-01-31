@@ -145,6 +145,7 @@ The benchmarking system must cover all core AssistFlow skills to ensure reliabil
 | `af-investigate`            | Code investigation/debugging   |     [ ]     |               |
 | `af-maintenance`            | Periodic project health checks |     [ ]     |               |
 | `af-plan`                   | Task planning (GODS)           |     [x]     | `af-plan-*`   |
+| `af-plan-interactive`     | Plan with multi-turn selection |     [x]     | `af-plan-interactive` |
 | `af-qa`                     | Quality assurance session      |     [ ]     |               |
 | `af-reflect`                | Self-reflection on task        |     [ ]     |               |
 | **Guides (af-skill-*)**     |                                |             |               |
