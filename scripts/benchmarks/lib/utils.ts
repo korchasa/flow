@@ -1,5 +1,19 @@
 import { join } from "@std/path";
 
+const TMP_DIR = join(Deno.cwd(), "tmp");
+
+/**
+ * Creates a temporary directory in ./tmp with a unique name.
+ * Cleans up old directories if needed.
+ */
+export async function createTempDir(prefix = "bench"): Promise<string> {
+  await Deno.mkdir(TMP_DIR, { recursive: true });
+  const uniqueId = crypto.randomUUID().slice(0, 8);
+  const tempDir = join(TMP_DIR, `${prefix}-${uniqueId}`);
+  await Deno.mkdir(tempDir, { recursive: true });
+  return tempDir;
+}
+
 /**
  * Runs a git command in the specified directory.
  */

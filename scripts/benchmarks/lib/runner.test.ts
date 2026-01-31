@@ -8,6 +8,7 @@ import { join } from "@std/path";
 import { load } from "@std/dotenv";
 import { runScenario } from "./runner.ts";
 import { BenchmarkScenario } from "./types.ts";
+import { createTempDir } from "./utils.ts";
 
 // Load environment variables from .env file
 await load({ export: true });
@@ -19,7 +20,7 @@ const JUDGE_CONFIG = {
 };
 
 Deno.test("Runner - Basic Scenario Execution", async () => {
-  const tempDir = await Deno.makeTempDir();
+  const tempDir = await createTempDir("runner");
   const agentPath = join(tempDir, "agent.md");
   await Deno.writeTextFile(agentPath, "You are a test agent. Do what user asks.");
 
@@ -66,7 +67,7 @@ Deno.test("Runner - Basic Scenario Execution", async () => {
 });
 
 Deno.test("Runner - Fixture Copying", async () => {
-  const tempDir = await Deno.makeTempDir();
+  const tempDir = await createTempDir("runner");
   const fixtureDir = join(tempDir, "fixtures");
   await Deno.mkdir(join(fixtureDir, "subdir"), { recursive: true });
   await Deno.writeTextFile(join(fixtureDir, "file1.txt"), "content1");
@@ -108,7 +109,7 @@ Deno.test("Runner - Fixture Copying", async () => {
 });
 
 Deno.test("Runner - AGENTS.md Fallback", async () => {
-  const tempDir = await Deno.makeTempDir();
+  const tempDir = await createTempDir("runner");
   const agentPath = join(tempDir, "agent.md");
   await Deno.writeTextFile(agentPath, "agent");
 
