@@ -7,17 +7,22 @@ description: Create, maintain, and run evidence-based benchmarks for AI agents. 
 
 ## 1. Context & Philosophy
 
-This skill defines a universal, language-agnostic standard for benchmarking Autonomous AI Agents. The goal is to objectively measure an agent's ability to solve real-world coding tasks.
+This skill defines a universal, language-agnostic standard for benchmarking Autonomous AI Agents. The goal is to objectively measure an agent's ability to solve real-world tasks, whether they are coding, data analysis, or conversational.
 
 ### Core Principles
 
 1. **Evidence-Based Verification**: We do not trust the agent's words. We verify its actions.
    - **Bad**: The agent says "I fixed the bug." -> Judge believes it.
-   - **Good**: The agent says "I fixed the bug." -> Judge runs the test suite in the sandbox and verifies the exit code is 0.
-2. **Strict Isolation (Docker)**: Test run MUST execute in a completely isolated Docker container. This ensures a clean, reproducible environment and prevents any side effects on the host system.
-   - _Note_: A single container MAY be reused for multiple scenarios within the same run, provided that the environment is fully reset (e.g., cleaning the working directory and resetting system state) between scenarios.
-3. **Determinism**: Benchmarks should be reproducible. Mock external network calls where possible and use fixed seeds.
-4. **Freedom of Implementation**: This standard describes **WHAT** needs to be built, not **HOW**. You are free to implement these modules in any language (Python, TS, Go, etc.).
+   - **Good**: The agent says "I fixed the bug." -> Judge runs the test suite in the environment and verifies the exit code is 0.
+2. **Strict Isolation**: Test run MUST execute in a completely isolated environment (Docker, VM, etc.). This ensures a clean, reproducible state and prevents side effects.
+3. **Black Box Protocol**: The benchmark knows *nothing* about the agent's internals (prompts, tools, language). It only observes:
+   - **Input**: User Query + Environment State.
+   - **Output**: New Environment State + Response Text.
+4. **Determinism**: Benchmarks should be reproducible. Mock external network calls where possible and use fixed seeds.
+5. **Universal Applicability**: The standard applies to any agent type:
+   - **CLI/IDE Agents**: Interact via shell/files.
+   - **API Agents**: Interact via HTTP/JSON.
+   - **Chat Agents**: Interact via conversation.
 
 ## 2. Evaluation Modes
 
@@ -36,48 +41,69 @@ The system supports three primary evaluation modes:
    - **Goal**: Measure impact of changes to prompt or logic.
    - **Method**: Compare current version (HEAD) against a baseline (BASE).
 
-## 3. Architecture & Requirements
+## 3. Interaction Strategies
 
-A robust benchmarking system consists of four key modules.
+Choosing the right interaction strategy is critical for stable benchmarks.
 
-### 3.1 The Sandbox (Environment)
+### 3.1 Atomic Request Verification (Step-by-Step)
+- **Method**: Send a single input, wait for output, verify immediately.
+- **Best for**: Stateless APIs, simple function calling agents, or deterministic workflows where the agent's path is fixed.
+- **Limitation**: Fails with autonomous agents that might "think" for 3 steps before acting. If you expect a file write on Step 1, but the agent does it on Step 2, the test fails falsely.
 
-The interface through which the agent interacts with the world.
+### 3.2 User Emulation (End-to-End Session)
+- **Method**: The Runner starts a session and acts as a **Simulated User**. It observes the agent's loop without interfering until the agent signals completion or asks for input.
+- **Best for**: Autonomous agents, complex problem solvers, and chat-based assistants.
+- **Reasoning**: In an autonomous loop, we cannot predict *when* the agent will perform the target action (e.g., writing a file). It might first explore, then plan, then act.
+- **Protocol**: The Runner waits for the agent to say "I'm done" or "I need X", providing replies via the Simulated User persona, and only verifies the final state after the session ends.
 
-- **Isolation**: MUST use Docker containers for execution.
-- **Capabilities**: FileSystem operations, Shell execution (`git`, `npm`), and Snapshotting (capturing state before/after).
-- **Fixture Loading**: Automatically populates the sandbox from a `fixture/` directory if it exists within the scenario folder.
+## 4. Architecture & Requirements
 
-### 3.2 The Runner (Orchestrator)
+A robust benchmarking system consists of five key modules.
 
-The central controller managing the test lifecycle (`Setup` -> `Run Agent` -> `Collect Evidence` -> `Teardown`).
+### 4.1 The Environment (Sandbox)
 
-- **Multi-turn Interaction**: Supports iterative loops (Agent -> Command -> Output -> Agent) with a configurable `max_steps` limit.
-- **Tool Execution**: Intercepts and executes shell commands; supports mocking external tools (e.g., `gh`, `curl`).
+The isolated state container where the task is performed. It is not limited to a file system.
+
+- **File System Context**: A directory with files (for coding tasks).
+- **Network Context**: Mock servers or intercepted HTTP traffic (for API tasks).
+- **Data Context**: Ephemeral databases (e.g., Postgres, Redis containers) for data tasks.
+- **Browser Context**: Headless browser instances (for web agents).
+- **Lifecycle**: Must support `Setup` (initial state), `Reset` (between runs), and `Teardown`.
+
+### 4.2 The Runner (Orchestrator)
+
+The central controller managing the test lifecycle.
+
+- **Interface Adapters**: Adapts the Agent's native output to the Environment.
+  - *Shell Adapter*: Executes bash commands.
+  - *SQL Adapter*: Executes SQL queries against the Data Context.
+  - *HTTP Adapter*: Sends requests to the Network Context.
 - **Concurrency**: Should run multiple scenarios in parallel.
 
-### 3.3 The Judge (Evaluator)
+### 4.3 The Simulated User (Persona)
 
-The logic that determines if a test passed or failed.
+For interactive agents that ask clarifying questions.
 
-- **Deterministic Checks (Hard)**: "File X must exist", "Exit code 0".
-- **Probabilistic Checks (Soft)**: LLM-based evaluation (e.g., "Is the commit message descriptive?").
-- **Metrics**: Tracks Pass/Fail status, Financial Cost, Steps Taken, and Duration.
-- **Pass@k**: Supports running a scenario `k` times to determine success rate.
+- **Role**: Replaces the human in the loop.
+- **Persona**: Defined by a specific goal, knowledge level, and constraints (e.g., "Junior Dev who doesn't know Docker").
+- **Behavior**: Provides consistent, deterministic answers to the agent's questions during the run.
 
-### 3.4 Observability (The Trace)
+### 4.4 The Judge (Evaluator)
 
-Complete capture of the agent's lifecycle in a **single human-readable file** (e.g., `trace.md`).
+The logic that determines if a test passed or failed based on **Evidence**.
 
-- **Must Capture**: Full conversation history, exact Judge prompts/responses, command outputs (stdout/stderr), file system diffs, and final score/reasoning.
-- **Normalization**: Output should be normalized (line endings, encoding) for consistent evaluation.
-- **Structured Readability**:
-  - **Visual Separation**: Use clear delimiters between logical sections (Messages, Commands, Evaluations).
-  - **Embedded Metadata**: Each section must include machine-readable metadata (type, source, role, step, etc.) using hidden or non-obtrusive formats.
-  - **Source Attribution**: Clearly identify the origin of every interaction (e.g., `agent`, `judge`, `user_emulation`, `system`).
-  - **Tool Context**: Include definitions of tools or mocks available to the agent during the run.
+- **Artifact Evidence**: Files created, DB rows inserted, resources deployed.
+- **Interaction Evidence**: API logs, tool call arguments, HTTP request bodies.
+- **Semantic Evidence**: The quality/accuracy of the text response (evaluated by LLM).
 
-## 4. Workflow: Creating a New Benchmark
+### 4.5 Observability (The Trace)
+
+Complete capture of the agent's lifecycle in a **single human-readable file** (e.g., `trace.md` or `trace.json`).
+
+- **Must Capture**: Full conversation history, exact Judge prompts/responses, command outputs, environment diffs.
+- **Normalization**: Output should be normalized for consistent evaluation.
+
+## 5. Workflow: Creating a New Benchmark
 
 Follow this process to add a new benchmark scenario.
 
@@ -85,94 +111,89 @@ Follow this process to add a new benchmark scenario.
 
 What specific capability are you testing?
 
-- _Example_: "Can the agent fix a syntax error in a Python file?"
+- _Example_: "Can the agent fix a syntax error?" or "Can the agent negotiate a price?"
 
-### Step 2: Design the Setup (Pre-condition)
+### Step 2: Design the Environment (Pre-condition)
 
-Create the initial state that presents the problem.
+Create the initial state.
 
-- **Static Setup**: Place files in a `fixture/` directory within your scenario folder. These files should be automatically copied to the sandbox by the Runner before the agent starts.
-- **Dynamic Setup**: Use the scenario's setup logic (e.g., a setup function or script) for actions like `git init`, setting up environment variables, or creating files that depend on the dynamic sandbox path.
-  - _Example_: Initialize a git repository or create a `.env` file with temporary paths.
+- **Static Setup**: Copy fixture files, seed database with initial rows.
+- **Dynamic Setup**: Start mock servers, configure environment variables.
 
 ### Step 3: Define the Task (Trigger)
 
 Write the prompt that instructs the agent.
 
-- _Prompt_: "Run the script and fix any errors you find."
+- _Prompt_: "Run the script and fix errors" or "Book a flight to Paris".
 
 ### Step 4: Define Success Criteria (Post-condition)
 
 How do we know it worked?
 
-1. **Hard Check**: Running `python script.py` returns exit code 0.
-2. **Hard Check**: File `script.py` content matches `print("hello")`.
-3. **Soft Check**: Agent did not delete other files.
+1. **Hard Check (Artifact)**: File `script.py` runs with exit code 0.
+2. **Hard Check (State)**: Database table `users` has 1 new row.
+3. **Soft Check (Semantic)**: Agent's explanation is polite and accurate.
+4. **Interaction Check**: Agent called `GET /api/v1/flights` with correct parameters.
 
 ### Step 5: Register
 
 Add the scenario to your Runner's registry.
 
-## 5. Workflow: Running & Debugging
+## 6. Workflow: Running & Debugging
 
 ### Execution Loop
 
-1. **Init**: Runner ensures a clean Sandbox (e.g., starts a new Docker container or resets an existing one).
-2. **Seed**: Runner executes Scenario Setup (copies fixtures and runs setup logic).
-3. **Act**: Agent runs in the sandbox container.
-   - Agent reads file -> runs file (fails) -> edits file -> runs file (passes).
+1. **Init**: Runner prepares the Environment (Docker, DB, Mocks).
+2. **Seed**: Runner executes Scenario Setup.
+3. **Act**: Agent runs in the environment.
+   - *Interactive Loop*: Agent <-> Simulated User.
+   - *Command Loop*: Agent <-> Environment (Shell/API).
 4. **Stop**: Agent signals completion or timeout.
-5. **Evidence**: Runner collects `git diff` and execution logs.
+5. **Evidence**: Runner collects state diffs (git, DB dump) and logs.
 6. **Judge**: Runner passes Evidence to the Judge.
-7. **Report**: Result is saved. Sandbox is deleted.
+7. **Report**: Result is saved. Environment is destroyed.
 
 ### Debugging Failures
 
 If a benchmark fails, check the **Trace**:
 
-1. **Did the Setup work?** Check initial file state.
-2. **Did the Agent try?** Check logs for tool calls.
-3. **Did the Tool fail?** Check stderr of the commands.
-4. **Did the Judge hallucinate?** Check the Judge's reasoning against the actual file diff.
+1. **Did the Setup work?** Check initial environment state.
+2. **Did the Agent try?** Check logs for actions/tool calls.
+3. **Did the Simulated User confuse the Agent?** Check the conversation log.
+4. **Did the Judge hallucinate?** Check the Judge's reasoning against the actual evidence.
 
-## 6. Configuration Principles
+## 7. Universal Result Schema
 
-The benchmarking system uses a centralized configuration to manage LLM parameters and execution defaults.
+To ensure cross-platform compatibility, benchmark results must follow a standard JSON schema.
 
-### Key Principles
-
-1. **Preset-Based Management**: LLM configurations (model, temperature, provider settings) are managed as named presets. This allows switching between different models or providers without changing the scenario definitions.
-2. **Role Separation**: The system distinguishes between the **Agent** (the model being tested) and the **Judge** (the model evaluating the results). Different presets can be assigned to each role to optimize for cost or intelligence.
-3. **Reproducibility**: Configuration should enforce deterministic behavior (e.g., `temperature: 0`) to ensure benchmark results are consistent across runs.
-4. **Provider Flexibility**: Support for provider-specific routing (e.g., OpenRouter provider order) allows for fallback mechanisms and cost optimization during large-scale runs.
-
-## 7. Data Model Reference
-
-### Scenario Definition
-
-```pseudocode
-Structure BenchmarkScenario:
-    id: String              // Unique identifier (e.g., "af-commit-basic")
-    name: String            // Human-readable name
-    targetAgentPath: Path   // Path to the agent/skill definition
-    setup: Function(sandboxPath: Path) -> Promise // Fixture setup logic
-    userQuery: String       // The initial task for the agent
-    checklist: List<ChecklistItem> // Evaluation criteria
-    maxSteps: Integer       // Optional limit on interaction turns (default: 10)
-    mocks: Map<String, String> // Optional tool mocks (command -> response)
+```json
+{
+  "scenario_id": "string",
+  "outcome": "pass|fail",
+  "score": 0-100,
+  "metrics": {
+    "duration_ms": 1200,
+    "cost_usd": 0.01,
+    "steps_taken": 5,
+    "tokens_used": 1500
+  },
+  "evidence": {
+    "artifacts": ["file_paths"],
+    "logs": ["log_entries"]
+  },
+  "checklist": [
+    { "id": "check_1", "status": "pass", "reason": "..." }
+  ]
+}
 ```
 
-### Checklist Item
+## 8. Configuration Principles
 
-```pseudocode
-Structure ChecklistItem:
-    id: String              // Unique identifier within the scenario
-    description: String     // What the judge should verify
-    critical: Boolean       // True: Failure fails the test. False: Results in a warning.
-    type: Enum              // Optional: "static" (regex/grep) or "semantic" (LLM judge)
-```
+1. **Preset-Based Management**: Manage LLM configurations as named presets.
+2. **Role Separation**: Distinguish between **Agent** (tested), **Judge** (evaluator), and **Simulated User** (context provider).
+3. **Reproducibility**: Enforce deterministic behavior (e.g., `temperature: 0`).
 
-## 8. Assets & References
+## 9. Assets & References
 
 - **[examples/scenario-example.md](examples/scenario-example.md)**: Template for defining scenarios.
 - **[benchmarks.config.json](benchmarks.config.json)**: Main configuration file for models and presets.

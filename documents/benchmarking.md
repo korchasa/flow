@@ -38,12 +38,16 @@ The trace is a structured HTML document designed for readability and detailed in
 - **Interactive Elements**: Collapsible sections for long content (LLM responses, command outputs).
 - **Content Decoding**: Automatically decodes URL-encoded content in events for better readability.
 
-## 4. Execution Flow
+## 5. Current State (2026-01-31)
 
-1. **Setup**: Clean `benchmarks/<scenario-id>`, create `sandbox/`.
-2. **Init**: Initialize `trace.html` with header and context.
-3. **Simulation**: Run LLM, log inputs and outputs to `trace.html`.
-4. **Execution**: Parse and run commands in `sandbox/`, log results to `trace.html`.
-5. **Evidence**: Collect git status/log, append to `trace.html`.
-6. **Evaluation**: Run checklist, log results to `trace.html`.
-7. **Reporting**: Output summary to console.
+| Scenario ID | Result | Errors | Warnings | Notes |
+| :--- | :--- | :---: | :---: | :--- |
+| `af-commit-basic` | FAILED | 1 | 0 | Unclean status after commit (untracked files) |
+| `af-commit-atomic-refactor` | PASSED | 0 | 0 | |
+| `af-commit-atomic-docs` | PASSED | 0 | 0 | |
+| `af-commit-check` | PASSED | 0 | 0 | |
+| `af-commit-sync-docs` | PASSED | 0 | 0 | |
+| `af-commit-atomic-hunk` | PASSED | 0 | 0 | |
+| `af-commit-deps` | FAILED | 2 | 0 | Missing 'chore:' and 'feat:' prefixes in atomic commits |
+| `af-commit-check-fail` | FAILED | 1 | 0 | Committed changes despite `deno task check` failure |
+| `af-plan-basic` | INTERRUPTED | - | - | Stopped due to PTY read error or missing simulated user |

@@ -86,11 +86,9 @@ The benchmarking system (`scripts/task-bench.ts`) is designed to evaluate agent 
      output (e.g., different command formatting) as long as the functional
      result is correct.
 
-5. **Full Environment Simulation**:
-   - The runner injects the full `catalog` into `sandbox/.cursor` to ensure agents
-     have access to all skills and rules, mimicking a real user environment.
-   - Benchmarks rely on `cursor-agent`'s native context discovery rather than
-     manual prompt assembly.
+6. **Foreground Execution**:
+   - Benchmark scripts (`deno task bench`) MUST be run in the foreground only.
+   - Do not use background execution for benchmarks to ensure proper interaction and error handling.
 
 ## DOCUMENTATION STRUCTURE AND RULES (directory `documents`)
 
