@@ -118,8 +118,9 @@
 - [x] Rich HTML tracing with step-by-step timeline and syntax highlighting.
 - [x] Unified data block UI with smart blur, line numbering, and word wrap.
 - [x] JSON-based configuration for model presets (agent and judge).
-- [x] **Support for direct model names**: Allows using model names directly if no preset matches.
-- [x] **Native Context Discovery**: Benchmarks rely on `cursor-agent`'s native context discovery by ensuring the sandbox structure mimics a real project (including `.cursor/` folder).
+  - [x] **Support for direct model names**: Allows using model names directly if no preset matches.
+  - [x] **Simplified Model Selection**: Replaced presets with direct model selection in `deno task bench` via `-m, --model` flag.
+  - [x] **Native Context Discovery**: Benchmarks rely on `cursor-agent`'s native context discovery by ensuring the sandbox structure mimics a real project (including `.cursor/` folder).
 - [x] **Single-Turn Benchmark**: User query is embedded in the system prompt to simulate real-world single-turn agent invocation.
 - [x] **Mandatory AGENTS.md**: Every scenario must have an `AGENTS.md` file in its
       fixtures or provided via config.

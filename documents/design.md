@@ -50,7 +50,7 @@
 - **Dependencies:** Updated by `af-update-docs`.
 
 - **Maintenance & Benchmarking**:
-  - `deno task bench`: Evaluates agents via evidence-based scenarios.
+  - `deno task bench`: Evaluates agents via evidence-based scenarios. Supports direct model selection via `-m, --model` flag.
   - **Parallel Execution Protection**: Uses `benchmarks.lock` file containing the PID to prevent concurrent runs. Implements signal listeners (`SIGINT`, `SIGTERM`) and `unload` events for reliable cleanup.
   - **Isolation**: Benchmarks run in isolated sandboxes using `SpawnedAgent` (PTY-based).
   - **Docker**: Optional Docker isolation (`Dockerfile` based on `denoland/deno:alpine`) with `git`, `bash`, `curl`, and `cursor-agent` installed.
