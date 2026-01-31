@@ -18,23 +18,24 @@ export const PlanInteractiveBench = new class extends BenchmarkSkillScenario {
       type: "semantic" as const,
     },
     {
+      id: "question_asked",
+      description:
+        "Did the agent ask the user to select an implementation variant?",
+      critical: true,
+      type: "semantic" as const,
+    },
+    {
       id: "solution_filled",
       description:
-        "Is the 'Solution' section in 'documents/whiteboard.md' filled (not empty)?",
+        "Is the 'Solution' section in 'documents/whiteboard.md' filled with technical details for the selected variant?",
       critical: true,
+      type: "semantic" as const,
     },
     {
       id: "no_switch_mode",
       description: "Did the logs NOT contain 'SwitchMode'?",
       critical: true,
       type: "static" as const,
-    },
-    {
-      id: "question_asked",
-      description:
-        "Did the agent ask the user to select an implementation variant?",
-      critical: true,
-      type: "semantic" as const,
     },
   ];
 }();

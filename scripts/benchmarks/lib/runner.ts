@@ -228,7 +228,6 @@ MOCK_EOF
 
     const { code, logs } = await agent.run(async (allLogs) => {
       if (!simulatedUser) {
-        console.log("  No simulated user and agent needs input. Stopping.");
         return null;
       }
       const response = await simulatedUser.getResponse(allLogs);

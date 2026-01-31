@@ -81,26 +81,26 @@ export class SpawnedAgent {
         break;
       }
 
-      // Check if agent finished task definitively
+      // If we have a callback, check if we need to resume
+      if (onInputRequired) {
+        const input = await onInputRequired(this.fullLog.join(""));
+        if (input && input !== "WAIT") {
+          nextPrompt = input;
+          // Continue to next step in loop
+          continue;
+        }
+      }
+
+      // Check if agent finished task definitively according to its own output
       if (this.isTaskFinished(finalResult.logs)) {
         await this.logAction("done", step + 1, maxSteps);
         break;
       }
 
-      // If not finished, we MUST continue.
-      // Try to get user input if callback is provided.
-      if (onInputRequired) {
-        const input = await onInputRequired(this.fullLog.join(""));
-        if (input && input !== "WAIT") {
-          nextPrompt = input;
-        } else {
-          // Agent not finished, but user has nothing to say or simulator said WAIT.
-          // We resume with a default prompt to let agent continue its internal logic.
-          nextPrompt = "Continue";
-        }
-      } else {
-        nextPrompt = "Continue";
-      }
+      // If not finished and no input provided, we might still need to continue
+      // but without a prompt it will just exit again. 
+      // In a real scenario, we'd probably want to stop here if no input was provided.
+      break;
     }
 
     return finalResult;
