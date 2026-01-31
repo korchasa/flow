@@ -46,9 +46,10 @@ EFFECTIVENESS ENTIRELY DEPENDS ON ITS ACCURACY.
 
 ## Architecture
 
-- `.cursor/skills/af-*/` stores chat-invoked workflows (Commands).
-- `.cursor/skills/` stores other skills and how-to guides.
-- `.cursor/agents/` stores autonomous sub-agents.
+- `catalog/skills/` stores the source of truth for all skills (product).
+- `catalog/agents/` stores the source of truth for all agents (product).
+- `.cursor/skills/` stores active skills for the current workspace (symlinks to `catalog/`).
+- `.cursor/agents/` stores active agents for the current workspace (symlinks to `catalog/`).
 - `documents/` stores SRS/SDS and supporting documentation.
 - `scripts/` stores Deno task scripts used by `deno task`.
     - `scripts/benchmarks/` stores agent benchmarking infrastructure.
