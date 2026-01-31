@@ -8,7 +8,8 @@ export interface BenchmarkChecklistItem {
 export interface BenchmarkScenario {
   id: string;
   name: string;
-  targetAgentPath: string; // Path to the agent/skill .md file
+  targetAgentPath?: string; // Path to the agent/skill .md file
+  skill?: string; // Skill identifier (e.g., "af-plan")
 
   /**
    * Setup the sandbox environment.
@@ -71,6 +72,26 @@ export interface BenchmarkScenario {
    * If not provided, the runner will try to load it from the scenario's fixture directory.
    */
   agentsMarkdown?: string;
+}
+
+/**
+ * Base class for scenarios that target a specific skill from the catalog.
+ * Automatically builds targetAgentPath from the skill ID.
+ */
+export abstract class BenchmarkSkillScenario implements BenchmarkScenario {
+  abstract id: string;
+  abstract name: string;
+  abstract skill: string;
+  abstract userQuery: string;
+  abstract checklist: BenchmarkChecklistItem[];
+
+  get targetAgentPath(): string {
+    return `catalog/skills/${this.skill}/SKILL.md`;
+  }
+
+  setup(_sandboxPath: string): Promise<void> {
+    return Promise.resolve();
+  }
 }
 
 export interface BenchmarkResult {

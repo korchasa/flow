@@ -44,7 +44,7 @@ export async function runScenario(
     scenario.name,
     scenario.id,
     options.agentModel,
-    scenario.targetAgentPath,
+    scenario.targetAgentPath || "",
     scenario.userQuery,
   );
 

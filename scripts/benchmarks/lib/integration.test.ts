@@ -18,8 +18,8 @@ import { createTempDir } from "./utils.ts";
 // Load environment variables from .env file
 await load({ export: true });
 
-const TEST_MODEL = Deno.env.get("INTEGRATION_TEST_MODEL") || "auto";
-const JUDGE_CONFIG = { model: TEST_MODEL, temperature: 0 };
+const TEST_MODEL = "auto";
+const JUDGE_CONFIG = { model: "google/gemini-2.0-flash-001", temperature: 0 };
 
 // ============================================================================
 // SpawnedAgent Integration Tests
