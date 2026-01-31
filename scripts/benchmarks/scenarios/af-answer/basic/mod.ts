@@ -1,21 +1,14 @@
-import { BenchmarkScenario } from "../../../lib/types.ts";
+import { BenchmarkSkillScenario } from "../../../lib/types.ts";
 
-const SKILL_PATH = "catalog/skills/af-answer/SKILL.md";
+export const AnswerBasicBench = new class extends BenchmarkSkillScenario {
+  id = "af-answer-basic";
+  name = "Basic Codebase Q&A";
+  skill = "af-answer";
 
-export const AnswerBasicBench: BenchmarkScenario = {
-  id: "af-answer-basic",
-  name: "Basic Codebase Q&A",
-  targetAgentPath: SKILL_PATH,
-  skillName: "af-answer",
+  userQuery =
+    "/af-answer How is password hashing implemented in this project? Does it follow the requirements?";
 
-  setup: async (_sandboxPath: string) => {
-    // Fixtures are copied automatically
-  },
-
-  userQuery:
-    "/af-answer How is password hashing implemented in this project? Does it follow the requirements?",
-
-  checklist: [
+  checklist = [
     {
       id: "docs_read",
       description:
@@ -32,7 +25,7 @@ export const AnswerBasicBench: BenchmarkScenario = {
       description:
         "Did the agent correctly identify that bcrypt is used for hashing as required?",
       critical: true,
-      type: "semantic",
+      type: "semantic" as const,
     },
-  ],
-};
+  ];
+}();

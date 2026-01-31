@@ -1,21 +1,19 @@
 import { join } from "@std/path";
-import { BenchmarkScenario } from "../../../lib/types.ts";
+import { BenchmarkSkillScenario } from "../../../lib/types.ts";
 
-const SKILL_PATH = "catalog/skills/af-init/SKILL.md";
+export const InitGreenfieldBench = new class extends BenchmarkSkillScenario {
+  id = "af-init-greenfield";
+  name = "Init Greenfield Project with Interview";
+  skill = "af-init";
 
-export const InitGreenfieldBench: BenchmarkScenario = {
-  id: "af-init-greenfield",
-  name: "Init Greenfield Project with Interview",
-  targetAgentPath: SKILL_PATH,
-
-  setup: async (sandboxPath: string) => {
+  async setup(sandboxPath: string) {
     await Deno.mkdir(join(sandboxPath, "documents"), { recursive: true });
     // Empty directory for greenfield
-  },
+  }
 
-  userQuery: "/af-init",
+  userQuery = "/af-init";
 
-  userPersona: `You are a developer starting a new project called 'MyProject'. 
+  userPersona = `You are a developer starting a new project called 'MyProject'. 
 Your vision is 'World domination'. 
 Target audience is 'Everyone'. 
 The problem is 'Boredom' and the solution is 'Fun'. 
@@ -23,15 +21,15 @@ There are no major risks.
 The tech stack is 'Deno' and 'TypeScript'. 
 The architecture is 'Monolith'. 
 When the agent asks for project details or starts an interview, provide these details. 
-Always confirm when asked to overwrite or create files.`,
+Always confirm when asked to overwrite or create files.`;
 
-  checklist: [
+  checklist = [
     {
       id: "interview_started",
       description:
         "Did the agent start an interview to gather project details?",
       critical: true,
-      type: "semantic",
+      type: "semantic" as const,
     },
     {
       id: "agents_md_created",
@@ -44,7 +42,7 @@ Always confirm when asked to overwrite or create files.`,
       description:
         "Does the generated AGENTS.md contain 'Code Documentation Rules'?",
       critical: true,
-      type: "semantic",
+      type: "semantic" as const,
     },
-  ],
-};
+  ];
+}();

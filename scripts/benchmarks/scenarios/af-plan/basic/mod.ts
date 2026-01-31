@@ -1,20 +1,14 @@
-import { BenchmarkScenario } from "../../../lib/types.ts";
+import { BenchmarkSkillScenario } from "../../../lib/types.ts";
 
-const AGENT_PATH = "catalog/skills/af-plan/SKILL.md";
+export const PlanBasicBench = new class extends BenchmarkSkillScenario {
+  id = "af-plan-basic";
+  name = "Basic Plan Generation";
+  skill = "af-plan";
 
-export const PlanBasicBench: BenchmarkScenario = {
-  id: "af-plan-basic",
-  name: "Basic Plan Generation",
-  targetAgentPath: AGENT_PATH,
+  userQuery =
+    "/af-plan Plan a new feature to add a 'hello world' endpoint. The project is a simple Node.js Express server. The server file is index.js. No other constraints.";
 
-  setup: async (_sandboxPath: string) => {
-    // Documents directory is now created automatically by fixture copying
-  },
-
-  userQuery:
-    "/af-plan Plan a new feature to add a 'hello world' endpoint. The project is a simple Node.js Express server. The server file is index.js. No other constraints.",
-
-  checklist: [
+  checklist = [
     {
       id: "whiteboard_created",
       description: "Did the agent create/write to 'documents/whiteboard.md'?",
@@ -30,7 +24,7 @@ export const PlanBasicBench: BenchmarkScenario = {
       id: "variants_presented",
       description: "Did the agent present implementation variants in the chat?",
       critical: true,
-      type: "semantic",
+      type: "semantic" as const,
     },
-  ],
-};
+  ];
+}();

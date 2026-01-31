@@ -1,15 +1,13 @@
-import { BenchmarkScenario } from "../../../lib/types.ts";
+import { BenchmarkSkillScenario } from "../../../lib/types.ts";
 import { runGit, setupGitRepo } from "../../../lib/utils.ts";
 import { join } from "@std/path";
 
-const AGENT_PATH = "catalog/skills/af-commit/SKILL.md";
+export const CommitAtomicHunkBench = new class extends BenchmarkSkillScenario {
+  id = "af-commit-atomic-hunk";
+  name = "Atomic Split: Hunk (Style vs Logic)";
+  skill = "af-commit";
 
-export const CommitAtomicHunkBench: BenchmarkScenario = {
-  id: "af-commit-atomic-hunk",
-  name: "Atomic Split: Hunk (Style vs Logic)",
-  targetAgentPath: AGENT_PATH,
-
-  setup: async (sandboxPath: string) => {
+  async setup(sandboxPath: string) {
     await setupGitRepo(sandboxPath);
 
     // Initial commit
@@ -22,12 +20,12 @@ export const CommitAtomicHunkBench: BenchmarkScenario = {
       join(sandboxPath, "code.ts"),
       "function newName() { return 1; } \n// Added comment for style",
     );
-  },
+  }
 
-  userQuery:
-    "/af-commit Commit changes. I renamed a function (logic) and added a comment (style). Split them into two commits (style and refactor).",
+  userQuery =
+    "/af-commit Commit changes. I renamed a function (logic) and added a comment (style). Split them into two commits (style and refactor).";
 
-  checklist: [
+  checklist = [
     {
       id: "multiple_commits",
       description: "Did the agent create at least 2 new commits?",
@@ -43,5 +41,5 @@ export const CommitAtomicHunkBench: BenchmarkScenario = {
       description: "Is there a commit with type 'refactor'?",
       critical: true,
     },
-  ],
-};
+  ];
+}();

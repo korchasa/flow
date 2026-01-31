@@ -1,14 +1,12 @@
-import { BenchmarkScenario } from "../../../lib/types.ts";
+import { BenchmarkSkillScenario } from "../../../lib/types.ts";
 import { runGit, setupGitRepo } from "../../../lib/utils.ts";
 
-const AGENT_PATH = "catalog/skills/af-commit/SKILL.md";
+export const CommitBasicBench = new class extends BenchmarkSkillScenario {
+  id = "af-commit-basic";
+  name = "Basic Feature Commit";
+  skill = "af-commit";
 
-export const CommitBasicBench: BenchmarkScenario = {
-  id: "af-commit-basic",
-  name: "Basic Feature Commit",
-  targetAgentPath: AGENT_PATH,
-
-  setup: async (sandboxPath: string) => {
+  async setup(sandboxPath: string) {
     await setupGitRepo(sandboxPath);
 
     // Initial commit with README and AGENTS.md
@@ -17,12 +15,12 @@ export const CommitBasicBench: BenchmarkScenario = {
 
     // utils.ts is already in sandbox but NOT in git yet.
     // This makes it an untracked file, which is what the scenario expects.
-  },
+  }
 
-  userQuery:
-    "/af-commit I added a sum function in utils.ts. Commit this changes.",
+  userQuery =
+    "/af-commit I added a sum function in utils.ts. Commit this changes.";
 
-  checklist: [
+  checklist = [
     {
       id: "file_committed",
       description: "Is `utils.ts` present in the last commit?",
@@ -43,5 +41,5 @@ export const CommitBasicBench: BenchmarkScenario = {
       description: "Is the final git status clean?",
       critical: true,
     },
-  ],
-};
+  ];
+}();

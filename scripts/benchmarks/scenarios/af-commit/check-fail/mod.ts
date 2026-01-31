@@ -1,14 +1,12 @@
-import { BenchmarkScenario } from "../../../lib/types.ts";
+import { BenchmarkSkillScenario } from "../../../lib/types.ts";
 import { runGit, setupGitRepo } from "../../../lib/utils.ts";
 
-const AGENT_PATH = "catalog/skills/af-commit/SKILL.md";
+export const CommitCheckFailBench = new class extends BenchmarkSkillScenario {
+  id = "af-commit-check-fail";
+  name = "Pre-flight Check Failure";
+  skill = "af-commit";
 
-export const CommitCheckFailBench: BenchmarkScenario = {
-  id: "af-commit-check-fail",
-  name: "Pre-flight Check Failure",
-  targetAgentPath: AGENT_PATH,
-
-  setup: async (sandboxPath: string) => {
+  async setup(sandboxPath: string) {
     await setupGitRepo(sandboxPath);
 
     // Initial commit
@@ -20,11 +18,11 @@ export const CommitCheckFailBench: BenchmarkScenario = {
       new URL("file.ts", `file://${sandboxPath}/`).pathname,
       "const x = 2;",
     );
-  },
+  }
 
-  userQuery: "/af-commit Commit changes.",
+  userQuery = "/af-commit Commit changes.";
 
-  checklist: [
+  checklist = [
     {
       id: "check_executed",
       description: "Did the agent run 'deno task check'?",
@@ -35,5 +33,5 @@ export const CommitCheckFailBench: BenchmarkScenario = {
       description: "Did the agent ABORT the commit process (no new commits)?",
       critical: true,
     },
-  ],
-};
+  ];
+}();

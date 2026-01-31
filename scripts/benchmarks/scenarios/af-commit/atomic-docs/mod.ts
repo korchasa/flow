@@ -1,15 +1,13 @@
-import { BenchmarkScenario } from "../../../lib/types.ts";
+import { BenchmarkSkillScenario } from "../../../lib/types.ts";
 import { runGit, setupGitRepo } from "../../../lib/utils.ts";
 import { join } from "@std/path";
 
-const AGENT_PATH = "catalog/skills/af-commit/SKILL.md";
+export const CommitAtomicDocsBench = new class extends BenchmarkSkillScenario {
+  id = "af-commit-atomic-docs";
+  name = "Atomic Split: Docs vs Code";
+  skill = "af-commit";
 
-export const CommitAtomicDocsBench: BenchmarkScenario = {
-  id: "af-commit-atomic-docs",
-  name: "Atomic Split: Docs vs Code",
-  targetAgentPath: AGENT_PATH,
-
-  setup: async (sandboxPath: string) => {
+  async setup(sandboxPath: string) {
     await setupGitRepo(sandboxPath);
 
     // Initial commit
@@ -23,12 +21,12 @@ export const CommitAtomicDocsBench: BenchmarkScenario = {
       join(sandboxPath, "main.ts"),
       "console.log('hello');",
     );
-  },
+  }
 
-  userQuery:
-    "/af-commit Commit changes. I updated README.md (docs) and main.ts (code). Split documentation and code.",
+  userQuery =
+    "/af-commit Commit changes. I updated README.md (docs) and main.ts (code). Split documentation and code.";
 
-  checklist: [
+  checklist = [
     {
       id: "multiple_commits",
       description: "Did the agent create at least 2 new commits?",
@@ -49,5 +47,5 @@ export const CommitAtomicDocsBench: BenchmarkScenario = {
       description: "Is the final git status clean?",
       critical: true,
     },
-  ],
-};
+  ];
+}();

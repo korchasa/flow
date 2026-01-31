@@ -1,20 +1,14 @@
-import { BenchmarkScenario } from "../../../lib/types.ts";
+import { BenchmarkSkillScenario } from "../../../lib/types.ts";
 
-const AGENT_PATH = "catalog/skills/af-plan/SKILL.md";
+export const PlanContextBench = new class extends BenchmarkSkillScenario {
+  id = "af-plan-context";
+  name = "Plan with Context Gathering";
+  skill = "af-plan";
 
-export const PlanContextBench: BenchmarkScenario = {
-  id: "af-plan-context",
-  name: "Plan with Context Gathering",
-  targetAgentPath: AGENT_PATH,
+  userQuery =
+    "/af-plan Plan implementation of the requirement described in documents/requirements.md.";
 
-  setup: async (_sandboxPath: string) => {
-    // Context is now in fixture/
-  },
-
-  userQuery:
-    "/af-plan Plan implementation of the requirement described in documents/requirements.md.",
-
-  checklist: [
+  checklist = [
     {
       id: "context_read",
       description: "Did the agent read 'documents/requirements.md'?",
@@ -26,5 +20,5 @@ export const PlanContextBench: BenchmarkScenario = {
         "Does the plan in 'documents/whiteboard.md' mention 'dark mode'?",
       critical: true,
     },
-  ],
-};
+  ];
+}();

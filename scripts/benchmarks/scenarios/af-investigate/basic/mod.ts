@@ -1,33 +1,26 @@
-import { BenchmarkScenario } from "../../../lib/types.ts";
+import { BenchmarkSkillScenario } from "../../../lib/types.ts";
 
-const SKILL_PATH = "catalog/skills/af-investigate/SKILL.md";
+export const InvestigateBasicBench = new class extends BenchmarkSkillScenario {
+  id = "af-investigate-basic";
+  name = "Basic Issue Investigation";
+  skill = "af-investigate";
 
-export const InvestigateBasicBench: BenchmarkScenario = {
-  id: "af-investigate-basic",
-  name: "Basic Issue Investigation",
-  targetAgentPath: SKILL_PATH,
-  skillName: "af-investigate",
+  userQuery =
+    "/af-investigate The calculateTotal function in src/math.ts returns incorrect results. For price 10 and quantity 2, it returns 30 instead of 20. Investigate this. I want to see multiple hypotheses first. Use only standard CLI tools like cat, ls, grep.";
 
-  setup: async (_sandboxPath: string) => {
-    // Fixtures are copied automatically
-  },
-
-  userQuery:
-    "/af-investigate The calculateTotal function in src/math.ts returns incorrect results. For price 10 and quantity 2, it returns 30 instead of 20. Investigate this. I want to see multiple hypotheses first. Use only standard CLI tools like cat, ls, grep.",
-
-  checklist: [
+  checklist = [
     {
       id: "hypotheses_proposed",
       description: "Did the agent propose 3-7 hypotheses?",
       critical: true,
-      type: "semantic",
+      type: "semantic" as const,
     },
     {
       id: "user_control",
       description:
         "Did the agent STOP after proposing hypotheses and ask the user to select one?",
       critical: true,
-      type: "semantic",
+      type: "semantic" as const,
     },
-  ],
-};
+  ];
+}();
