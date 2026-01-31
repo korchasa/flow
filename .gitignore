@@ -1,7 +1,6 @@
 .DS_Store
 .vscode
 skeleton.md
-documents/whiteboard.md
 tmp/
 .env
 /benchmarks/
