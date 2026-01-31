@@ -48,7 +48,7 @@ The trace is a structured HTML document designed for readability and detailed in
 | `af-commit-atomic-docs` | PASSED | 0 | 0 | 18.9 | |
 | `af-commit-check` | PASSED | 0 | 0 | 30.0+ | |
 | `af-commit-check-fail` | PASSED | 0 | 0 | 19.9 | Correctly refused to commit on check failure |
-| `af-commit-deps` | FAILED | 2 | 0 | 22.1 | Missing 'chore:' and 'feat:' prefixes |
+| `af-commit-deps` | PASSED | 0 | 0 | 22.1 |  |
 | `af-commit-sync-docs` | PASSED | 0 | 0 | 21.5 | |
 | `af-commit-atomic-hunk` | PASSED | 0 | 0 | 27.0 | |
 | `af-init-brownfield` | FAILED | 5 | 0 | 31.0 | Claims to create files (AGENTS.md, docs) but doesn't |

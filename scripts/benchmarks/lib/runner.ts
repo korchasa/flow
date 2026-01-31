@@ -286,6 +286,16 @@ MOCK_EOF
     const statusStr = new TextDecoder().decode(statusOut.stdout);
     const logStr = new TextDecoder().decode(logOut.stdout);
 
+    // Read whiteboard.md content if it exists
+    let whiteboardContent = "";
+    try {
+      whiteboardContent = await Deno.readTextFile(
+        join(sandboxPath, "documents", "whiteboard.md"),
+      );
+    } catch (_) {
+      whiteboardContent = "(file not found)";
+    }
+
     await tracer.logEvidence(statusStr, logStr);
 
     const evidence = `
@@ -300,6 +310,9 @@ ${statusStr}
 
 --- LAST COMMIT ---
 ${logStr}
+
+--- DOCUMENTS/WHITEBOARD.MD ---
+${whiteboardContent}
     `;
 
     // 6. Judge

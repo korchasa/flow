@@ -6,7 +6,7 @@ export const CommitBasicBench = new class extends BenchmarkSkillScenario {
   name = "Basic Feature Commit";
   skill = "af-commit";
 
-  async setup(sandboxPath: string) {
+  override async setup(sandboxPath: string) {
     await setupGitRepo(sandboxPath);
 
     // Initial commit with README, AGENTS.md and .cursor
