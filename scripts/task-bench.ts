@@ -24,9 +24,11 @@ import { PlanVariantsObviousBench } from "./benchmarks/scenarios/af-plan/variant
 import { PlanVariantsComplexBench } from "./benchmarks/scenarios/af-plan/variants-complex/mod.ts";
 import { InitBrownfieldBench } from "./benchmarks/scenarios/af-init/brownfield/mod.ts";
 import { InitGreenfieldBench } from "./benchmarks/scenarios/af-init/greenfield/mod.ts";
+import { InitVisionIntegrationBench } from "./benchmarks/scenarios/af-init/vision-integration/mod.ts";
 
 const SCENARIOS: BenchmarkScenario[] = [
   CommitBasicBench,
+
   CommitAtomicRefactorBench,
   CommitAtomicDocsBench,
   CommitCheckBench,
@@ -44,6 +46,7 @@ const SCENARIOS: BenchmarkScenario[] = [
   PlanVariantsComplexBench,
   InitBrownfieldBench,
   InitGreenfieldBench,
+  InitVisionIntegrationBench,
 ];
 
 function printHelp(defaultAgentPreset: string, defaultJudgePreset: string) {
