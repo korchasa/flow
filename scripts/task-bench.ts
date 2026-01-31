@@ -1,5 +1,6 @@
 import { join } from "@std/path";
 import { parse } from "@std/flags";
+import { existsSync } from "@std/fs";
 import { BenchmarkResult, BenchmarkScenario } from "./benchmarks/lib/types.ts";
 import { runScenario } from "./benchmarks/lib/runner.ts";
 import { loadConfig, ModelConfig } from "./benchmarks/lib/llm.ts";
@@ -69,6 +70,40 @@ Options:
 }
 
 async function main() {
+  const lockFile = join(Deno.cwd(), "benchmarks.lock");
+
+  if (existsSync(lockFile)) {
+    const pid = await Deno.readTextFile(lockFile).catch(() => "unknown");
+    console.error(
+      `\x1b[31mError: Another benchmark process (PID: ${pid}) is already running.\x1b[0m`,
+    );
+    console.error(
+      `If you are sure no other process is running, delete ${lockFile} and try again.`,
+    );
+    Deno.exit(1);
+  }
+
+  await Deno.writeTextFile(lockFile, Deno.pid.toString());
+
+  // Ensure lock file is removed on exit
+  const cleanup = () => {
+    try {
+      Deno.removeSync(lockFile);
+    } catch {
+      // Ignore if already removed
+    }
+  };
+
+  globalThis.addEventListener("unload", cleanup);
+  Deno.addSignalListener("SIGINT", () => {
+    cleanup();
+    Deno.exit(130);
+  });
+  Deno.addSignalListener("SIGTERM", () => {
+    cleanup();
+    Deno.exit(143);
+  });
+
   const config = await loadConfig();
 
   const args = parse(Deno.args, {
