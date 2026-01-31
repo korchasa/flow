@@ -222,15 +222,15 @@ Deno.test("SpawnedAgent - Error Handling (Invalid Command)", async () => {
     model: "test-model",
   });
 
-  // В текущей реализации monitorPty просто логирует ошибку в консоль и делает cleanup(0)
-  // Но Pty может бросить ошибку при старте.
-  // Проверим, что run() завершается (хотя бы с ошибкой или пустым результатом)
+  // In the current implementation, monitorPty simply logs the error to the console and performs cleanup(0)
+  // But Pty might throw an error at startup.
+  // Verify that run() completes (at least with an error or empty result)
   try {
     const _result = await agent.run();
-    // В текущей реализации Pty от @sigma/pty-ffi может вести себя по-разному
-    // Если команда не найдена, она обычно завершается с ненулевым кодом или ошибкой
+    // In the current implementation, Pty from @sigma/pty-ffi can behave differently
+    // If the command is not found, it usually terminates with a non-zero code or an error
   } catch (_e) {
-    // Ожидаем какую-то ошибку
+    // Expect some kind of error
   } finally {
     await Deno.remove(tempDir, { recursive: true });
   }
