@@ -35,6 +35,6 @@
     "opus-4.5-thinking",
     "composer-1"
   ],
-  "default_agent_model": "auto",
+  "default_agent_model": "gemini-3-flash",
   "default_judge_preset": "gemini-2.5-flash-lite"
 }
