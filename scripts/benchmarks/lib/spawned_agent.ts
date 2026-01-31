@@ -27,7 +27,7 @@ export class SpawnedAgent {
   private isFinished: boolean = false;
   private sessionId: string | null = null;
   private parsedResult: Record<string, unknown> | null = null;
-  
+
   private exitPromise: Promise<AgentResult> | null = null;
   private resolveExit!: (res: AgentResult) => void;
 
@@ -37,15 +37,22 @@ export class SpawnedAgent {
    * Runs the agent until completion, handling input requests via callback.
    * @param onInputRequired Callback to get user input when agent is waiting.
    */
-  async run(onInputRequired?: (logs: string) => Promise<string | null>): Promise<AgentResult> {
+  async run(
+    onInputRequired?: (logs: string) => Promise<string | null>,
+  ): Promise<AgentResult> {
     const maxSteps = this.options.maxSteps || 10;
     let finalResult: AgentResult = { code: 0, logs: "" };
     let nextPrompt = this.options.prompt || "";
 
     for (let step = 0; step < maxSteps; step++) {
       // Log step start with query
-      await this.logAction(step === 0 ? "start" : "resume", step + 1, maxSteps, nextPrompt);
-      
+      await this.logAction(
+        step === 0 ? "start" : "resume",
+        step + 1,
+        maxSteps,
+        nextPrompt,
+      );
+
       await this.start(nextPrompt);
       const result = await this.wait();
       finalResult = result;
@@ -56,7 +63,7 @@ export class SpawnedAgent {
         break;
       }
 
-      // If not finished, we MUST continue. 
+      // If not finished, we MUST continue.
       // Try to get user input if callback is provided.
       if (onInputRequired) {
         const input = await onInputRequired(this.fullLog.join(""));
@@ -76,15 +83,22 @@ export class SpawnedAgent {
     return finalResult;
   }
 
-  private async logAction(action: "start" | "resume" | "done", step: number, maxSteps: number, prompt?: string) {
+  private async logAction(
+    action: "start" | "resume" | "done",
+    step: number,
+    maxSteps: number,
+    prompt?: string,
+  ) {
     const gray = "\x1b[90m";
     const reset = "\x1b[0m";
-    
+
     let message = "";
     switch (action) {
       case "start":
       case "resume": {
-        const prefix = action === "resume" ? `[${step}/${maxSteps}] -> ` : `-> `;
+        const prefix = action === "resume"
+          ? `[${step}/${maxSteps}] -> `
+          : `-> `;
         const text = prompt ? this.getFirstChars(prompt) : "";
         message = `${prefix}${text}`;
         break;
@@ -93,7 +107,7 @@ export class SpawnedAgent {
         message = `[done]`;
         break;
     }
-    
+
     const output = `${gray}${message}${reset}\n`;
     await Deno.stdout.write(new TextEncoder().encode(output));
   }
@@ -123,12 +137,15 @@ export class SpawnedAgent {
 
   private buildArgs(prompt: string): string[] {
     const args = [
-      "--model", this.options.model,
-      "--workspace", this.options.workspace,
+      "--model",
+      this.options.model,
+      "--workspace",
+      this.options.workspace,
       "--force",
       "--approve-mcps",
       "--print",
-      "--output-format", "json",
+      "--output-format",
+      "json",
     ];
 
     if (this.sessionId) {
@@ -148,8 +165,10 @@ export class SpawnedAgent {
     const decoder = new TextDecoder("utf-8", { fatal: false, ignoreBOM: true });
 
     try {
-      const readable = this.pty.readable as unknown as AsyncIterable<string | Uint8Array>;
-      
+      const readable = this.pty.readable as unknown as AsyncIterable<
+        string | Uint8Array
+      >;
+
       for await (const chunk of readable) {
         let text: string;
 
@@ -158,11 +177,11 @@ export class SpawnedAgent {
         } else {
           text = decoder.decode(chunk, { stream: true });
         }
-        
+
         this.outputBuffer += text;
         this.fullLog.push(text);
       }
-      
+
       // Final flush
       const finalFlush = decoder.decode();
       if (finalFlush) {
@@ -172,7 +191,7 @@ export class SpawnedAgent {
 
       // Parse complete JSON output after process ends
       this.parseOutput(this.outputBuffer);
-      
+
       // Print extracted message in gray color
       await this.printFormattedOutput();
     } catch (e) {
@@ -186,24 +205,28 @@ export class SpawnedAgent {
 
   private async printFormattedOutput() {
     if (!this.parsedResult) return;
-    
+
     const gray = "\x1b[90m";
     const reset = "\x1b[0m";
-    
+
     // Extract first non-empty line from result or messages
     let firstLine = "";
-    
+
     // Try result first
-    const result = this.parsedResult.result as Record<string, unknown> | undefined;
+    const result = this.parsedResult.result as
+      | Record<string, unknown>
+      | undefined;
     if (result && typeof result === "object" && result.result) {
       firstLine = this.getFirstChars(String(result.result));
     } else if (typeof this.parsedResult.result === "string") {
       firstLine = this.getFirstChars(this.parsedResult.result);
     }
-    
+
     // If no result, try messages
     if (!firstLine) {
-      const messages = this.parsedResult.messages as Array<Record<string, unknown>> | undefined;
+      const messages = this.parsedResult.messages as
+        | Array<Record<string, unknown>>
+        | undefined;
       if (Array.isArray(messages)) {
         for (const msg of messages) {
           if (msg.content) {
@@ -213,7 +236,7 @@ export class SpawnedAgent {
         }
       }
     }
-    
+
     if (firstLine) {
       const output = `${gray}<- ${firstLine}${reset}\n`;
       await Deno.stdout.write(new TextEncoder().encode(output));
@@ -233,12 +256,12 @@ export class SpawnedAgent {
 
     try {
       const obj = JSON.parse(jsonMatch[0]);
-      
+
       // Extract session_id from root
       if (obj.session_id) {
         this.sessionId = obj.session_id;
       }
-      
+
       // Store parsed result for isTaskFinished check
       this.parsedResult = obj;
     } catch (_) {
@@ -282,10 +305,10 @@ export class SpawnedAgent {
    */
   async kill() {
     if (this.isFinished) return;
-    
+
     if (this.pty) {
       try {
-        await this.pty.write("\x03"); 
+        await this.pty.write("\x03");
       } catch (_) { /* ignore */ }
     }
     this.cleanup(130);
@@ -294,7 +317,7 @@ export class SpawnedAgent {
   private cleanup(code: number) {
     if (this.isFinished) return;
     this.isFinished = true;
-    
+
     const result = {
       code,
       logs: this.fullLog.join(""),

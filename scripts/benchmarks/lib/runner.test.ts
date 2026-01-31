@@ -9,6 +9,7 @@ import { load } from "@std/dotenv";
 import { runScenario } from "./runner.ts";
 import { BenchmarkScenario } from "./types.ts";
 import { createTempDir } from "./utils.ts";
+import { evaluateChecklist } from "./judge.ts";
 
 // Load environment variables from .env file
 await load({ export: true });
@@ -22,7 +23,10 @@ const JUDGE_CONFIG = {
 Deno.test("Runner - Basic Scenario Execution", async () => {
   const tempDir = await createTempDir("runner");
   const agentPath = join(tempDir, "agent.md");
-  await Deno.writeTextFile(agentPath, "You are a test agent. Do what user asks.");
+  await Deno.writeTextFile(
+    agentPath,
+    "You are a test agent. Do what user asks.",
+  );
 
   const scenario: BenchmarkScenario = {
     id: "test-scenario",
@@ -38,15 +42,14 @@ Deno.test("Runner - Basic Scenario Execution", async () => {
     ],
   };
 
-  const judgeClient = async () => {
-    await Promise.resolve(); 
-    return {
+  const judgeClient = () => {
+    return Promise.resolve({
       results: {
         check1: { pass: true, reason: "Test passed" },
       },
       messages: [],
       response: "Judge response",
-    };
+    });
   };
 
   try {
@@ -54,7 +57,7 @@ Deno.test("Runner - Basic Scenario Execution", async () => {
       agentModel: AGENT_MODEL,
       judgeConfig: JUDGE_CONFIG,
       workDir: tempDir,
-      judgeClient: judgeClient as any,
+      judgeClient: judgeClient as unknown as typeof evaluateChecklist,
     });
 
     // Basic assertions - scenario completed
@@ -86,23 +89,31 @@ Deno.test("Runner - Fixture Copying", async () => {
     checklist: [],
   };
 
-  const judgeClient = async () => ({
-    results: {},
-    messages: [],
-    response: "ok",
-  });
+  const judgeClient = () => {
+    return Promise.resolve({
+      results: {},
+      messages: [],
+      response: "ok",
+    });
+  };
 
   try {
     await runScenario(scenario, {
       agentModel: AGENT_MODEL,
       judgeConfig: JUDGE_CONFIG,
       workDir: tempDir,
-      judgeClient: judgeClient as any,
+      judgeClient: judgeClient as unknown as typeof evaluateChecklist,
     });
 
     const sandboxPath = join(tempDir, "af-test-fixture", "sandbox");
-    assertEquals(await Deno.readTextFile(join(sandboxPath, "file1.txt")), "content1");
-    assertEquals(await Deno.readTextFile(join(sandboxPath, "subdir/file2.txt")), "content2");
+    assertEquals(
+      await Deno.readTextFile(join(sandboxPath, "file1.txt")),
+      "content1",
+    );
+    assertEquals(
+      await Deno.readTextFile(join(sandboxPath, "subdir/file2.txt")),
+      "content2",
+    );
   } finally {
     await Deno.remove(tempDir, { recursive: true });
   }
@@ -123,25 +134,28 @@ Deno.test("Runner - AGENTS.md Fallback", async () => {
     // agentsMarkdown is undefined
   };
 
-  const judgeClient = async () => ({
-    results: {},
-    messages: [],
-    response: "ok",
-  });
+  const judgeClient = () => {
+    return Promise.resolve({
+      results: {},
+      messages: [],
+      response: "ok",
+    });
+  };
 
   try {
     await runScenario(scenario, {
       agentModel: AGENT_MODEL,
       judgeConfig: JUDGE_CONFIG,
       workDir: tempDir,
-      judgeClient: judgeClient as any,
+      judgeClient: judgeClient as unknown as typeof evaluateChecklist,
     });
 
     const sandboxPath = join(tempDir, "test-no-agents-md", "sandbox");
-    const agentsContent = await Deno.readTextFile(join(sandboxPath, "AGENTS.md"));
+    const agentsContent = await Deno.readTextFile(
+      join(sandboxPath, "AGENTS.md"),
+    );
     assertStringIncludes(agentsContent, "Agent Reference");
   } finally {
     await Deno.remove(tempDir, { recursive: true });
   }
 });
-

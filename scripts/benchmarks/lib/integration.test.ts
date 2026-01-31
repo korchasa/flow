@@ -61,7 +61,6 @@ Deno.test({
   },
 });
 
-
 // ============================================================================
 // Runner + SpawnedAgent Integration Tests
 // ============================================================================
@@ -106,7 +105,8 @@ When asked to create a file, create it with the exact content requested.
         });
         await gitConfig2.output();
       },
-      userQuery: "Create a file named 'hello.txt' with content 'Hello from integration test'",
+      userQuery:
+        "Create a file named 'hello.txt' with content 'Hello from integration test'",
       agentsMarkdown: "# Test Agent\nYou are a helpful file manager.",
       checklist: [
         {
@@ -147,11 +147,12 @@ When asked to create a file, create it with the exact content requested.
 
       // Verify trace was created
       const tracePath = join(tempDir, "integration-test-basic", "trace.html");
-      const traceExists = await Deno.stat(tracePath).then(() => true).catch(() => false);
+      const traceExists = await Deno.stat(tracePath).then(() => true).catch(
+        () => false,
+      );
       assertEquals(traceExists, true);
     } finally {
       await Deno.remove(tempDir, { recursive: true });
     }
   },
 });
-

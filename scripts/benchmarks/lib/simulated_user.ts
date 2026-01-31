@@ -43,7 +43,8 @@ RULES:
       },
       {
         role: "user",
-        content: `--- RECENT CLI OUTPUT ---\n${recentOutput}\n--- END OF OUTPUT ---`,
+        content:
+          `--- RECENT CLI OUTPUT ---\n${recentOutput}\n--- END OF OUTPUT ---`,
       },
     ];
 

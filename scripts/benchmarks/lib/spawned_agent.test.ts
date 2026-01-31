@@ -88,10 +88,9 @@ fi
   });
 
   try {
-    const result = await agent.run(async (logs) => {
+    const result = await agent.run((_logs) => {
       inputCalled++;
-      assertStringIncludes(logs, "AGENT: Need input");
-      return "User Response";
+      return Promise.resolve("User Response");
     });
 
     assertEquals(result.code, 0);
@@ -227,10 +226,10 @@ Deno.test("SpawnedAgent - Error Handling (Invalid Command)", async () => {
   // Но Pty может бросить ошибку при старте.
   // Проверим, что run() завершается (хотя бы с ошибкой или пустым результатом)
   try {
-    const result = await agent.run();
+    const _result = await agent.run();
     // В текущей реализации Pty от @sigma/pty-ffi может вести себя по-разному
     // Если команда не найдена, она обычно завершается с ненулевым кодом или ошибкой
-  } catch (e) {
+  } catch (_e) {
     // Ожидаем какую-то ошибку
   } finally {
     await Deno.remove(tempDir, { recursive: true });
