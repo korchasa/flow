@@ -14,9 +14,6 @@ Deno.test("SpawnedAgent - Basic Execution", async () => {
 cat <<'EOF'
 {
   "session_id": "test-session-123",
-  "messages": [
-    {"type": "assistant", "content": "AGENT: Hello"}
-  ],
   "result": {"subtype": "success", "result": "Done"}
 }
 EOF
@@ -35,7 +32,6 @@ exit 0
     const result = await agent.run();
 
     assertEquals(result.code, 0);
-    assertStringIncludes(result.logs, "AGENT: Hello");
     assertStringIncludes(result.logs, "Done");
   } finally {
     await agent.kill();
@@ -58,11 +54,11 @@ for arg in "$@"; do
   if [ "$arg" = "--resume" ]; then RESUME=true; fi
 done
 
-if [ "$RESUME" = "false" ]; then
+  if [ "$RESUME" = "false" ]; then
   cat <<'EOF'
 {
   "session_id": "session-456",
-  "messages": [{"type": "assistant", "content": "AGENT: Need input"}]
+  "result": {"subtype": "success", "result": "AGENT: Need input"}
 }
 EOF
   exit 0
@@ -70,7 +66,6 @@ else
   cat <<'EOF'
 {
   "session_id": "session-456",
-  "messages": [{"type": "assistant", "content": "AGENT: Resumed with session"}],
   "result": {"subtype": "success", "result": "Finished"}
 }
 EOF
@@ -80,7 +75,6 @@ fi
   );
   await Deno.chmod(mockAgentBin, 0o755);
 
-  let inputCalled = 0;
   const agent = new SpawnedAgent({
     commandPath: mockAgentBin,
     workspace: tempDir,
@@ -88,18 +82,20 @@ fi
   });
 
   try {
-    const result = await agent.run((_logs, messages) => {
-      inputCalled++;
-      assertEquals(messages.length, 1);
-      assertEquals(messages[0].role, "assistant");
-      assertEquals(messages[0].content, "AGENT: Need input");
-      return Promise.resolve("User Response");
+    let inputCalled = 0;
+    const result = await agent.run({
+      getResponse: (_messages) => {
+        inputCalled++;
+        return Promise.resolve(inputCalled === 1 ? "User Response" : null);
+      },
     });
 
     assertEquals(result.code, 0);
-    assertEquals(inputCalled, 1);
+    // getResponse is called after EACH step:
+    // - Step 1: agent returns "Need input" -> getResponse called -> returns "User Response"
+    // - Step 2: agent returns "Finished" -> getResponse called -> returns null -> exit
+    assertEquals(inputCalled, 2);
     assertStringIncludes(result.logs, "AGENT: Need input");
-    assertStringIncludes(result.logs, "AGENT: Resumed with session");
     assertStringIncludes(result.logs, "Finished");
   } finally {
     await agent.kill();
@@ -147,14 +143,14 @@ Deno.test("SpawnedAgent - Max Steps", async () => {
   const tempDir = await createTempDir("agent");
   const mockAgentBin = join(tempDir, "mock-agent-loop.sh");
 
-  // JSON format: no result field means task not finished, triggers resume
+  // JSON format: agent always returns success, but emulator decides to continue
   await Deno.writeTextFile(
     mockAgentBin,
     `#!/bin/sh
 cat <<'EOF'
 {
   "session_id": "loop-session",
-  "messages": [{"type": "assistant", "content": "AGENT: Still working..."}]
+  "result": {"subtype": "success", "result": "AGENT: Still working..."}
 }
 EOF
 exit 0
@@ -170,8 +166,18 @@ exit 0
   });
 
   try {
-    const result = await agent.run();
-    // Should stop after 3 steps
+    // Without userEmulator, loop exits after first step (documented behavior).
+    // To test maxSteps limit, we need an emulator that always continues.
+    let stepCount = 0;
+    const result = await agent.run({
+      getResponse: () => {
+        stepCount++;
+        // Return "continue" for first 2 calls, then null to stop
+        // This allows 3 agent steps total (initial + 2 resumes)
+        return Promise.resolve(stepCount < 3 ? "continue" : null);
+      },
+    });
+    // Should have 3 occurrences of the agent message (one per step)
     const steps = (result.logs.match(/AGENT: Still working/g) || []).length;
     assertEquals(steps, 3);
   } finally {
@@ -255,19 +261,14 @@ if [ "$RESUME" = "false" ]; then
   cat <<'EOF'
 {
   "session_id": "msg-session",
-  "messages": [{"type": "assistant", "content": "Hello"}]
+  "result": {"subtype": "success", "result": "Hello"}
 }
 EOF
 else
   cat <<'EOF'
 {
   "session_id": "msg-session",
-  "messages": [
-    {"type": "assistant", "content": "Hello"},
-    {"type": "user", "content": "Hi"},
-    {"type": "assistant", "content": "How can I help?"}
-  ],
-  "result": {"subtype": "success", "result": "Done"}
+  "result": {"subtype": "success", "result": "How can I help?"}
 }
 EOF
 fi
@@ -280,28 +281,32 @@ exit 0
     commandPath: mockAgentBin,
     workspace: tempDir,
     model: "test-model",
+    prompt: "initial prompt",
   });
 
   try {
     let callCount = 0;
-    await agent.run(async (_logs, messages) => {
-      callCount++;
-      if (callCount === 1) {
-        assertEquals(messages.length, 1);
-        assertEquals(messages[0].content, "Hello");
-        return "Hi";
-      }
-      return null;
+    await agent.run({
+      getResponse: (messages) => {
+        callCount++;
+        if (callCount === 1) {
+          assertEquals(messages.length, 2);
+          assertEquals(messages[0].content, "initial prompt");
+          assertEquals(messages[1].content, "Hello");
+          return Promise.resolve("Hi");
+        }
+        return Promise.resolve(null);
+      },
     });
 
     const finalMessages = agent.getMessages();
-    assertEquals(finalMessages.length, 3);
-    assertEquals(finalMessages[0].content, "Hello");
-    assertEquals(finalMessages[1].content, "Hi");
-    assertEquals(finalMessages[2].content, "How can I help?");
+    assertEquals(finalMessages.length, 4);
+    assertEquals(finalMessages[0].content, "initial prompt");
+    assertEquals(finalMessages[1].content, "Hello");
+    assertEquals(finalMessages[2].content, "Hi");
+    assertEquals(finalMessages[3].content, "How can I help?");
   } finally {
     await agent.kill();
     await Deno.remove(tempDir, { recursive: true });
   }
 });
-
