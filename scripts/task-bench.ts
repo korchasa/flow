@@ -1,60 +1,80 @@
 import { join } from "@std/path";
 import { parse } from "@std/flags";
-import { existsSync } from "@std/fs";
+import { existsSync, walk } from "@std/fs";
 import { BenchmarkResult, BenchmarkScenario } from "./benchmarks/lib/types.ts";
 import { runScenario } from "./benchmarks/lib/runner.ts";
 import { loadConfig, ModelConfig } from "./benchmarks/lib/llm.ts";
 
-// Import scenarios from the new structure
-import { CommitBasicBench } from "./benchmarks/scenarios/af-commit/basic/mod.ts";
-import { CommitAtomicRefactorBench } from "./benchmarks/scenarios/af-commit/atomic-refactor/mod.ts";
-import { CommitAtomicDocsBench } from "./benchmarks/scenarios/af-commit/atomic-docs/mod.ts";
-import { CommitCheckBench } from "./benchmarks/scenarios/af-commit/check/mod.ts";
-import { CommitSyncDocsBench } from "./benchmarks/scenarios/af-commit/sync-docs/mod.ts";
-import { CommitAtomicHunkBench } from "./benchmarks/scenarios/af-commit/atomic-hunk/mod.ts";
-import { CommitDepsBench } from "./benchmarks/scenarios/af-commit/deps/mod.ts";
-import { CommitCheckFailBench } from "./benchmarks/scenarios/af-commit/check-fail/mod.ts";
+async function discoverScenarios(): Promise<BenchmarkScenario[]> {
+  const scenarios: BenchmarkScenario[] = [];
+  const skillsDir = join(Deno.cwd(), "catalog/skills");
 
-import { PlanBasicBench } from "./benchmarks/scenarios/af-plan/basic/mod.ts";
-import { PlanContextBench } from "./benchmarks/scenarios/af-plan/context/mod.ts";
-import { PlanInteractiveBench } from "./benchmarks/scenarios/af-plan/interactive/mod.ts";
-import { PlanRefactorBench } from "./benchmarks/scenarios/af-plan/refactor/mod.ts";
-import { PlanMigrationBench } from "./benchmarks/scenarios/af-plan/migration/mod.ts";
-import { PlanDbFeatureBench } from "./benchmarks/scenarios/af-plan/db-feature/mod.ts";
-import { PlanVariantsObviousBench } from "./benchmarks/scenarios/af-plan/variants-obvious/mod.ts";
-import { PlanVariantsComplexBench } from "./benchmarks/scenarios/af-plan/variants-complex/mod.ts";
-import { InitBrownfieldBench } from "./benchmarks/scenarios/af-init/brownfield/mod.ts";
-import { InitGreenfieldBench } from "./benchmarks/scenarios/af-init/greenfield/mod.ts";
-import { InitVisionIntegrationBench } from "./benchmarks/scenarios/af-init/vision-integration/mod.ts";
-import { AnswerBasicBench } from "./benchmarks/scenarios/af-answer/basic/mod.ts";
-import { InvestigateBasicBench } from "./benchmarks/scenarios/af-investigate/basic/mod.ts";
-import { MaintenanceBasicBench } from "./benchmarks/scenarios/af-maintenance/basic/mod.ts";
+  // 1. Discover scenarios in catalog/skills/*/benchmarks/*/mod.ts
+  if (existsSync(skillsDir)) {
+    for await (
+      const entry of walk(skillsDir, {
+        maxDepth: 10,
+        includeFiles: true,
+        match: [/mod\.ts$/],
+      })
+    ) {
+      if (entry.path.includes("/benchmarks/")) {
+        try {
+          const module = await import(`file://${entry.path}`);
+          for (const exportName in module) {
+            const value = module[exportName];
+            if (
+              value && typeof value === "object" && "id" in value &&
+              "userQuery" in value
+            ) {
+              scenarios.push(value as BenchmarkScenario);
+            }
+          }
+        } catch (e) {
+          console.warn(
+            `  Warning: Failed to import scenario from ${entry.path}: ${e}`,
+          );
+        }
+      }
+    }
+  }
 
-const SCENARIOS: BenchmarkScenario[] = [
-  CommitBasicBench,
+  // 2. Discover scenarios in scripts/benchmarks/scenarios/**/mod.ts (legacy)
+  const legacyDir = join(Deno.cwd(), "scripts/benchmarks/scenarios");
+  if (existsSync(legacyDir)) {
+    for await (
+      const entry of walk(legacyDir, {
+        maxDepth: 5,
+        includeFiles: true,
+        match: [/mod\.ts$/],
+      })
+    ) {
+      try {
+        const module = await import(`file://${entry.path}`);
+        for (const exportName in module) {
+          const value = module[exportName];
+          if (
+            value && typeof value === "object" && "id" in value &&
+            "userQuery" in value
+          ) {
+            // Avoid duplicates if already found in skills
+            if (
+              !scenarios.some((s) => s.id === (value as BenchmarkScenario).id)
+            ) {
+              scenarios.push(value as BenchmarkScenario);
+            }
+          }
+        }
+      } catch (e) {
+        console.warn(
+          `  Warning: Failed to import legacy scenario from ${entry.path}: ${e}`,
+        );
+      }
+    }
+  }
 
-  CommitAtomicRefactorBench,
-  CommitAtomicDocsBench,
-  CommitCheckBench,
-  CommitSyncDocsBench,
-  CommitAtomicHunkBench,
-  CommitDepsBench,
-  CommitCheckFailBench,
-  PlanBasicBench,
-  PlanContextBench,
-  PlanInteractiveBench,
-  PlanRefactorBench,
-  PlanMigrationBench,
-  PlanDbFeatureBench,
-  PlanVariantsObviousBench,
-  PlanVariantsComplexBench,
-  InitBrownfieldBench,
-  InitGreenfieldBench,
-  InitVisionIntegrationBench,
-  AnswerBasicBench,
-  InvestigateBasicBench,
-  MaintenanceBasicBench,
-];
+  return scenarios;
+}
 
 function printHelp(defaultAgentModel: string, defaultJudgePreset: string) {
   console.log(`
@@ -142,9 +162,10 @@ async function main() {
   const filter = args.filter;
   const runs = parseInt(args.runs || "1", 10);
 
+  const allScenarios = await discoverScenarios();
   const scenariosToRun = filter
-    ? SCENARIOS.filter((s) => s.id.includes(String(filter)))
-    : SCENARIOS;
+    ? allScenarios.filter((s) => s.id.includes(String(filter)))
+    : allScenarios;
 
   console.log(`Found ${scenariosToRun.length} scenarios.`);
   console.log(`Using agent model: ${agentModel}`);
@@ -153,11 +174,25 @@ async function main() {
   console.log(`Runs per scenario: ${runs}`);
 
   const results: BenchmarkResult[] = [];
-  const workDir = join(Deno.cwd(), "benchmarks");
+
+  // Determine work directory: if scenario has a skill, use its local benchmarks/runs
+  // Otherwise fallback to global benchmarks/
+  const getWorkDir = (scenario: BenchmarkScenario) => {
+    if (scenario.skill) {
+      return join(
+        Deno.cwd(),
+        "catalog/skills",
+        scenario.skill,
+        "benchmarks/runs",
+      );
+    }
+    return join(Deno.cwd(), "benchmarks");
+  };
 
   let totalCostAll = 0;
 
   for (const scenario of scenariosToRun) {
+    const workDir = getWorkDir(scenario);
     for (let i = 0; i < runs; i++) {
       if (runs > 1) {
         console.log(`\n--- Run ${i + 1}/${runs} for ${scenario.id} ---`);
@@ -226,7 +261,7 @@ async function main() {
   if (failedResults.length > 0) {
     console.log("\n--- DETAILED ERRORS & WARNINGS ---");
     for (const r of failedResults) {
-      const scenario = SCENARIOS.find((s) => s.id === r.scenarioId);
+      const scenario = allScenarios.find((s) => s.id === r.scenarioId);
       console.log(
         `\nScenario: ${scenario?.name || r.scenarioId} (${r.scenarioId})`,
       );

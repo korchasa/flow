@@ -1,4 +1,4 @@
-import { join } from "@std/path";
+import { dirname, fromFileUrl, join } from "@std/path";
 import { BenchmarkResult, BenchmarkScenario } from "./types.ts";
 import { chatCompletion, ModelConfig } from "./llm.ts";
 import { evaluateChecklist } from "./judge.ts";
@@ -63,10 +63,32 @@ export async function runScenario(
 
   try {
     // 1.5 Copy fixtures if exist
-    const scenarioPathParts = scenario.id.split("-");
     let fixturePath = scenario.fixturePath;
 
-    if (!fixturePath && scenarioPathParts[0] === "af") {
+    if (!fixturePath) {
+      // Try to find fixture relative to the scenario's mod.ts
+      // This assumes the scenario is an instance of a class defined in a mod.ts
+      try {
+        // @ts-ignore: Accessing internal property to find the file path
+        const stack = new Error().stack;
+        const match = stack?.match(/at\s+(?:new\s+)?.*\((.*mod\.ts):/);
+        if (match && match[1]) {
+          const modPath = match[1].startsWith("file://")
+            ? fromFileUrl(match[1])
+            : match[1];
+          const candidate = join(dirname(modPath), "fixture");
+          const stat = await Deno.stat(candidate);
+          if (stat.isDirectory) {
+            fixturePath = candidate;
+          }
+        }
+      } catch (_) {
+        // Fallback to old heuristic if dynamic detection fails
+      }
+    }
+
+    if (!fixturePath && scenario.id.startsWith("af-")) {
+      const scenarioPathParts = scenario.id.split("-");
       const skill = scenarioPathParts[1];
       const id = scenarioPathParts.slice(2).join("-");
       // Try with full id first, then fallback to parts if needed
@@ -110,7 +132,11 @@ export async function runScenario(
     try {
       await Deno.mkdir(dotCursorPath, { recursive: true });
       console.log(`  Copying catalog from ${catalogPath} to ${dotCursorPath}`);
-      await copyRecursive(catalogPath, dotCursorPath);
+      await copyRecursive(catalogPath, dotCursorPath, [
+        "benchmarks",
+        "runs",
+        "tmp",
+      ]);
     } catch (e) {
       console.warn(`  Warning: Failed to copy catalog: ${e}`);
     }
@@ -226,26 +252,7 @@ MOCK_EOF
       stepTimeout: 60000, // 1 minute timeout per step
     });
 
-    const { code, logs } = await agent.run(async (_allLogs, messages) => {
-      if (!userEmulator) {
-        return null;
-      }
-      const response = await userEmulator.getResponse(messages);
-      if (response) {
-        const gray = "\x1b[90m";
-        const reset = "\x1b[0m";
-        const output = `${gray}?? ${response}${reset}\n`;
-        await Deno.stdout.write(new TextEncoder().encode(output));
-
-        // Log to trace
-        await tracer.logLLMInteraction(
-          messages.map(m => ({ role: m.role, content: m.content })),
-          response,
-          { step: 1, source: "user_emulation", model: options.judgeConfig.model }
-        );
-      }
-      return response;
-    });
+    const { code, logs } = await agent.run(userEmulator || undefined);
 
     const durationMs = performance.now() - start;
 
