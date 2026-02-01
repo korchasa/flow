@@ -4,5 +4,6 @@ skeleton.md
 tmp/
 .env
 /benchmarks/
+catalog/skills/*/benchmarks/runs/
 __pycache__/
 benchmarks.lock
