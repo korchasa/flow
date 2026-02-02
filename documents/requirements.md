@@ -68,9 +68,9 @@
 - **Use case scenario:** User asks how to fix tests. Agent retrieves
   `af-skill-fix-tests/RULE.md` and follows the procedure.
 - **Acceptance criteria:**
-  - [x] Support for 13 how-to guides covering commit workflows, documentation,
-        debugging, testing, Git operations, GitHub management, and GODS tasks
-  - [x] Guides follow `af-skill-*/` directory naming convention with `RULE.md`
+  - [x] Support for 14 how-to guides covering commit workflows, documentation,
+        debugging, testing, Git operations, GitHub management, hooks configuration, and GODS tasks
+  - [x] Guides follow `af-skill-*/` directory naming convention with `SKILL.md`
         files
   - [x] Each guide provides step-by-step instructions for specific scenarios
 
@@ -121,6 +121,7 @@
   - [x] **Support for direct model names**: Allows using model names directly if no preset matches.
   - [x] **Simplified Model Selection**: Replaced presets with direct model selection in `deno task bench` via `-m, --model` flag.
   - [x] **Native Context Discovery**: Benchmarks rely on `cursor-agent`'s native context discovery by ensuring the sandbox structure mimics a real project (including `.cursor/` folder).
+- [x] **Agent Under Test**: Benchmarks execute the `cursor-agent` binary in headless CLI mode within a dedicated sandbox environment, with interaction via standard input/output and arguments (e.g., `--resume` for multi-turn conversations).
 - [x] **Single-Turn Benchmark**: User query is embedded in the system prompt to simulate real-world single-turn agent invocation.
 - [x] **Mandatory AGENTS.md**: Every scenario must have an `AGENTS.md` file in its
       fixtures or provided via config.
@@ -140,6 +141,7 @@ The benchmarking system must cover all core AssistFlow skills to ensure reliabil
 | `af-create-vision-doc`      | Creating VISION.md             |     [ ]     |               |
 | `af-do`                     | General task execution         |     [ ]     |               |
 | `af-engineer-command`       | Creating new AF commands       |     [ ]     |               |
+| `af-engineer-hook`          | Creating Cursor hooks          |     [ ]     |               |
 | `af-execute`                | Executing planned tasks        |     [ ]     |               |
 | `af-init`                   | Project initialization         |     [x]     | `af-init-*`   |
 | `af-investigate`            | Code investigation/debugging   |     [ ]     |               |
@@ -154,6 +156,7 @@ The benchmarking system must cover all core AssistFlow skills to ensure reliabil
 | `af-skill-draw-mermaid`     | Drawing Mermaid diagrams       |     [ ]     |               |
 | `af-skill-eng-prompt-inst`  | Prompt engineering (Instant)   |     [ ]     |               |
 | `af-skill-eng-prompt-reas`  | Prompt engineering (Reasoning) |     [ ]     |               |
+| `af-skill-engineer-hook`    | Creating Cursor hooks          |     [ ]     |               |
 | `af-skill-fix-by-benchmarks` | Fixing skills via benchmarks |     [x]     |               |
 | `af-skill-fix-tests`        | Fixing broken tests            |     [ ]     |               |
 | `af-skill-manage-github`    | Managing GitHub via MCP        |     [ ]     |               |

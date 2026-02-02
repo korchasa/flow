@@ -1,3 +1,8 @@
+---
+description: 
+alwaysApply: true
+---
+
 # YOU MUST
 
 - STRICTLY FOLLOW YOUR ROLE.
@@ -85,6 +90,11 @@ The benchmarking system (`scripts/task-bench.ts`) is designed to evaluate agent 
    - The evaluation logic must be robust enough to handle variations in model
      output (e.g., different command formatting) as long as the functional
      result is correct.
+
+5. **Agent Under Test**:
+   - The benchmarks execute the `cursor-agent` binary in a headless CLI mode.
+   - The agent runs in a dedicated sandbox environment to ensure isolation.
+   - Interaction happens via standard input/output and arguments (e.g., `--resume` for multi-turn conversations).
 
 6. **Foreground Execution**:
    - Benchmark scripts (`deno task bench`) MUST be run in the foreground only.
