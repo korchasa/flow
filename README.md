@@ -38,7 +38,7 @@ coverage.
 
 **Goal**: Keep the project clean, documented, and up-to-date.
 
-- **Health Check**: Run `af-check-and-fix` or `deno task check` regularly to
+- **Health Check**: Run `af-maintenance` or `deno task check` regularly to
   catch regressions.
 - **Update Agents**: Run `deno task check` to ensure all rules are consistent.
 
@@ -68,22 +68,17 @@ standardize team processes and speeds up typical tasks.
 ### Available Skills
 
 - `af-answer` - Answer questions with context from codebase
-- `af-check-and-fix` - **Iterative check and fix**: run project checks and fix
-  errors until success
 - `af-commit` - Git commit workflow following Conventional Commits
-- `af-create-scripts` - Create the Deno task scripts
 - `af-do` - General task execution workflow
-- `af-engineer-prompt` - Prompt engineering utility
-- `af-engineer-rule` - Rule engineering utility
 - `af-execute` - Execute and implement planned tasks
 - `af-investigate` - Deep investigation and root cause diagnosis
 - `af-maintenance` - Project maintenance and health audit
 - `af-plan` - Plan and break down complex development tasks
 - `af-qa` - Quality Assurance workflow
 - `af-reflect` - Reflect on recent work and update context
-- `draw-mermaid-diagrams` - Create and edit Mermaid diagrams
-- `init` - Project initialization workflow
-- `write-agent-benchmarks` - Create and run agent benchmarks
+- `af-skill-draw-mermaid` - Create and edit Mermaid diagrams
+- `af-init` - Project initialization workflow
+- `af-skill-write-bench` - Create and run agent benchmarks
 
 ## Framework
 

@@ -31,7 +31,7 @@
 - **Purpose:** Provide specialized capabilities and workflows.
 - **Interfaces:** Directories containing `SKILL.md` files.
 - **Categories:**
-  - `af-*`: Command-like skills (e.g., `af-check-and-fix`, `af-commit`).
+  - `af-*`: Command-like skills (e.g., `af-maintenance`, `af-commit`).
   - `af-skill-*`: Practical guides (e.g., `af-skill-fix-tests`).
   - `rules-*`: Behavioral frameworks (e.g., `rules-tdd`).
 

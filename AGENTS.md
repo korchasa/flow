@@ -53,10 +53,16 @@ Assumes users will follow the defined workflows and keep documentation up-to-dat
 
 ## Architecture
 
-- `catalog/skills/`: Source of truth for skills
+- `catalog/skills/`: Source of truth for skills (logical Commands and Skills)
 - `catalog/agents/`: Source of truth for agents
 - `documents/`: SRS/SDS and supporting documentation
 - `scripts/`: Deno task scripts
+
+## Terminology (agentskills.io)
+
+All workflows are implemented as **Skills** according to the [agentskills.io](https://agentskills.io/home) standard (folders with `SKILL.md`). Logically, they are divided into:
+- **Commands** (`af-*`): High-level task workflows (e.g., `/af-commit`). Executed by the agent upon user request, but usually not invoked by the agent itself as a tool.
+- **Skills** (`af-skill-*`): Procedural knowledge and specialized capabilities (e.g., `af-skill-draw-mermaid`). Can be discovered and used by agents to perform specific sub-tasks.
 
 ## Key Decisions
 
