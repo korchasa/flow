@@ -1,4 +1,4 @@
-import { assertEquals } from "./test-assert.ts";
+import { assertEquals } from "@std/assert";
 import { buildTestCommand } from "./task-test.ts";
 
 Deno.test("buildTestCommand defaults to scripts", () => {
