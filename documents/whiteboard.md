@@ -1,79 +1,25 @@
-# Перенос сценариев и рабочих папок бенчмарков в корень проекта
+# Maintenance Report (2026-02-02)
 
-## Goal
+## 1. Hygiene & Quality
 
-Перенести сценарии бенчмарков и их рабочие папки (sandbox, runs) в единую директорию `benchmarks/` в корне проекта для упрощения структуры и изоляции артефактов тестирования.
+- [ ] `scripts/test-assert.ts` seems redundant if `@std/assert` is already in `deno.json`. (Fix: Migrate to `@std/assert` and delete `scripts/test-assert.ts`)
+- [ ] Unused exports: `buildTestCommand` in `scripts/task-test.ts`, `buildCheckCommands` in `scripts/task-check.ts` are only used within their respective tasks but exported. (Fix: Remove `export` if not needed for external testing)
+- [ ] Test Quality: `scripts/benchmarks/lib/config.test.ts` and `types.test.ts` have very few tests (2-3) compared to the complexity of the modules.
 
-## Overview
+## 2. Technical Debt
 
-### Context
+- [ ] `catalog/skills/af-engineer-command/scripts/init_command.py` contains 7 TODOs related to template completion.
+- [ ] `benchmarks/af-answer/scenarios/basic/fixture/src/auth.service.ts` has a TODO for implementation.
+- [ ] `scripts/benchmarks/lib/trace.ts` has a hardcoded judge model name in `logEvaluation` (line 1037) which might drift from `evaluateChecklist`.
 
-В текущей реализации сценарии бенчмарков и их результаты распределены по нескольким местам:
-1.  `catalog/skills/*/benchmarks/` — сценарии, привязанные к конкретным навыкам.
-2.  `scripts/benchmarks/scenarios/` — устаревшие (legacy) сценарии.
-3.  `catalog/skills/*/benchmarks/runs/` — рабочие папки (sandbox) для сценариев навыков.
-4.  `benchmarks/` — рабочие папки для глобальных сценариев.
+## 3. Consistency
 
-Это усложняет навигацию, очистку артефактов и нарушает принцип чистоты каталога навыков (`catalog/`), который должен содержать только "продуктовые" файлы.
+- [ ] Terminology: Docs use "Skill" and "Command" interchangeably in some places, but `requirements.md` tries to distinguish them. Code uses `BenchmarkScenario` which sometimes refers to a skill test.
+- [ ] Drift: `design.md` mentions `af-check-and-fix` as a skill, but it's not present in the root `catalog/skills/` (though mentioned in `README.md`).
 
-### Current State
+## 4. Documentation Coverage
 
--   `scripts/task-bench.ts` ищет сценарии в `catalog/skills` и `scripts/benchmarks/scenarios`.
--   `scripts/benchmarks/lib/runner.ts` определяет `workDir` на основе наличия поля `skill` в сценарии.
--   `scripts/benchmarks/lib/runner.ts` пытается найти `fixture` по относительному пути от `mod.ts` или по жестко заданным правилам для `af-*`.
-
-### Constraints
-
--   Необходимо сохранить работоспособность всех существующих бенчмарков.
--   Пути к `fixture` должны определяться корректно после переноса.
--   Нужно обновить `deno.json` (если там есть ссылки на старые пути) и документацию.
--   Сценарии должны быть организованы по подпапкам (например, `benchmarks/scenarios/af-commit/...`).
-
-## Definition of Done
-
-- [x] Все сценарии из `catalog/skills/*/benchmarks/` перенесены в `benchmarks/scenarios/`.
-- [x] Все сценарии из `scripts/benchmarks/scenarios/` перенесены в `benchmarks/scenarios/`.
-- [x] Директории `catalog/skills/*/benchmarks/` удалены.
-- [x] Директория `scripts/benchmarks/scenarios/` удалена.
-- [x] `scripts/task-bench.ts` обновлен для поиска сценариев только в `benchmarks/scenarios`.
-- [x] `scripts/benchmarks/lib/runner.ts` обновлен: `workDir` всегда указывает на `benchmarks/runs/`.
-- [x] Логика поиска `fixture` в `runner.ts` адаптирована под новую структуру.
-- [x] `deno task bench` успешно находит и запускает сценарии.
-- [x] `benchmarks.lock` и `benchmarks.config.json` перенесены внутрь `benchmarks/`.
-- [x] Рабочие папки бенчмарков добавлены в `.gitignore`.
-
-## Solution
-
-### 1. Подготовка новой структуры
-- [x] Создать директорию `benchmarks/scenarios`.
-- [x] Создать директорию `benchmarks/runs`.
-
-### 2. Перенос файлов
-- [x] Перенести все сценарии из `catalog/skills/*/benchmarks/scenarios/` (если есть) или `catalog/skills/*/benchmarks/` в `benchmarks/scenarios/`.
-- [x] Перенести все сценарии из `scripts/benchmarks/scenarios/` в `benchmarks/scenarios/`.
-- [x] Перенести `benchmarks.config.json` в `benchmarks/config.json`.
-- [ ] Удалить старые директории `benchmarks` внутри `catalog/skills/*/`.
-- [ ] Удалить `scripts/benchmarks/scenarios/`.
-
-### 3. Обновление кода (Инфраструктура)
-- [x] **`scripts/task-bench.ts`**:
-    - [x] Обновить путь к `lockFile`: `benchmarks/benchmarks.lock`.
-    - [x] Обновить `discoverScenarios`: искать только в `benchmarks/scenarios`.
-    - [x] Обновить `getWorkDir`: всегда возвращать `benchmarks/runs`.
-- [x] **`scripts/benchmarks/lib/runner.ts`**:
-    - [x] Обновить логику поиска `fixturePath`. Теперь она должна быть относительной новой структуры в `benchmarks/scenarios/`.
-    - [x] Убрать специфичную логику для `catalog/skills` и `scripts/benchmarks/scenarios`.
-    - [x] Убедиться, что `scenarioDir` и `sandboxPath` создаются внутри `options.workDir` (который теперь `benchmarks/runs`).
-- [x] **`scripts/benchmarks/lib/llm.ts`**:
-    - [x] Обновить путь загрузки конфига по умолчанию на `benchmarks/config.json`.
-
-### 4. Обновление путей в сценариях
-- [x] Проверить `mod.ts` перенесенных сценариев на наличие относительных импортов (например, `../../../../scripts/benchmarks/lib/types.ts`) и обновить их на корректные (теперь будет меньше уровней вложенности или другой путь).
-
-### 5. Верификация
-- [x] Запустить `deno task bench --help` для проверки загрузки конфига.
-- [x] Запустить один из бенчмарков (например, `af-commit-atomic-docs`) и проверить создание sandbox в `benchmarks/runs`.
-- [x] Проверить отсутствие файлов бенчмарков в `catalog/`.
-- [x] Запустить `deno task check` для общей проверки проекта.
-- [x] Добавить рабочие папки бенчмарков в `.gitignore`.
-
+- [ ] `scripts/benchmarks/lib/runner.ts` - `runScenario` and `RunnerOptions` missing JSDoc.
+- [ ] `scripts/benchmarks/lib/spawned_agent.ts` - `SpawnedAgent` class has some comments but missing formal JSDoc for methods like `run`, `start`, `monitorProcess`.
+- [ ] `scripts/utils.ts` - `CommandSpec`, `runCommand`, etc. missing JSDoc.
+- [ ] Most exported functions in `scripts/` lack "Why/How" documentation, focusing only on "What".
