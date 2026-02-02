@@ -1,4 +1,4 @@
-import { join, dirname } from "@std/path";
+import { dirname, join } from "@std/path";
 import { parse } from "@std/flags";
 import { existsSync, walk } from "@std/fs";
 import { BenchmarkResult, BenchmarkScenario } from "./benchmarks/lib/types.ts";
