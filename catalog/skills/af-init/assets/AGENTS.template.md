@@ -45,7 +45,7 @@
 
 ### Rules
 - **STRICT COMPLIANCE**: AGENTS.md, SRS, SDS.
-- **Workflow**: New req -> Update SRS -> Update SDS -> Implement.
+- **Workflow**: New/Updated req -> Update SRS -> Update SDS -> Implement.
 - **Status**: `[x]` = implemented, `[ ]` = pending.
 
 ### SRS Format (`documents/requirements.md`)
