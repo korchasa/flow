@@ -1,4 +1,4 @@
-import { join } from "@std/path";
+import { join, dirname } from "@std/path";
 import { parse } from "@std/flags";
 import { existsSync, walk } from "@std/fs";
 import { BenchmarkResult, BenchmarkScenario } from "./benchmarks/lib/types.ts";
@@ -28,7 +28,11 @@ async function discoverScenarios(): Promise<BenchmarkScenario[]> {
             value && typeof value === "object" && "id" in value &&
             "userQuery" in value
           ) {
-            scenarios.push(value as BenchmarkScenario);
+            const scenario = value as BenchmarkScenario;
+            if (!scenario.fixturePath) {
+              scenario.fixturePath = join(dirname(entry.path), "fixture");
+            }
+            scenarios.push(scenario);
           }
         }
       } catch (e) {
@@ -229,6 +233,7 @@ async function main() {
     console.log("\n--- DETAILED ERRORS & WARNINGS ---");
     for (const r of failedResults) {
       const scenario = allScenarios.find((s) => s.id === r.scenarioId);
+      const workDir = scenario ? getWorkDir(scenario) : "unknown";
       console.log(
         `\nScenario: ${scenario?.name || r.scenarioId} (${r.scenarioId})`,
       );

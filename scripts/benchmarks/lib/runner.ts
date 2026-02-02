@@ -93,6 +93,18 @@ export async function runScenario(
         if (fixtureStat.isDirectory) {
           console.log(`  Copying fixtures from: ${fixturePath}`);
           await copyRecursive(fixturePath, sandboxPath);
+
+          // Rename AGENTS.md.orig to AGENTS.md if it exists
+          try {
+            await Deno.rename(
+              join(sandboxPath, "AGENTS.md.orig"),
+              join(sandboxPath, "AGENTS.md"),
+            );
+          } catch (e) {
+            if (!(e instanceof Deno.errors.NotFound)) {
+              throw e;
+            }
+          }
         }
       } catch (e) {
         if (!(e instanceof Deno.errors.NotFound)) {
@@ -136,7 +148,13 @@ export async function runScenario(
               join(fixturePath, "AGENTS.md"),
             );
           } catch (_) {
-            // Still not found
+            try {
+              agentsMarkdown = await Deno.readTextFile(
+                join(fixturePath, "AGENTS.md.orig"),
+              );
+            } catch (__) {
+              // Still not found
+            }
           }
         }
       }
