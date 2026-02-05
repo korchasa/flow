@@ -191,8 +191,10 @@ insert_final_newline = true
             deno_config = {
                 "tasks": {
                     "start": "echo 'Not implemented'",
-                    "check": "deno lint && deno fmt --check",
-                    "test": "deno test"
+                    "check": "deno lint && deno fmt --check && deno test",
+                    "test": "deno test",
+                    "dev": "deno run --watch main.ts",
+                    "prod": "deno task start"
                 }
             }
             with open(os.path.join(root_dir, 'deno.json'), 'w') as f:
@@ -206,7 +208,10 @@ insert_final_newline = true
                  "version": "0.1.0",
                  "scripts": {
                      "start": "echo 'Not implemented'",
-                     "test": "echo 'Error: no test specified' && exit 1"
+                     "test": "echo 'Error: no test specified' && exit 1",
+                     "check": "npm run lint && npm test",
+                     "dev": "echo 'Not implemented'",
+                     "prod": "npm start"
                  }
              }
              with open(os.path.join(root_dir, 'package.json'), 'w') as f:
