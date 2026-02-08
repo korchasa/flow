@@ -35,6 +35,7 @@
   - `af-skill-*`: Practical guides (e.g., `af-skill-fix-tests`).
   - `rules-*`: Behavioral frameworks (e.g., `rules-tdd`).
   - `deno-*`: Deno-specific tools (`deno-cli`, `deno-deploy`).
+- **Composition**: Skills can delegate to other skills (e.g., `af-init` delegates development command configuration to `af-skill-configure-*-commands`).
 
 ### 3.2 Agents (`.cursor/agents/`)
 
