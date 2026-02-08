@@ -38,6 +38,7 @@
   - [x] Commands follow `/<command>` naming convention (file name without
         `task-` prefix)
   - [x] Each command provides guided workflow with checklist
+  - [ ] af-init configures development commands via specialized skills
 
 ### 3.2 Rule Enforcement (FR-2)
 
@@ -85,6 +86,7 @@
   - [x] Task scripts stored in `./scripts/` and invoked via `deno task`
   - [x] Support for check, test, and dev commands
   - [x] Automated quality assurance workflows
+  - [ ] Development commands are set up during project initialization
 
 ### 3.6 Developer Onboarding & Workflow Clarity (FR-6)
 
