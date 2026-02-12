@@ -18,39 +18,46 @@ Understand the priority of context loading to effectively manage the agent's kno
 ## Core Components
 
 ### AGENTS.md
+
 - **Purpose**: Global instructions and context for the project.
 - **Best Practice**: Keep compact (<100 lines). Use nested `AGENTS.md` for subdirectories.
 - **Location**: Project root (`AGENTS.md`) or subdirectories (e.g., `projects/foo/AGENTS.md`).
 
 ### Project Rules (`.cursor/rules/`)
+
 - **Purpose**: Specific, versioned rules.
 - **Format**: `.md` or `.mdc` (with YAML frontmatter).
 - **Types**:
-    - **Always Apply**: `alwaysApply: true`
-    - **Apply Intelligently**: `alwaysApply: false` (Agent decides based on description)
-    - **Apply to Specific Files**: `globs: ["pattern"]`
-    - **Apply Manually**: `@rule-name` mention
+  - **Always Apply**: `alwaysApply: true`
+  - **Apply Intelligently**: `alwaysApply: false` (Agent decides based on description)
+  - **Apply to Specific Files**: `globs: ["pattern"]`
+  - **Apply Manually**: `@rule-name` mention
 
 ### Skills (`.cursor/skills/`)
+
 - **Purpose**: Portable, versioned packages for domain-specific workflows.
 - **Structure**: Directory with `SKILL.md`, `scripts/`, `assets/`, `references/`.
 - **Usage**: Multi-step workflows requiring resources or scripts.
 
 ### Commands (`.cursor/commands/`)
+
 - **Purpose**: One-off actions triggered by `/command` in chat.
 - **Format**: Simple Markdown files.
 
 ### Subagents
+
 - **Purpose**: Isolated AI assistants for heavy tasks or parallel execution.
 - **Usage**: Use `Task` tool.
 - **When to use**: Context isolation needed, parallel work, or specialized long-running tasks.
 - **Cost**: Each subagent has its own context window (token overhead).
 
 ### MCP Servers & Integrations
+
 - **Local**: Use MCP for stateful connections (e.g., Slack) or CLI tools via `Shell` for request-response (e.g., Jira, GitLab).
 - **Cloud Agents**: Not used in this system (require remote repo).
 
 ### Hooks (`.cursor/hooks.json`)
+
 - **Purpose**: Scripts triggered on agent events (e.g., `preToolUse`, `afterFileEdit`).
 - **Types**: Command-based (shell script) or Prompt-based (LLM evaluation).
 
