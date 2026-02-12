@@ -10,17 +10,17 @@
 - IF A FIX ATTEMPT FAILS, APPLY "5 WHY" ANALYSIS TO FIND THE ROOT CAUSE BEFORE RETRYING.
 - IF ROOT CAUSE IS UNFIXABLE OR OUTSIDE CONTROL: STOP. DO NOT USE WORKAROUNDS. ASK USER FOR HELP.
 - IF ISSUE PERSISTS AFTER 2 ATTEMPTS: STOP. OUTPUT "STOP-ANALYSIS REPORT" (STATE, EXPECTED, 5-WHY CHAIN, ROOT CAUSE, HYPOTHESES). WAIT FOR USER HELP.
+- WHEN EDITING CI/CD, ALWAYS CHECK LOCALLY FIRST.
+
 ---
 - REMEMBER, AGENTS AND SKILLS IN THE catalog/ FOLDER ARE THE PRODUCT OF THIS PROJECT. FOR USERS, THEY WILL BE STORED IN .cursor/. DO NOT CONFUSE AGENTS AND SKILLS AS A PRODUCT WITH YOUR OWN AGENTS AND SKILLS.
 - ANY CHANGES TO SKILLS MUST BE TESTED THROUGH BENCHMARKS, LIKE TDD FOR CODE.
 
 
 ## Project Information
-
 - Project Name: AssistFlow
 
 ## Project Vision
-
 ### Vision Statement
 
 A collection of Cursor skills and agents, designed to standardize work across various software development contexts.
@@ -35,26 +35,26 @@ AI models have a limited context window and lose information between chat sessio
 
 ### Solution & Differentiators
 
-Uses explicit workflows (skills), rigid verification (deno task check), and persistent memory through comprehensive documentation to maintain context and quality. 
+Uses explicit workflows (skills), rigid verification (deno task check), and persistent memory through comprehensive documentation to maintain context and quality.
 
 ### Risks & Assumptions
 
 Assumes users will follow the defined workflows and keep documentation up-to-date.
 
 ## Project tooling Stack
-
-- Python
-- Deno
 - TypeScript
+- Deno
+- Python
 
 ## Development Commands
 
 - `deno task start` (check deno.json)
 - `deno task check` (check deno.json)
 - `deno task test` (check deno.json)
+- `deno task dev` (check deno.json)
+- `deno task bench` (check deno.json)
 
 ## Architecture
-
 - `catalog/skills/`: Source of truth for skills (logical Commands and Skills)
 - `catalog/agents/`: Source of truth for agents
 - `documents/`: SRS/SDS and supporting documentation
@@ -67,10 +67,20 @@ All workflows are implemented as **Skills** according to the [agentskills.io](ht
 - **Skills** (`af-skill-*`): Procedural knowledge and specialized capabilities (e.g., `af-skill-draw-mermaid`). Can be discovered and used by agents to perform specific sub-tasks.
 
 ## Key Decisions
-
 - Use Cursor skills and commands as the primary workflow system
 - Store project knowledge in `documents/` using SRS/SDS schema
 - Centralize verification through `deno task check`
+
+## Planning Rules
+
+- **Environment Side-Effects**: Changes to infra/DB/external services → plan MUST include migration/sync/deploy steps.
+- **Verification Steps**: Plan MUST include specific verification commands (tests, validation tools, connectivity checks).
+- **Functionality Preservation**: Refactoring/modifications → run existing tests before/after; add new tests if coverage missing.
+- **Data-First**: Integration with external APIs/processes → inspect protocol & data formats BEFORE planning.
+- **Architectural Validation**: Complex logic changes → visualize event sequence (sequence diagram/pseudocode).
+- **Variant Analysis**: Non-obvious path → propose variants with Pros/Cons. Quality > quantity. 1 variant OK if path is clear.
+- **User Decision Gate**: Do NOT detail implementation plan until user explicitly selects a variant.
+- **Proactive Resolution**: Before asking user, exhaust available resources (codebase, docs, web) to find the answer autonomously.
 
 ## DOCS STRUCTURE & RULES (`documents/`)
 
@@ -84,7 +94,7 @@ All workflows are implemented as **Skills** according to the [agentskills.io](ht
 
 ### Rules
 - **STRICT COMPLIANCE**: AGENTS.md, SRS, SDS.
-- **Workflow**: New req -> Update SRS -> Update SDS -> Implement.
+- **Workflow**: New/Updated req -> Update SRS -> Update SDS -> Implement.
 - **Status**: `[x]` = implemented, `[ ]` = pending.
 
 ### SRS Format (`documents/requirements.md`)
@@ -101,15 +111,21 @@ All workflows are implemented as **Skills** according to the [agentskills.io](ht
 - **Desc:**
 - **Scenario:**
 - **Acceptance:**
-...
-## 4. Non-Functional
-- **Perf/Reliability/Sec/Scale/UX:**
-## 5. Interfaces
-- **API/Proto/UI:**
-## 6. Acceptance
-- **Criteria:**
-```
+---
 
+## 4. Non-Functional
+
+- **Perf/Reliability/Sec/Scale/UX:**
+
+## 5. Interfaces
+
+- **API/Proto/UI:**
+
+## 6. Acceptance
+
+- **Criteria:**
+
+````
 ### SDS Format (`documents/design.md`)
 ```markdown
 # SDS
@@ -136,12 +152,45 @@ All workflows are implemented as **Skills** according to the [agentskills.io](ht
 - **Scale/Fault/Sec/Logs:**
 ## 7. Constraints
 - **Simplified/Deferred:**
+````
+
+### GODS Format (`documents/whiteboard.md`)
+
+- Structure:
+
+```markdown
+# [Task Title]
+
+## Goal
+
+[Why? Business value.]
+
+## Overview
+
+### Context
+
+[Full problematics, pain points, operational environment, constraints, tech debt, external URLs, @-refs to relevant files/docs.]
+
+### Current State
+
+[Technical description of existing system/code relevant to task.]
+
+### Constraints
+
+[Hard limits, anti-patterns, requirements (e.g., "Must use Deno", "No external libs").]
+
+## Definition of Done
+
+- [ ] [Criteria 1]
+- [ ] [Criteria 2]
+
+## Solution
+
+[Detailed step-by-step for SELECTED variant only. Filled AFTER user selects variant.]
 ```
 
-### Whiteboard Format (`documents/whiteboard.md`)
-- Temp notes/plans. Clean up after session.
-
 ### Compressed Style Rules (All Docs)
+
 - **No History**: No changelogs.
 - **English Only(Except whiteboard.md)**.
 - **Summarize**: Extract facts -> compress. No loss of facts.
@@ -154,16 +203,19 @@ All workflows are implemented as **Skills** according to the [agentskills.io](ht
 - **Symbols**: Replace words with symbols/nums.
 
 ## CODE DOCS
+
 - **Module**: `AGENTS.md` (responsibility/decisions).
 - **Comments**: Class/Method/Func (JSDoc/GoDoc). Why/How > What. No trivial comments.
 
 ## TDD FLOW
+
 1. **RED**: Write test (`deno test <id>`).
 2. **GREEN**: Pass test (`deno test <id>`).
 3. **REFACTOR**: Improve code/tests. No behavior change. (`deno test <id>`).
 4. **CHECK**: `deno fmt && deno lint && deno test`. Fix all.
 
 ### Test Rules
+
 - Tests in same pkg. Private methods OK.
 - Code ONLY to fix tests/issues.
 - NO STUBS. Real code.
