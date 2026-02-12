@@ -11,18 +11,17 @@
 - IF ROOT CAUSE IS UNFIXABLE OR OUTSIDE CONTROL: STOP. DO NOT USE WORKAROUNDS. ASK USER FOR HELP.
 - IF ISSUE PERSISTS AFTER 2 ATTEMPTS: STOP. OUTPUT "STOP-ANALYSIS REPORT" (STATE, EXPECTED, 5-WHY CHAIN, ROOT CAUSE, HYPOTHESES). WAIT FOR USER HELP.
 - WHEN EDITING CI/CD, ALWAYS CHECK LOCALLY FIRST.
+
 ---
+{{PROJECT_RULES}}
 
 ## Project Information
-
 - Project Name: {{PROJECT_NAME}}
 
 ## Project Vision
-
 {{PROJECT_VISION}}
 
 ## Project tooling Stack
-
 {{TOOLING_STACK}}
 
 ## Development Commands
@@ -45,12 +44,21 @@
 {{COMMAND_SCRIPTS}}
 
 ## Architecture
-
 {{ARCHITECTURE}}
 
 ## Key Decisions
-
 {{KEY_DECISIONS}}
+
+## Planning Rules
+
+- **Environment Side-Effects**: Changes to infra/DB/external services → plan MUST include migration/sync/deploy steps.
+- **Verification Steps**: Plan MUST include specific verification commands (tests, validation tools, connectivity checks).
+- **Functionality Preservation**: Refactoring/modifications → run existing tests before/after; add new tests if coverage missing.
+- **Data-First**: Integration with external APIs/processes → inspect protocol & data formats BEFORE planning.
+- **Architectural Validation**: Complex logic changes → visualize event sequence (sequence diagram/pseudocode).
+- **Variant Analysis**: Non-obvious path → propose variants with Pros/Cons. Quality > quantity. 1 variant OK if path is clear.
+- **User Decision Gate**: Do NOT detail implementation plan until user explicitly selects a variant.
+- **Proactive Resolution**: Before asking user, exhaust available resources (codebase, docs, web) to find the answer autonomously.
 
 ## DOCS STRUCTURE & RULES (`documents/`)
 
@@ -81,15 +89,21 @@
 - **Desc:**
 - **Scenario:**
 - **Acceptance:**
-...
-## 4. Non-Functional
-- **Perf/Reliability/Sec/Scale/UX:**
-## 5. Interfaces
-- **API/Proto/UI:**
-## 6. Acceptance
-- **Criteria:**
-```
+---
 
+## 4. Non-Functional
+
+- **Perf/Reliability/Sec/Scale/UX:**
+
+## 5. Interfaces
+
+- **API/Proto/UI:**
+
+## 6. Acceptance
+
+- **Criteria:**
+
+````
 ### SDS Format (`documents/design.md`)
 ```markdown
 # SDS
@@ -116,12 +130,48 @@
 - **Scale/Fault/Sec/Logs:**
 ## 7. Constraints
 - **Simplified/Deferred:**
+````
+
+### Whiteboard file (`documents/whiteboard.md`)
+
+- Temp notes/plans. Clean up after session.
+- Issue or plan in GODS format.
+
+#### GODS Format
+
+```markdown
+# [Task Title]
+
+## Goal
+
+[Why? Business value.]
+
+## Overview
+
+### Context
+
+[Full problematics, pain points, operational environment, constraints, tech debt, external URLs, @-refs to relevant files/docs.]
+
+### Current State
+
+[Technical description of existing system/code relevant to task.]
+
+### Constraints
+
+[Hard limits, anti-patterns, requirements (e.g., "Must use Deno", "No external libs").]
+
+## Definition of Done
+
+- [ ] [Criteria 1]
+- [ ] [Criteria 2]
+
+## Solution
+
+[Detailed step-by-step for SELECTED variant only. Filled AFTER user selects variant.]
 ```
 
-### Whiteboard Format (`documents/whiteboard.md`)
-- Temp notes/plans. Clean up after session.
-
 ### Compressed Style Rules (All Docs)
+
 - **No History**: No changelogs.
 - **English Only(Except whiteboard.md)**.
 - **Summarize**: Extract facts -> compress. No loss of facts.
@@ -134,16 +184,19 @@
 - **Symbols**: Replace words with symbols/nums.
 
 ## CODE DOCS
+
 - **Module**: `AGENTS.md` (responsibility/decisions).
 - **Comments**: Class/Method/Func (JSDoc/GoDoc). Why/How > What. No trivial comments.
 
 ## TDD FLOW
+
 1. **RED**: Write test (`deno test <id>`).
 2. **GREEN**: Pass test (`deno test <id>`).
 3. **REFACTOR**: Improve code/tests. No behavior change. (`deno test <id>`).
 4. **CHECK**: `deno fmt && deno lint && deno test`. Fix all.
 
 ### Test Rules
+
 - Tests in same pkg. Private methods OK.
 - Code ONLY to fix tests/issues.
 - NO STUBS. Real code.

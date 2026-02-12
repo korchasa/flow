@@ -1,6 +1,7 @@
 ---
 name: af-init
 description: Initialize project with AGENTS.md and rules, handling both Greenfield (new) and Brownfield (existing) projects.
+disable-model-invocation: true
 ---
 
 # Task: Initialize Project Agent Documentation
@@ -81,10 +82,11 @@ The user wants to bootstrap an AI agent's understanding of the project. The agen
      - Infer:
        - **Architecture**: (e.g., "React SPA", "Express API", "CLI Tool").
        - **Key Decisions**: (e.g., "Tailwind for styling", "Jest for testing").
+     - **Extract PROJECT_RULES**: If `AGENTS.md` exists, extract content between two `---` markers (excluding the markers) as `project_rules`.
      - **Create `interview_data.json`**:
        ```bash
        # Example of what you should generate (do not run this exact command, use the tool to write your findings)
-       echo '{ "architecture": "- ...", "key_decisions": "- ..." }' > interview_data.json
+       echo '{ "architecture": "- ...", "key_decisions": "- ...", "project_rules": "..." }' > interview_data.json
        ```
 
 5. **Component Inventory (Brownfield only)**
