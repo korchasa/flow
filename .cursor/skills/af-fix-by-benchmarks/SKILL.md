@@ -18,6 +18,7 @@ This command provides a systematic approach to debugging and improving AssistFlo
 ### 1. Identify the Benchmark
 
 Find the relevant benchmark scenario for the skill you are working on.
+
 - Scenarios are located in `benchmarks/<skill>/scenarios/`.
 
 ### 2. Run and Analyze (via Subagent)
@@ -27,6 +28,7 @@ Delegate the execution and initial analysis to the `benchmark-runner` subagent.
 > "Run the benchmark for scenario <scenario-id> and analyze the results."
 
 The subagent will:
+
 - Execute `deno task bench -f <scenario-id>`
 - Report Pass/Fail status
 - Detail specific checklist failures and evidence
@@ -35,12 +37,12 @@ The subagent will:
 
 Based on the subagent's report and your own analysis of the skill:
 
-1.  **Analyze**: Why did the specific checklist items fail?
-2.  **Hypothesize**:
-    - **Prompt Issue**: Ambiguous instructions in `SKILL.md`.
-    - **Tool Issue**: Missing or misused tools.
-    - **Context Issue**: Missing project knowledge.
-    - **Model Limitation**: Task too complex for the model.
+1. **Analyze**: Why did the specific checklist items fail?
+2. **Hypothesize**:
+   - **Prompt Issue**: Ambiguous instructions in `SKILL.md`.
+   - **Tool Issue**: Missing or misused tools.
+   - **Context Issue**: Missing project knowledge.
+   - **Model Limitation**: Task too complex for the model.
 
 ### 4. Propose and Argument Fixes
 
@@ -55,10 +57,10 @@ Present the findings to the user:
 
 ### 5. Implement and Verify
 
-1.  **Pre-condition**: User has approved the proposed fix.
-2.  Apply the agreed-upon fix.
-3.  Ask `benchmark-runner` to run the benchmark again with `--runs 3` to verify stability.
-4.  Confirm all checks pass consistently.
+1. **Pre-condition**: User has approved the proposed fix.
+2. Apply the agreed-upon fix.
+3. Ask `benchmark-runner` to run the benchmark again with `--runs 3` to verify stability.
+4. Confirm all checks pass consistently.
 
 ## Tips for Root Cause Analysis
 

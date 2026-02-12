@@ -6,6 +6,7 @@ description: Enforce strict code generation rules regarding architecture, securi
 # Code Generation Rules
 
 ## Architecture
+
 - No abstraction without 3+ current consumers. No "future-proofing."
 - No Factory/Strategy/Observer/ABC in projects < 1000 LOC unless asked.
 - Check existing code before creating new files/classes/functions. Reuse > create.
@@ -13,6 +14,7 @@ description: Enforce strict code generation rules regarding architecture, securi
 - Match project structure. Don't reorganize without being asked.
 
 ## Security (always, no reminders needed)
+
 - Validate and sanitize all user input at entry point.
 - SQL: parameterized queries only. Never concatenate.
 - Secrets: env vars or secret manager. Never in code, configs, comments, logs.
@@ -20,6 +22,7 @@ description: Enforce strict code generation rules regarding architecture, securi
 - After generating auth/crypto/file/network code: add "⚠️ Security" section listing risks.
 
 ## Error Handling
+
 - No empty catch/except.
 - No catch-all (catch Exception) without re-raise or explicit recovery.
 - Every external call (HTTP, DB, FS, queue): timeout + failure handling.
@@ -27,16 +30,19 @@ description: Enforce strict code generation rules regarding architecture, securi
 - Errors must say what failed, where, with what input. No secret leakage.
 
 ## Dependencies
+
 - Only use packages you're certain exist. If unsure — say so, don't guess.
 - Pin versions. No latest/newest.
 - No deprecated APIs. If one is deprecated — suggest current replacement.
 
 ## Tech Recommendations
+
 - Don't suggest stack changes unless current stack can't solve the problem.
 - If suggesting alternatives: state the specific problem with current approach, not general superiority.
 - Factor in team size, budget, ops burden — not just technical merit.
 
 ## Production Readiness (backend services)
+
 - Structured logging: JSON, severity levels, correlation_id.
 - Health check endpoint with dependency checks.
 - Timeouts on all external calls. No unbounded waits.
