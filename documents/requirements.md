@@ -38,7 +38,7 @@
   - [x] Commands follow `/<command>` naming convention (file name without
         `task-` prefix)
   - [x] Each command provides guided workflow with checklist
-  - [ ] af-init configures development commands via specialized skills
+  - [x] af-init configures development commands via specialized skills (see FR-8)
 
 ### 3.2 Rule Enforcement (FR-2)
 
@@ -86,7 +86,7 @@
   - [x] Task scripts stored in `./scripts/` and invoked via `deno task`
   - [x] Support for check, test, and dev commands
   - [x] Automated quality assurance workflows
-  - [ ] Development commands are set up during project initialization
+  - [x] Development commands are set up during project initialization (see FR-8)
 
 ### 3.6 Developer Onboarding & Workflow Clarity (FR-6)
 
@@ -176,6 +176,22 @@ The benchmarking system must cover all core AssistFlow skills to ensure reliabil
 | `cursor-desktop-guide` | Guide for Cursor desktop features | [ ] | |
 | `opencode-guide` | Guide for OpenCode features | [ ] | |
 | `af-refactor-user-manager` | Refactoring UserManager        |     [ ]     |               |
+
+### 3.8 Project Initialization — af-init (FR-8)
+
+- **Description:** The `af-init` skill bootstraps AI agent understanding of a project by analyzing codebase, generating `AGENTS.md`, and scaffolding documentation.
+- **Use case scenario:** User runs `/af-init` on existing or new project. Agent analyzes codebase, determines project type, interviews user if needed, and generates missing documentation.
+- **Acceptance criteria:**
+  - [ ] **FR-8.1 Agent-driven Greenfield/Brownfield detection**: The analysis script (`analyze_project.py`) must NOT output `is_new` flag. The agent determines Greenfield vs Brownfield based on script output (file count, stack, file tree) and its own judgment.
+  - [ ] **FR-8.2 Scripts are read-only**: Scripts (`analyze_project.py`, `generate_agents.py`) must NOT create, write, or modify any files. Scripts only analyze and output data (JSON to stdout). All file creation is the agent's responsibility.
+  - [ ] **FR-8.3 No rule copying**: The initialization process must NOT copy rules to `.cursor/rules/`. Rule management is outside af-init scope.
+  - [ ] **FR-8.4 Auto-generation of missing documentation**: If `AGENTS.md` or `documents/` (SRS, SDS, whiteboard) are absent, the agent must generate them by analyzing existing code, configs, README, and project documentation. Not from templates with empty placeholders — from actual project content.
+  - [ ] **FR-8.5 PoC mode detection and setup**: If `AGENTS.md` exists but contains no indication of PoC status, the agent must ask the user if the project is in Proof-of-Concept mode. If confirmed, the agent must add a clear PoC declaration and PoC working rules to `AGENTS.md` (see rules-poc reference: strict timebox, hypothesis validation, disposable code, security remains mandatory).
+  - [ ] Greenfield workflow: interview user for vision, stack, architecture
+  - [ ] Brownfield workflow: reverse-engineer architecture from codebase
+  - [ ] Configure development commands via specialized skills (e.g., `af-skill-configure-deno-commands`)
+  - [ ] Idempotency: confirm before overwriting existing components
+  - [ ] Cleanup temporary files after execution
 
 ## 4. Non-functional requirements
 
