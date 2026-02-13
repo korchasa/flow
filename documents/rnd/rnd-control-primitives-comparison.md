@@ -294,5 +294,5 @@ Specify files that should not get into agent context, even if they are not exclu
 | | Project | - | `.gitignore` | `.cursorignore` | `.gitignore` | `.gitignore`<br>`.ignore`<br>`opencode.json` `watcher.ignore` |
 | **Custom Tools** | User | - | - | - | - | `~/.config/opencode/tools/*.{ts,js}` |
 | | Project | - | - | - | - | `.opencode/tools/*.{ts,js}` |
-| **Custom Agents** | User | - | - | - | - | `~/.config/opencode/agents/*.md` |
-| | Project | - | - | - | - | `.opencode/agents/*.md` |
+| | **Custom Agents (Subagents)** | User | - | - | `~/.cursor/agents/*.md` | - | `~/.config/opencode/agents/*.md` |
+| | | Project | - | - | `.cursor/agents/*.md` | - | `.opencode/agents/*.md` |
