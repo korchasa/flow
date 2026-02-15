@@ -1,5 +1,5 @@
 ---
-name: deno-cli
+name: flow-skill-deno-cli
 description: Manage all Deno capabilities via CLI (run, test, fmt, lint, task, add, etc.). Use this skill when you need to execute Deno commands, manage dependencies, run tests, or handle local development workflows.
 ---
 
@@ -74,4 +74,4 @@ deno fmt
 ## Tips
 - Use `deno help <command>` for detailed information on any subcommand.
 - Use `deno compile` to create standalone binaries.
-- For cloud deployments, use the `deno-deploy` skill.
+- For cloud deployments, use the `flow-skill-deno-deploy` skill.
