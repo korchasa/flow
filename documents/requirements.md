@@ -172,8 +172,8 @@ The benchmarking system must cover all core AssistFlow skills to ensure reliabil
 | `flow-diff-specialist` | Analyze git diffs and plan commits | [ ] | |
 | `flow-prompt-engineer` | Craft prompts for reasoning models | [ ] | |
 | `flow-skill-executor` | Execute specific skills or prompts | [ ] | |
-| `deno-cli` | Manage Deno via CLI | [ ] | |
-| `deno-deploy` | Manage Deno Deploy | [ ] | |
+| `flow-skill-deno-cli` | Manage Deno via CLI | [ ] | |
+| `flow-skill-deno-deploy` | Manage Deno Deploy | [ ] | |
 | `flow-skill-ai-skel-ts` | AI agent scaffold | [ ] | |
 | `flow-skill-configure-strict-typescript` | Strict TypeScript config | [ ] | |
 | `cursor-desktop-guide` | Guide for Cursor desktop features | [ ] | |

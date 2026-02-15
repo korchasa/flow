@@ -34,7 +34,7 @@
   - `flow-*`: Command-like skills (e.g., `flow-maintenance`, `flow-commit`, `flow-auto`).
   - `flow-skill-*`: Practical guides (e.g., `flow-skill-fix-tests`).
   - `rules-*`: Behavioral frameworks (e.g., `rules-tdd`).
-  - `deno-*`: Deno-specific tools (`deno-cli`, `deno-deploy`).
+  - `flow-skill-deno-*`: Deno-specific tools (`flow-skill-deno-cli`, `flow-skill-deno-deploy`).
 - **Composition**: Skills can delegate to other skills (e.g., `flow-init` delegates development command configuration to `flow-skill-configure-*-commands`).
 
 ### 3.2 Agents (`.cursor/agents/`)
