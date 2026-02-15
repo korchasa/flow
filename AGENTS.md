@@ -218,6 +218,7 @@ All workflows are implemented as **Skills** according to the [agentskills.io](ht
 
 ### Test Rules
 
+- DO NOT test constants/templates. Test LOGIC/BEHAVIOR only.
 - Tests in same pkg. Private methods OK.
 - Code ONLY to fix tests/issues.
 - NO STUBS. Real code.
