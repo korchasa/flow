@@ -194,10 +194,10 @@
 
 ## TDD FLOW
 
-1. **RED**: Write test (`deno test <id>`) for new/changed logic or behavior.
-2. **GREEN**: Pass test (`deno test <id>`).
-3. **REFACTOR**: Improve code/tests. No behavior change. (`deno test <id>`).
-4. **CHECK**: `deno fmt && deno lint && deno test`. Fix all.
+1. **RED**: Write test (`test <id>`) for new/changed logic or behavior.
+2. **GREEN**: Pass test (`test <id>`).
+3. **REFACTOR**: Improve code/tests. No behavior change. (`test <id>`).
+4. **CHECK**: `check` command. Fix all warnings and errors.
 
 ### Test Rules
 
