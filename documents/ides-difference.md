@@ -92,7 +92,113 @@
 
 ---
 
-## 3. Comparative Summary
+## 3. Cursor → Claude Code Conversion
+
+### 3.1 Project Rules
+
+`AGENTS.md` → `CLAUDE.md` (rename). [^21][^2]
+
+Subdir rules: `subdir/AGENTS.md` → `subdir/CLAUDE.md`.
+
+### 3.2 Conditional Rules
+
+Path: `.cursor/rules/*.md` → `.claude/rules/*.md` [^21][^22]
+
+Frontmatter transform:
+
+| Cursor field | Cursor semantics | Claude Code equivalent |
+| :--- | :--- | :--- |
+| `alwaysApply: true` | Always load | Remove frontmatter (rules without `paths` load unconditionally) |
+| `globs: [...]` | Scope to file patterns | `paths: [...]` |
+| `alwaysApply: false` + `description` only | Agent decides by relevance | No equivalent — becomes always-apply or drop |
+| No frontmatter (manual) | Triggered via `@rule-name` | No direct equivalent |
+
+### 3.3 Custom Commands
+
+`.cursor/commands/*.md` → `.claude/commands/*.md` — copy as-is. [^2]
+
+`$ARGUMENTS` placeholder works the same way. Claude Code adds optional frontmatter: `allowed-tools`, `model`, `description`, `argument-hint`, `disable-model-invocation`.
+
+### 3.4 Skills (SKILL.md)
+
+`.cursor/skills/<name>/` → `.claude/skills/<name>/` — copy entire directory. [^10][^11]
+
+Format is the same (Agent Skills open standard). Supporting files, scripts, and references travel with the skill unchanged.
+
+### 3.5 Custom Agents
+
+`.cursor/agents/*.md` → `.claude/agents/*.md` [^23]
+
+Frontmatter transform:
+
+| Cursor field | Claude Code field | Notes |
+| :--- | :--- | :--- |
+| `name` | `name` | Unchanged |
+| `description` | `description` | Unchanged |
+| `model: inherit` | `model: inherit` | Unchanged |
+| `model: fast` | `model: haiku` | Cursor "fast" = haiku-class |
+| `readonly: true` | `disallowedTools: Write, Edit, NotebookEdit` | Or `permissionMode: plan` |
+
+Claude Code agent additional fields: `tools`, `disallowedTools`, `permissionMode`, `maxTurns`, `skills`, `mcpServers`, `hooks`, `memory`.
+
+### 3.6 Hooks
+
+`.cursor/hooks.json` → `hooks` key inside `.claude/settings.json` [^14][^24]
+
+**Structure transform:**
+
+```
+# Cursor
+{ "version": 1, "hooks": { "eventName": [{ "command": "script.sh" }] } }
+
+# Claude Code
+{ "hooks": { "EventName": [{ "matcher": "ToolName", "hooks": [{ "type": "command", "command": "script.sh" }] }] } }
+```
+
+**Event name mapping:**
+
+| Cursor event | Claude Code event | Recommended `matcher` |
+| :--- | :--- | :--- |
+| `beforeShellExecution` | `PreToolUse` | `"Bash"` |
+| `afterShellExecution` | `PostToolUse` | `"Bash"` |
+| `preToolUse` | `PreToolUse` | — |
+| `postToolUse` | `PostToolUse` | — |
+| `postToolUseFailure` | `PostToolUseFailure` | — |
+| `sessionStart` | `SessionStart` | — |
+| `sessionEnd` | `SessionEnd` | — |
+| `subagentStart` | `SubagentStart` | — |
+| `subagentStop` | `SubagentStop` | — |
+| `stop` | `Stop` | — |
+| `preCompact` | `PreCompact` | — |
+| `afterFileEdit` | `PostToolUse` | `"Edit\|Write"` |
+| `beforeSubmitPrompt` | `UserPromptSubmit` | — |
+| `beforeMCPExecution` | `PreToolUse` | `"mcp__.*"` |
+| `afterMCPExecution` | `PostToolUse` | `"mcp__.*"` |
+| `beforeReadFile` | `PreToolUse` | `"Read"` |
+
+**Hook response mapping:**
+
+| Cursor stdout | Claude Code equivalent |
+| :--- | :--- |
+| `{ "decision": "allow" }` | `exit 0` |
+| `{ "decision": "deny" }` | `exit 2` + message to stderr |
+| `{ "decision": "ask" }` | `hookSpecificOutput.permissionDecision: "ask"` |
+
+Script paths: `.cursor/hooks/` → `.claude/hooks/`.
+
+### 3.7 MCP Config
+
+`mcp.json` → `.mcp.json` — rename (format identical). [^15]
+
+### 3.8 Context Ignoring
+
+`.cursorignore` — **no direct equivalent** in Claude Code. [^16][^15]
+
+Claude Code respects `.gitignore` by default (`respectGitignore: true`). Content from `.cursorignore` should be manually merged into `.gitignore` or noted as unmigratable.
+
+---
+
+## 4. Comparative Summary
 
 | Primitive | Cursor | Claude Code | OpenCode | Antigravity | OpenAI Codex |
 | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -129,3 +235,6 @@
 [^19]: https://developers.openai.com/codex/mcp — Codex MCP: config.toml
 [^20]: https://antigravity.google/docs/rules-workflows — Antigravity rules (.agent/rules/), workflows (.agent/workflows/)
 [^21]: https://docs.cursor.com/en/context/rules — Cursor rules, AGENTS.md
+[^22]: https://code.claude.com/docs/en/memory — Claude Code memory: CLAUDE.md, `.claude/rules/` with `paths` frontmatter
+[^23]: https://code.claude.com/docs/en/sub-agents — Claude Code subagents: `.claude/agents/*.md`, frontmatter fields
+[^24]: https://code.claude.com/docs/en/hooks — Claude Code hooks reference: events, matchers, input/output schema
