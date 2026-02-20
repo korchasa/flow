@@ -19,7 +19,11 @@ When the user asks to create a diagram or visualize a process, use Mermaid synta
 To validate a mermaid diagram file (or a markdown file containing mermaid blocks), use the provided Python script. It uses the official Mermaid CLI to check for syntax errors.
 
 ```bash
-python .cursor/skills/flow-skill-draw-mermaid-diagrams/scripts/validate.py path/to/diagram.mmd
+# Path depends on IDE and installation location, e.g.:
+# Cursor:     python .cursor/skills/flow-skill-draw-mermaid-diagrams/scripts/validate.py path/to/diagram.mmd
+# Claude Code: python .claude/skills/flow-skill-draw-mermaid-diagrams/scripts/validate.py path/to/diagram.mmd
+# OpenCode:   python .opencode/skills/flow-skill-draw-mermaid-diagrams/scripts/validate.py path/to/diagram.mmd
+python <skill-path>/scripts/validate.py path/to/diagram.mmd
 ```
 
 ## Diagram Types Selection
