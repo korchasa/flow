@@ -133,6 +133,3 @@ Before sending your prompt, ask yourself:
 2. **Context:** Did I explain _why_ we are doing this?
 3. **Format:** Did I specify _how_ the output should look?
 4. **Tags:** Did I use `<tags>` to organize big blocks of text?
-
-```
-```
