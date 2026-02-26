@@ -234,23 +234,24 @@ Per-IDE subdirectories with IDE-native frontmatter. Body (system prompt) shared.
   `~/.opencode/`). On re-run, it updates only framework-managed symlinks without
   touching user-created files.
 - **Acceptance criteria:**
-  - [ ] **FR-10.1 Per-item symlinks**: Each agent file and each skill directory is
+  - [x] **FR-10.1 Per-item symlinks**: Each agent file and each skill directory is
         symlinked individually (not a single directory symlink). This prevents
         overwriting user's custom agents/skills.
-  - [ ] **FR-10.2 Multi-IDE support**: Script detects and supports Cursor
+  - [x] **FR-10.2 Multi-IDE support**: Script detects and supports Cursor
         (`~/.cursor/`), Claude Code (`~/.claude/`), OpenCode (`~/.config/opencode/`).
         Agents are per-IDE: reads from `framework/agents/{claude,cursor,opencode}/`
         with IDE-native frontmatter format.
-  - [ ] **FR-10.3 Idempotent**: Safe to run multiple times. Existing symlinks are
+  - [x] **FR-10.3 Idempotent**: Safe to run multiple times. Existing symlinks are
         updated, non-symlink files are never overwritten (warn and skip).
-  - [ ] **FR-10.4 Install & update**: Same script handles both fresh install and
+  - [x] **FR-10.4 Install & update**: Same script handles both fresh install and
         update. Stale framework symlinks (pointing to removed framework items) are
-        cleaned up.
-  - [ ] **FR-10.5 No user data loss**: User-created files/directories in IDE config
+        cleaned up. `--update` flag triggers `git pull` on existing clone.
+  - [x] **FR-10.5 No user data loss**: User-created files/directories in IDE config
         dirs are never modified or removed.
-  - [ ] **FR-10.6 Remote execution**: Supports `deno run -A <url>` for one-liner
-        install from repository.
-  - [ ] **FR-10.7 Written in Deno/TypeScript**: No Python dependency.
+  - [x] **FR-10.6 Remote execution**: Supports `deno run -A <url>` for one-liner
+        install from repository. Auto-clones to `~/.assistflow/`. Shell bootstrap
+        (`install.sh`) installs Deno if missing.
+  - [x] **FR-10.7 Written in Deno/TypeScript**: No Python dependency.
 
 ### 3.11 Conventional Commits — `agent` Type (FR-11)
 

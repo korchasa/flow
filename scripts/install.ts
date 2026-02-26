@@ -4,7 +4,10 @@
  * Installs skills and agents from framework/ into global IDE config directories
  * (~/.cursor/, ~/.claude/, ~/.config/opencode/) via per-item symlinks.
  *
- * Usage: deno task install
+ * Usage:
+ *   Local:  deno task install
+ *   Remote: deno run -A https://raw.githubusercontent.com/korchasa/flow/main/scripts/install.ts
+ *   Update: deno run -A <url> --update
  *
  * Fully interactive: no changes without user confirmation.
  * Idempotent: safe to run multiple times.
@@ -12,6 +15,9 @@
  */
 
 import { dirname, fromFileUrl, join, resolve } from "@std/path";
+
+const REPO_URL = "https://github.com/korchasa/flow.git";
+const INSTALL_DIR_NAME = ".assistflow";
 
 // ─── Types ───
 
@@ -311,6 +317,112 @@ export function computeRelativePath(from: string, to: string): string {
   return [...Array(ups).fill(".."), ...downs].join("/");
 }
 
+// ─── Remote install support (exported for tests) ───
+
+export interface ParsedArgs {
+  update: boolean;
+}
+
+/**
+ * Determine if the script is running from a remote URL (https:/http:).
+ * When executed via `deno run -A https://...`, import.meta.url starts with https://.
+ */
+export function isRemoteExecution(importMetaUrl: string): boolean {
+  return importMetaUrl.startsWith("https://") ||
+    importMetaUrl.startsWith("http://");
+}
+
+/**
+ * Parse CLI arguments.
+ * Supported flags: --update / -u
+ */
+export function parseArgs(args: string[]): ParsedArgs {
+  let update = false;
+  for (const arg of args) {
+    if (arg === "--update" || arg === "-u") {
+      update = true;
+    }
+  }
+  return { update };
+}
+
+/**
+ * Resolve the framework directory based on execution context.
+ *
+ * - Local mode (file:// URL): resolve relative to script location → ../framework/
+ * - Remote mode (https:// URL): clone/update repo into ~/.assistflow/, return ~/.assistflow/framework/
+ */
+export async function resolveFrameworkDir(
+  importMetaUrl: string,
+  args: ParsedArgs,
+): Promise<string> {
+  if (!isRemoteExecution(importMetaUrl)) {
+    // Local mode: resolve relative to script file
+    const scriptDir = dirname(fromFileUrl(importMetaUrl));
+    return resolve(scriptDir, "..", "framework");
+  }
+
+  // Remote mode: use ~/.assistflow/
+  const homeDir = Deno.env.get("HOME");
+  if (!homeDir) {
+    throw new Error("HOME environment variable is not set");
+  }
+
+  const installDir = join(homeDir, INSTALL_DIR_NAME);
+
+  try {
+    const info = await Deno.lstat(installDir);
+    if (info.isDirectory) {
+      if (args.update) {
+        // Update existing clone
+        console.log(`Updating ${installDir}...`);
+        const cmd = new Deno.Command("git", {
+          args: ["-C", installDir, "pull", "--rebase", "--autostash"],
+          stdout: "inherit",
+          stderr: "inherit",
+        });
+        const status = await cmd.output();
+        if (!status.success) {
+          throw new Error(
+            `git pull failed in ${installDir} (exit code ${status.code})`,
+          );
+        }
+      } else {
+        console.log(`Using existing ${installDir}/`);
+      }
+    } else {
+      throw new Error(
+        `${installDir} exists but is not a directory`,
+      );
+    }
+  } catch (e) {
+    if (e instanceof Deno.errors.NotFound) {
+      if (args.update) {
+        throw new Error(
+          `Cannot --update: ${installDir} does not exist. Run without --update first to install.`,
+        );
+      }
+      // Fresh clone
+      console.log(`Cloning AssistFlow into ${installDir}...`);
+      const cmd = new Deno.Command("git", {
+        args: ["clone", "--depth=1", REPO_URL, installDir],
+        stdout: "inherit",
+        stderr: "inherit",
+      });
+      const status = await cmd.output();
+      if (!status.success) {
+        throw new Error(
+          `git clone failed (exit code ${status.code}). Ensure git is installed.`,
+        );
+      }
+    } else {
+      throw e;
+    }
+  }
+
+  return join(installDir, "framework");
+}
+
 /**
  * Format the plan for display.
  */
@@ -500,10 +612,12 @@ async function executePlan(items: PlanItem[]): Promise<void> {
 
 async function main(): Promise<void> {
   const stdin = new StdinReader();
+  const args = parseArgs(Deno.args);
+
+  // Phase 0: Resolve framework directory (local or remote clone)
+  const frameworkDir = await resolveFrameworkDir(import.meta.url, args);
 
   // Phase 1: Discovery (skills are shared; agents discovered per-IDE later)
-  const scriptDir = dirname(fromFileUrl(import.meta.url));
-  const frameworkDir = resolve(scriptDir, "..", "framework");
 
   // Quick skill count for display
   const previewAssets = await discoverFramework(frameworkDir);

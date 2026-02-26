@@ -37,6 +37,45 @@ Developer: sets task
                     → AI: commits approved changes
 ```
 
+## Installation
+
+Install AssistFlow skills and agents into your IDE config directories (`~/.cursor/`, `~/.claude/`, `~/.config/opencode/`).
+
+**One-liner (requires [Deno](https://deno.land)):**
+
+```sh
+deno run -A https://raw.githubusercontent.com/korchasa/flow/main/scripts/install.ts
+```
+
+**If you don't have Deno:**
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/korchasa/flow/main/install.sh | sh
+```
+
+**Update to latest version:**
+
+```sh
+deno run -A https://raw.githubusercontent.com/korchasa/flow/main/scripts/install.ts --update
+```
+
+**What happens:**
+
+1. The installer clones the repository into `~/.assistflow/` (shallow, ~1MB)
+2. Detects which IDEs you have installed (Cursor, Claude Code, OpenCode)
+3. Shows a plan of symlinks to create and asks for confirmation
+4. Creates per-item symlinks for each skill and agent — your own files are never touched
+
+Re-running is safe (idempotent). Stale symlinks from removed framework items are cleaned up automatically.
+
+**From a local clone:**
+
+```sh
+git clone https://github.com/korchasa/flow.git
+cd flow
+deno task install
+```
+
 ## How It Works
 
 AssistFlow is a set of **Skills** and **Agents** — markdown instruction files that AI coding assistants (Cursor, Claude Code, OpenCode, etc.) load into context to follow structured workflows.

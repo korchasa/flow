@@ -1,9 +1,12 @@
-import { assertEquals } from "@std/assert";
+import { assertEquals, assertRejects } from "@std/assert";
 import { resolve } from "@std/path";
 import {
   computePlan,
   type FrameworkAssets,
   type IDEConfig,
+  isRemoteExecution,
+  parseArgs,
+  resolveFrameworkDir,
 } from "./install.ts";
 
 // --- discoverFramework is tested implicitly via integration (reads real fs) ---
@@ -310,4 +313,119 @@ Deno.test("computePlan: broken parent symlink detected as replace_broken", async
   const creates = items.filter((i) => i.action === "create");
   assertEquals(creates.length, 1);
   assertEquals(creates[0].name, "flow-commit");
+});
+
+// ─── isRemoteExecution tests ───
+
+Deno.test("isRemoteExecution: https URL returns true", () => {
+  assertEquals(
+    isRemoteExecution(
+      "https://raw.githubusercontent.com/korchasa/flow/main/scripts/install.ts",
+    ),
+    true,
+  );
+});
+
+Deno.test("isRemoteExecution: http URL returns true", () => {
+  assertEquals(
+    isRemoteExecution("http://example.com/install.ts"),
+    true,
+  );
+});
+
+Deno.test("isRemoteExecution: file:// URL returns false", () => {
+  assertEquals(
+    isRemoteExecution(
+      "file:///Users/korchasa/www/tools/flow/scripts/install.ts",
+    ),
+    false,
+  );
+});
+
+Deno.test("isRemoteExecution: bare path returns false", () => {
+  assertEquals(
+    isRemoteExecution("/Users/korchasa/scripts/install.ts"),
+    false,
+  );
+});
+
+// ─── parseArgs tests ───
+
+Deno.test("parseArgs: no args returns defaults", () => {
+  const result = parseArgs([]);
+  assertEquals(result.update, false);
+});
+
+Deno.test("parseArgs: --update flag", () => {
+  const result = parseArgs(["--update"]);
+  assertEquals(result.update, true);
+});
+
+Deno.test("parseArgs: -u shorthand", () => {
+  const result = parseArgs(["-u"]);
+  assertEquals(result.update, true);
+});
+
+// ─── resolveFrameworkDir tests ───
+
+Deno.test("resolveFrameworkDir: local mode resolves relative to script", async () => {
+  const scriptUrl = "file:///fake/project/scripts/install.ts";
+  const result = await resolveFrameworkDir(scriptUrl, { update: false });
+  assertEquals(result, "/fake/project/framework");
+});
+
+Deno.test({
+  name: "resolveFrameworkDir: remote mode uses ~/.assistflow/framework",
+  async fn() {
+    const home = Deno.env.get("HOME") ?? "/tmp";
+    const scriptUrl =
+      "https://raw.githubusercontent.com/korchasa/flow/main/scripts/install.ts";
+
+    // This will attempt git clone — we expect it to either:
+    // - succeed if git is available and network works
+    // - fail with a meaningful error
+    // For unit test purposes, we just check that it targets the right directory
+    // by catching the error (no network in CI)
+    try {
+      const result = await resolveFrameworkDir(scriptUrl, { update: false });
+      // If it succeeds (e.g., ~/.assistflow/ already exists from a previous run),
+      // verify the path
+      assertEquals(result, `${home}/.assistflow/framework`);
+    } catch (e) {
+      // Expected in environments without network/git — the error should mention
+      // the target directory or git command, not be a type/logic error
+      const msg = (e as Error).message;
+      assertEquals(
+        msg.includes("git") || msg.includes(".assistflow") ||
+          msg.includes("clone"),
+        true,
+        `Expected git/clone related error, got: ${msg}`,
+      );
+    }
+  },
+});
+
+Deno.test({
+  name:
+    "resolveFrameworkDir: remote mode with --update on missing dir fails clearly",
+  async fn() {
+    const scriptUrl = "https://example.com/install.ts";
+    // Use a temp dir that definitely doesn't have .assistflow/
+    const origHome = Deno.env.get("HOME");
+    const tmpDir = await Deno.makeTempDir();
+    Deno.env.set("HOME", tmpDir);
+
+    try {
+      await assertRejects(
+        () => resolveFrameworkDir(scriptUrl, { update: true }),
+        Error,
+      );
+    } finally {
+      // Restore HOME
+      if (origHome) {
+        Deno.env.set("HOME", origHome);
+      }
+      await Deno.remove(tmpDir, { recursive: true });
+    }
+  },
 });
