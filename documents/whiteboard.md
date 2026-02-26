@@ -1,62 +1,88 @@
-# Multi-IDE Dev Resources (SPOT via .dev/)
+# Global Framework Install/Update (FR-10)
 
 ## Goal
 
-Eliminate Cursor lock-in for dev resources. Single Point of Truth in `.dev/`, symlinked to all supported IDEs (Cursor, Claude Code, OpenCode).
+Enable one-command installation of AssistFlow skills and agents into user's IDE config directories. Remove friction: no manual file copying, no repo cloning required from user perspective.
 
 ## Overview
 
 ### Context
 
-Dev skills, agents, hooks currently live in `.cursor/` — only Cursor can use them. Claude Code and OpenCode directories exist but have no skills/agents. `catalog/` is the product (for end users), separate concern.
+`scripts/install.ts` already implements a full interactive installer with per-item symlinks, plan/confirm UX, conflict detection, and stale symlink cleanup. But it only works **after cloning the repo** — `frameworkDir` is resolved relative to script location. FR-10.6 requires remote execution via `deno run -A <url>`.
+
+Repo: `https://github.com/korchasa/flow`
+Raw base: `https://raw.githubusercontent.com/korchasa/flow/main/`
 
 ### Current State
 
-- `.cursor/skills/` — 6 dev skills
-- `.cursor/agents/` — 2 dev agents
-- `.cursor/hooks.json`, `.cursor/hooks/logger.sh` — Cursor hook config
-- `.cursor/worktrees.json` — Cursor worktree config
-- `.claude/` — only `settings.local.json`
-- `.opencode/` — only plugin dependency
+- `install.ts` — 527 lines, fully implemented for local mode
+- Pure functions exported for testing (`discoverFramework`, `detectIDEs`, `computePlan`, `formatPlan`, `computeRelativePath`)
+- `FsAdapter` interface for testability
+- `deno task install` registered but undocumented in README
 
 ### Constraints
 
-- Symlinks must work on macOS/Linux (Windows out of scope)
-- Claude Code destroys symlinks on write (confirmed bug) — dev skills are read-only, acceptable risk
-- `catalog/` must remain separate (product vs dev resources)
-- Post-clone `deno task link` required
+- Deno/TypeScript only (FR-10.7)
+- Per-item symlinks, not directory symlinks (FR-10.1)
+- No user data loss (FR-10.5)
+- Idempotent (FR-10.3)
+- macOS/Linux (Windows out of scope)
+- `--uninstall` deferred to v2
+- Simple shallow clone (no sparse checkout in v1)
 
 ## Definition of Done
 
-- [x] `.dev/` contains all dev skills, agents, hooks, configs
-- [x] `.cursor/`, `.claude/`, `.opencode/` use symlinks to `.dev/`
-- [x] `deno task link` creates/verifies all symlinks (idempotent)
-- [x] `deno task dev` calls link on startup
-- [x] `check-skills.ts` validates `.dev/skills/`
-- [x] `.gitignore` excludes symlinks, includes `.dev/`
-- [x] Documentation updated (SRS, SDS, AGENTS.md)
-- [x] `deno task check` passes
+- [ ] `deno run -A https://raw.githubusercontent.com/korchasa/flow/main/scripts/install.ts` works from scratch
+- [ ] Remote mode: auto-clones repo to `~/.assistflow/`, creates symlinks to IDE dirs
+- [ ] `--update` flag: git pull + re-plan symlinks
+- [ ] Local mode (from cloned repo) still works unchanged
+- [ ] `install.sh` bootstrap: checks/installs Deno, delegates to install.ts
+- [ ] README.md has Installation section
+- [ ] Tests for new functions pass
+- [ ] `deno task check` passes
+- [ ] SRS FR-10 criteria updated, SDS section 3.5 updated
 
 ## Solution
 
-### Linking Matrix
+### Architecture
 
 ```
-.dev/ source        .cursor/            .claude/            .opencode/
-skills/             symlink             symlink             symlink
-agents/             symlink             symlink             symlink
-hooks/              symlink             skip (incompatible) skip (incompatible)
-hooks.json          symlink             skip (Cursor-only)  skip (Cursor-only)
-worktrees.json      symlink             skip (Cursor-only)  skip (Cursor-only)
+Remote mode:
+  deno run -A <raw-url>/install.ts
+    → detect remote (import.meta.url starts with https://)
+    → git clone --depth=1 https://github.com/korchasa/flow.git ~/.assistflow/
+    → frameworkDir = ~/.assistflow/framework/
+    → existing plan/confirm/execute flow
+
+Local mode (unchanged):
+  deno task install
+    → frameworkDir = resolve(scriptDir, "..", "framework")
+    → existing plan/confirm/execute flow
+
+--update:
+  git -C ~/.assistflow/ pull --rebase
+  → re-run plan/confirm/execute
 ```
 
-### Steps
+### New Functions in install.ts
 
-1. Create `.dev/`, move files from `.cursor/`
-2. Create `scripts/task-link.ts` — idempotent symlink manager
-3. Add `deno task link` to `deno.json`
-4. Integrate into `deno task dev`
-5. Update `check-skills.ts` -> `.dev/skills/`
-6. Update `.gitignore`
-7. Update docs (SRS, SDS, AGENTS.md)
-8. Verify with `deno task check`
+- `isRemoteExecution(importMetaUrl: string): boolean` — check if running from URL
+- `parseArgs(args: string[]): { update: boolean }` — flag parsing
+- `resolveFrameworkDir(importMetaUrl: string, args: ParsedArgs): Promise<string>` — local vs remote resolution
+- `ensureLocalClone(repoUrl: string, targetDir: string, update: boolean): Promise<void>` — git clone/pull
+
+### install.sh (bootstrap, ~15 lines)
+
+- Check `command -v deno`
+- If missing: `curl -fsSL https://deno.land/install.sh | sh`
+- `exec deno run -A https://raw.githubusercontent.com/korchasa/flow/main/scripts/install.ts "$@"`
+
+### Steps (TDD)
+
+1. RED: write tests for `isRemoteExecution`, `parseArgs`, `ensureLocalClone`
+2. GREEN: implement functions in install.ts, modify `main()`
+3. REFACTOR: `deno task check`
+4. Create `install.sh`
+5. Update README.md — Installation section
+6. Update SRS/SDS
+7. Final `deno task check`

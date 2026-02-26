@@ -133,13 +133,23 @@
 - **IDE Detection:** Checks existence of `~/.cursor/`, `~/.claude/`, `~/.config/opencode/`.
 - **Agent Discovery:** Per-IDE — reads from `framework/agents/{agentSubdir}/` (claude/cursor/opencode).
   Each IDE gets agent files with IDE-native frontmatter format.
+- **Execution modes:**
+  - **Local:** `deno task install` — uses `framework/` relative to script location.
+  - **Remote:** `deno run -A https://raw.githubusercontent.com/korchasa/flow/main/scripts/install.ts`
+    — auto-detects remote context via `import.meta.url`, clones repo to `~/.assistflow/`
+    (`git clone --depth=1`), uses `~/.assistflow/framework/` as source.
+  - **Update:** `--update` / `-u` flag — runs `git pull --rebase` in `~/.assistflow/`,
+    then re-plans symlinks.
 - **Operations:**
   - Create `<ide-config>/agents/<name>.md` -> `<framework>/agents/<ide>/<name>.md`
   - Create `<ide-config>/skills/<name>/` -> `<framework>/skills/<name>/`
+  - Replace broken parent directory symlinks with real directories.
   - Remove stale symlinks pointing to non-existent framework items.
   - Skip non-symlink files (warn user).
-- **Remote execution:** `deno run -A https://raw.githubusercontent.com/.../install.ts`
-- **Deps:** None (Deno std only).
+- **Bootstrap:** `install.sh` — thin shell script that installs Deno if absent,
+  then delegates to `install.ts` via remote URL.
+- **Managed directory:** `~/.assistflow/` — shallow git clone, source for symlinks.
+- **Deps:** None (Deno std only, git for remote mode).
 
 ### 3.6 Conventional Commits `agent:` Type — FR-11
 
