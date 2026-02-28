@@ -284,12 +284,12 @@ At this point, it is time to actually create the command.
 
 Skip this step only if the command being developed already exists, and iteration or packaging is needed. In this case, continue to the next step.
 
-When creating a new command from scratch, always run the `init_command.py` script. The script conveniently generates a new template command directory that automatically includes everything a command requires, making the command creation process much more efficient and reliable.
+When creating a new command from scratch, always run the `init_command.ts` script. The script conveniently generates a new template command directory that automatically includes everything a command requires, making the command creation process much more efficient and reliable.
 
 Usage:
 
 ```bash
-scripts/init_command.py <command-name> --path <output-directory>
+deno run -A scripts/init_command.ts <command-name> --path <output-directory>
 ```
 
 The script:
@@ -347,13 +347,13 @@ Write instructions for using the command and its bundled resources.
 Once development of the command is complete, it must be packaged into a distributable .skill file that gets shared with the user. The packaging process automatically validates the command first to ensure it meets all requirements:
 
 ```bash
-scripts/package_command.py <path/to/command-folder>
+deno run -A scripts/package_command.ts <path/to/command-folder>
 ```
 
 Optional output directory specification:
 
 ```bash
-scripts/package_command.py <path/to/command-folder> ./dist
+deno run -A scripts/package_command.ts <path/to/command-folder> ./dist
 ```
 
 The packaging script will:

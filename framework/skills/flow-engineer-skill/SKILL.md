@@ -256,14 +256,14 @@ If context from prior conversation exists, infer the skill from discussed workfl
 2. Write SKILL.md with frontmatter
 3. Create supporting reference files
 4. Create utility scripts if needed
-5. Run `scripts/init_skill.py` for scaffolding if starting from scratch
+5. Run `deno run -A scripts/init_skill.ts` for scaffolding if starting from scratch
 
 ### Phase 4: Verification
 
 Run validation:
 
 ```bash
-scripts/validate_skill.py <path/to/skill-directory>
+deno run -A scripts/validate_skill.ts <path/to/skill-directory>
 ```
 
 Checklist:
@@ -279,7 +279,7 @@ Checklist:
 ### Phase 5: Packaging
 
 ```bash
-scripts/package_skill.py <path/to/skill-directory> [output-directory]
+deno run -A scripts/package_skill.ts <path/to/skill-directory> [output-directory]
 ```
 
 Creates a `.skill` zip file for distribution.
