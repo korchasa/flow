@@ -51,7 +51,7 @@ Assumes users will follow the defined workflows and keep documentation up-to-dat
 ## Project tooling Stack
 - TypeScript
 - Deno
-- Python
+- Python (general-purpose utility scripts only: token counting, Mermaid validation)
 
 ## Architecture
 - `.dev/`: SPOT for dev resources (skills, agents, hooks, IDE configs). Symlinked to IDE dirs via `deno task link`.

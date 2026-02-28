@@ -212,7 +212,7 @@ Every rule should contain:
 Run validation:
 
 ```bash
-scripts/validate_rule.py <path/to/rule-file-or-directory>
+deno run -A scripts/validate_rule.ts <path/to/rule-file-or-directory>
 ```
 
 Checklist:
