@@ -325,15 +325,18 @@ Per-IDE subdirectories with IDE-native frontmatter. Body (system prompt) shared.
   definition. On commit, the message is prefixed with `agent:` (e.g.,
   `agent: update flow-commit skill with atomic grouping rules`).
 - **Acceptance criteria:**
-  - [ ] **FR-11.1 New type recognized**: `flow-commit` skill recognizes `agent:` as a
-        valid Conventional Commits type.
-  - [ ] **FR-11.2 Scope**: `agent:` type applies to changes in: `framework/agents/`,
-        `framework/skills/`, `.dev/agents/`, `.dev/skills/`, `AGENTS.md`,
-        IDE-specific agent/skill directories.
-  - [ ] **FR-11.3 Auto-detection**: `flow-commit` automatically selects `agent:` type
-        when staged changes are exclusively in agent/skill files.
-  - [ ] **FR-11.4 Documentation**: The `agent:` type is documented in `flow-commit`
-        SKILL.md and project conventions.
+  - [x] **FR-11.1 New type recognized**: `flow-commit` skill recognizes `agent:` as a
+        valid Conventional Commits type. Verified: SKILL.md rule 4, type list includes
+        `agent:`.
+  - [x] **FR-11.2 Scope**: `agent:` type applies to changes in: `framework/agents/`,
+        `framework/skills/`, `.dev/agents/`, `.dev/skills/`, `**/AGENTS.md`,
+        `**/CLAUDE.md`, IDE-specific agent/skill directories (`.cursor/`, `.claude/`,
+        `.opencode/` agents/skills subdirs).
+  - [x] **FR-11.3 Auto-detection**: `flow-commit` SKILL.md rule 4 instructs agent to
+        auto-select `agent:` when ALL staged files match scope paths. Mixed changes
+        (agent + app code) use the application type.
+  - [x] **FR-11.4 Documentation**: The `agent:` type is documented in `flow-commit`
+        SKILL.md rule 4 (scope, auto-detection, examples) and in step 4 type list.
 
 ### 3.12 flow-init Idempotency with User Edit Preservation (FR-12)
 
