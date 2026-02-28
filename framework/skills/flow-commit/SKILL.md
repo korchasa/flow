@@ -34,10 +34,14 @@ The project follows Conventional Commits 1.0.0 and uses a structured documentati
 2. **Automation**: Automatically group and commit changes. DO NOT ask the user for permission to split commits.
 3. **Dependency Updates**: ALWAYS use `build:` prefix for dependency and configuration updates (e.g., `build: update dependencies`). Do NOT use `chore:` type.
 4. **Strict Commits**: Compose messages in **English** per Conventional Commits 1.0.0.
-   - **MANDATORY**: ALWAYS prefix commit messages with a type (e.g., `feat:`, `fix:`, `docs:`, `style:`, `refactor:`, `test:`, `build:`).
+   - **MANDATORY**: ALWAYS prefix commit messages with a type (e.g., `feat:`, `fix:`, `docs:`, `style:`, `refactor:`, `test:`, `build:`, `agent:`).
+   - **`agent:` type**: Use for changes to AI agent configuration, skills, and rules:
+     - **Scope**: Files in `framework/agents/`, `framework/skills/`, `.dev/agents/`, `.dev/skills/`, `**/AGENTS.md`, `**/CLAUDE.md`, IDE-specific agent/skill directories (`.cursor/agents/`, `.claude/agents/`, `.opencode/agents/`, `.cursor/skills/`, `.claude/skills/`, `.opencode/skills/`).
+     - **Auto-detection**: When ALL staged files match the `agent:` scope paths above, automatically use `agent:` type without asking.
+     - **Mixed changes**: If staged files include both agent/skill files AND application code, use the appropriate application type (`feat:`, `fix:`, etc.) — NOT `agent:`.
+     - **Example**: `agent: update flow-commit skill with atomic grouping rules` or `agent(flow-init): add brownfield detection logic`.
    - **Scope**: MAY use optional scope in parentheses to provide context, e.g., `feat(llm): add retry logic`.
    - **Breaking Changes**: MUST indicate breaking changes by adding a `!` before the colon (e.g., `feat!: change API contract`) OR by adding `BREAKING CHANGE:` in the footer.
-   - **Example**: `feat: add user authentication` or `build: bump version to 1.1.0`.
    - **CRITICAL**: Commits without these prefixes are STRICTLY FORBIDDEN.
 5. **Git Pager**: Use `GIT_PAGER=cat` for all git commands.
 6. **Planning**: The agent MUST use a task management tool (e.g., todo write) to track the execution steps.
@@ -73,7 +77,7 @@ The project follows Conventional Commits 1.0.0 and uses a structured documentati
      - Default: all changes = one commit.
      - Split only when changes serve different, unrelated purposes OR the user explicitly requested a split.
      - Documentation describing a code change goes in the same commit as that code.
-     - Use appropriate type: `feat:`, `fix:`, `refactor:`, `build:`, `test:`, `docs:` (standalone only), `style:` (standalone only).
+      - Use appropriate type: `feat:`, `fix:`, `refactor:`, `build:`, `test:`, `agent:`, `docs:` (standalone only), `style:` (standalone only).
    - _Hunk-level splitting (isolating changes within a single file) is an exceptional measure. Use ONLY when the user explicitly requests it or when changes within one file serve genuinely unrelated purposes._
 5. **Commit Execution Loop**
    - **Iterate** through the planned groups:
