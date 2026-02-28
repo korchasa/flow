@@ -12,6 +12,10 @@
 - **STRICT COMPLIANCE**: AGENTS.md, SRS, SDS.
 - **Workflow**: New/Updated req -> Update SRS -> Update SDS -> Implement.
 - **Status**: `[x]` = implemented, `[ ]` = pending.
+- **Evidence**: Every `[x]` acceptance criterion MUST include evidence — file
+  paths with line numbers proving implementation. Format:
+  `- [x] Criterion text. Evidence: \`path/to/file.ts:42\`, \`other/file.md:10\``
+  Without evidence, criterion stays `[ ]`.
 
 ## SRS Format (`documents/requirements.md`)
 ```markdown
