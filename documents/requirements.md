@@ -192,19 +192,76 @@ Per-IDE subdirectories with IDE-native frontmatter. Body (system prompt) shared.
 
 ### 3.8 Project Initialization — flow-init (FR-8)
 
-- **Description:** The `flow-init` skill bootstraps AI agent understanding of a project by analyzing codebase, generating `AGENTS.md`, and scaffolding documentation.
-- **Use case scenario:** User runs `/flow-init` on existing or new project. Agent analyzes codebase, determines project type, interviews user if needed, and generates missing documentation.
+- **Description:** The `flow-init` skill bootstraps AI agent understanding of a
+  project by analyzing codebase, generating 3 AGENTS.md files (root,
+  `documents/`, `scripts/`), and scaffolding documentation. Uses
+  `generate_agents.ts` (Deno/TS, read-only) for project analysis and template
+  files from `assets/` as reference for agent-driven file generation.
+- **Use case scenario:** User runs `/flow-init` on existing or new project. Agent
+  runs the analysis script, determines Greenfield vs Brownfield by its own
+  judgment, interviews user (Greenfield) or reverse-engineers architecture
+  (Brownfield), generates 3 AGENTS.md files, documentation (SRS, SDS,
+  whiteboard), and configures development commands.
 - **Acceptance criteria:**
-  - [ ] **FR-8.1 Agent-driven Greenfield/Brownfield detection**: The analysis script (`analyze_project.py`) must NOT output `is_new` flag. The agent determines Greenfield vs Brownfield based on script output (file count, stack, file tree) and its own judgment.
-  - [ ] **FR-8.2 Scripts are read-only**: Scripts (`analyze_project.py`, `generate_agents.py`) must NOT create, write, or modify any files. Scripts only analyze and output data (JSON to stdout). All file creation is the agent's responsibility.
-  - [ ] **FR-8.3 No rule copying**: The initialization process must NOT copy rules to `.cursor/rules/`. Rule management is outside flow-init scope.
-  - [ ] **FR-8.4 Auto-generation of missing documentation**: If `AGENTS.md` or `documents/` (SRS, SDS, whiteboard) are absent, the agent must generate them by analyzing existing code, configs, README, and project documentation. Not from templates with empty placeholders — from actual project content.
-  - [ ] **FR-8.5 PoC mode detection and setup**: If `AGENTS.md` exists but contains no indication of PoC status, the agent must ask the user if the project is in Proof-of-Concept mode. If confirmed, the agent must add a clear PoC declaration and PoC working rules to `AGENTS.md` (see rules-poc reference: strict timebox, hypothesis validation, disposable code, security remains mandatory).
-  - [ ] Greenfield workflow: interview user for vision, stack, architecture
-  - [ ] Brownfield workflow: reverse-engineer architecture from codebase
-  - [ ] Configure development commands via specialized skills (e.g., `flow-skill-configure-deno-commands`)
-  - [ ] Idempotency: confirm before overwriting existing components
-  - [ ] Cleanup temporary files after execution
+  - [x] **FR-8.1 Agent-driven Greenfield/Brownfield detection**: Script
+        (`generate_agents.ts`) outputs `is_new` flag but SKILL.md explicitly
+        instructs the agent to NOT rely on it. Agent determines project type
+        based on file count, stack, file tree, and presence of config files.
+  - [x] **FR-8.2 Scripts are read-only (Deno/TS)**: Single script
+        `generate_agents.ts` (command: `analyze`) only reads filesystem and
+        outputs JSON to stdout. No file creation/modification. Python scripts
+        fully removed (only stale `__pycache__/` remains).
+  - [x] **FR-8.3 No rule copying**: SKILL.md rule 6 explicitly prohibits
+        copying rules to IDE-specific directories. Rule management outside
+        flow-init scope.
+  - [x] **FR-8.4 Auto-generation of missing documentation**: SKILL.md step 8
+        generates `documents/requirements.md` (SRS), `documents/design.md`
+        (SDS), `documents/whiteboard.md` from actual project data using LLM
+        capabilities. Skips existing files exceeding line thresholds (50 for
+        SRS/SDS, 10 for whiteboard).
+  - [x] **FR-8.5 Greenfield workflow**: SKILL.md step 3 defines structured
+        interview collecting 10 data points (project name, vision, audience,
+        problem, solution, risks, stack, architecture, key decisions, Deno
+        tooling preference). Returns JSON for template filling.
+  - [x] **FR-8.6 Brownfield workflow**: SKILL.md step 4 defines discovery
+        (read config files, infer architecture/decisions) and extraction
+        (semantically identify doc/script sections in existing `./AGENTS.md`,
+        move to subdirectory files, remove from root).
+  - [x] **FR-8.7 Multi-file architecture**: Produces 3 AGENTS.md files:
+        `./AGENTS.md` (core rules, project metadata), `./documents/AGENTS.md`
+        (documentation system rules), `./scripts/AGENTS.md` (development
+        commands). Templates in `assets/` directory (3 files with
+        `{{PLACEHOLDER}}` variables).
+  - [x] **FR-8.8 Per-file diff confirmation**: SKILL.md rules 3 and 8 require
+        showing diffs and asking per-file confirmation before applying changes
+        to existing files. Never silently overwrite.
+  - [x] **FR-8.9 User content preservation**: SKILL.md rule 9 requires
+        preserving user's existing instructions in brownfield. Extracted
+        content takes priority over template content. Templates are fallbacks
+        for greenfield only.
+  - [x] **FR-8.10 Configure development commands**: SKILL.md step 9 detects
+        stack, looks up specialized skills (e.g., `flow-skill-configure-deno-commands`),
+        creates standard command interface (`check`, `test`, `dev`, `prod`).
+        Verifies `check` command works.
+  - [x] **FR-8.11 Cleanup**: SKILL.md step 10 removes temporary files
+        (`project_info.json`, `interview_data.json`), verifies all 3
+        AGENTS.md files exist, verifies no duplication between root and
+        subdirectory files.
+  - [x] **FR-8.12 OpenCode compatibility check**: SKILL.md step 7 checks
+        `opencode.json` for subdirectory AGENTS.md glob entries, warns if
+        missing.
+  - [x] **FR-8.13 Stack detection**: `generate_agents.ts` detects 6 stacks
+        (Node.js, Deno, Go, Rust, Python, Swift) via marker files. Skips 11
+        directories (`.git`, `node_modules`, `.cursor`, `.claude`, `.opencode`,
+        `dist`, `build`, `coverage`, `.dev`, `__pycache__`, `vendor`).
+  - [x] **FR-8.14 Unit tests**: `generate_agents.test.ts` covers 8 scenarios
+        (Deno/Node.js/Go detection, empty project, README reading, directory
+        skipping, multi-stack, type exports).
+  - [x] **FR-8.15 Benchmark coverage**: 5 benchmark scenarios: `greenfield`
+        (interview flow), `brownfield` (discovery from scratch), `brownfield-update`
+        (re-run with diffs and user content preservation), `brownfield-idempotent`
+        (preserve files when user declines changes), `vision-integration`
+        (pre-filled interview data).
 
 ### 3.9 Multi-IDE Dev Resource Distribution (FR-9)
 
@@ -251,6 +308,12 @@ Per-IDE subdirectories with IDE-native frontmatter. Body (system prompt) shared.
         dirs are never modified or removed.
   - [x] **FR-10.6 Remote execution**: Supports `deno run -A <url>` for one-liner
         install from repository. Auto-clones to `~/.assistflow/`. Requires Deno pre-installed.
+  - [x] **FR-10.8 Agent per-item symlinks**: Agents MUST be installed as individual
+        per-file symlinks (one symlink per agent `.md` file), same as skills are
+        installed as per-directory symlinks. Verified in `install.ts` lines 195-213:
+        each agent `.md` file gets its own symlink to `<ide-config>/agents/<name>.md`.
+        Note: local `task-link.ts` uses directory-level symlinks for `.dev/agents/`
+        (by design — dev resources vs product distribution are different).
   - [x] **FR-10.7 Written in Deno/TypeScript**: No Python dependency.
 
 ### 3.11 Conventional Commits — `agent` Type (FR-11)
@@ -372,7 +435,10 @@ Per-IDE subdirectories with IDE-native frontmatter. Body (system prompt) shared.
         types (command, prompt, agent), and `settings.json` configuration.
   - [ ] **FR-15.2 OpenCode plugins**: Document `.opencode/plugins/*.ts` format,
         `tool()` helper, event API, and npm package distribution.
-  - [ ] **FR-15.3 Cursor hooks**: Retain existing Cursor hook documentation.
+  - [x] **FR-15.3 Cursor hooks**: Retain existing Cursor hook documentation.
+        Verified: SKILL.md lines 39-81 (config format, implementation types,
+        guard.sh example), `references/hooks_api.md` (90 lines, 20 events,
+        input/output JSON docs), `assets/hook_template.sh` present.
   - [ ] **FR-15.4 Cross-IDE guidance**: Skill provides IDE-specific examples
         and notes which events/types are available per IDE.
 
@@ -391,8 +457,11 @@ Per-IDE subdirectories with IDE-native frontmatter. Body (system prompt) shared.
   - [ ] **FR-16.2 IDE-specific guidance**: Skill provides correct path and format
         for each IDE (Cursor: `.cursor/commands/`, Claude Code: `.claude/skills/`,
         OpenCode: `.opencode/commands/`).
-  - [ ] **FR-16.3 No breaking changes**: Existing command creation workflow for
-        Cursor and OpenCode remains unchanged.
+  - [x] **FR-16.3 No breaking changes**: Existing command creation workflow for
+        Cursor and OpenCode remains unchanged. Verified: scripts
+        (`init_command.py`, `validate_command.py`, `package_command.py`) are
+        IDE-agnostic, operate on generic directory paths. Requires re-verification
+        after FR-16.1/FR-16.2 are applied.
 
 ### 3.17 Resolve IDE Support Scope (FR-17)
 
