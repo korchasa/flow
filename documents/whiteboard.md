@@ -1,163 +1,79 @@
-# flow-init: Multi-File Architecture + Diff-Based Updates + Declarative Manifest
+# Deep Research Skill: Playwright-CLI Based Architecture with Iterative Research Loop
 
 ## Goal
 
-Eliminate user content loss during `flow-init` re-runs. Split monolithic AGENTS.md into 3 domain-scoped files. Implement declarative manifest for file structure + diff-based per-file update with user confirmation. Rewrite Python scripts to Deno/TS.
+Redesign `flow-skill-deep-research` to implement a full deep research agent architecture: iterative research loop with gap analysis, scratchpad-based state management, selective extraction, self-reflection, and playwright-cli as the primary search/fetch mechanism. Increase research depth (search→fetch→extract→reflect→repeat) while maintaining citation provenance and context budget control.
 
 ## Overview
 
 ### Context
 
-- FR-12 (idempotency with user edit preservation) — fully unimplemented
-- FR-13 (Python-to-Deno migration) — partially addressed here
-- Current `generate_agents.py` has binary overwrite: skip entirely OR full overwrite
-- Only preservation mechanism: `PROJECT_RULES` between `---` markers
-- Users lose: custom YOU MUST rules, custom sections (e.g. Terminology), edits to Planning Rules, custom doc structures
-- @framework/skills/flow-init/SKILL.md — current skill
-- @framework/skills/flow-init/scripts/generate_agents.py — current generator
-- @framework/skills/flow-init/assets/AGENTS.template.md — current template
-- @documents/requirements.md#FR-12 — requirements
-- @documents/design.md#3.7 — current (outdated) design
+- `@framework/skills/flow-skill-deep-research/SKILL.md` — current skill (5 phases: detect method → plan → sequential workers → escalate → synthesize)
+- `@framework/skills/flow-skill-playwright-cli/SKILL.md` — browser automation skill (open/goto/snapshot/click/fill/type)
+- `@framework/agents/{opencode,cursor,claude}/deep-research-worker.md` — worker sub-agent (3 IDE variants, identical logic)
+- `@framework/skills/flow-skill-deep-research/assets/report_template.md` — output format templates
+
+Current skill has Phase 0 (search method detection) that treats playwright-cli as one of 4 fallback methods. Workers do a single-pass: run all queries → evaluate → extract → save. No iterative loop, no centralized scratchpad, no gap analysis within a direction.
+
+### Pain points
+
+- **No iterative research loop**: worker searches once, no "what's still unknown?" cycle → shallow coverage
+- **No scratchpad/state machine**: facts scattered across per-direction temp files, no centralized plan/completed/pending/facts/contradictions tracking
+- **No selective extraction**: workers fetch full pages and extract everything → context waste, irrelevant noise
+- **No outline as research anchor**: planning produces directions but no report outline → synthesis has no structure to fill
+- **No dependency graph**: directions treated as independent → can't sequence "learn X before researching Y"
+- **playwright-cli is a fallback, not primary**: Phase 0 prefers built-in search, playwright-cli is priority 2
+- **No within-direction iteration**: worker does one pass; if coverage insufficient, only orchestrator-level escalation with retry
+- **Citation drift risk**: hierarchical temp files → synthesis → report chain can lose source attribution
+- **No loop termination heuristic**: escalation is binary (score < 6.0 → retry once), no soft signal from gap analysis
 
 ### Current State
 
-Single template (`AGENTS.template.md`, 213 lines) → single `AGENTS.md`. `generate_agents.py` (Python) does `str.replace()` for 8 placeholders. `--no-overwrite-agents` flag skips write entirely. No merge, no diff, no section awareness.
+**SKILL.md (235 lines):**
+- Phase 0: detect search method (built-in > playwright-cli > playwright-mcp > other MCP)
+- Phase 1: decompose into 3-6 directions with queries + acceptance criteria
+- Phase 2: launch workers sequentially, post-worker review (4 checks: sources ≥2, coverage, confidence, no fabrication)
+- Phase 3: escalation if direction score < 6.0 (retry once with alternative queries)
+- Phase 4: synthesis (read all temp files, group thematically, merge, label FACT/SYNTHESIS, cite)
+- Phase 5: output (save report, verify integrity, print summary, cleanup)
+
+**Worker sub-agent (133 lines, 3 IDE variants):**
+- 7 steps: search → evaluate (authority 0-5) → fetch top 3-5 → extract facts → note contradictions → note gaps → save
+- Single pass, no iteration
+- Saves structured markdown to `_research_tmp/<slug>.md`
+
+**Playwright-CLI skill:**
+- Commands: open, goto, snapshot, screenshot, click, fill, type, press, eval
+- Snapshot = accessibility tree (preferred over screenshot for AI reasoning)
+- Session management via `-s=name`
 
 ### Constraints
 
-- `---` markers in root AGENTS.md preserved (backward compat for PROJECT_RULES)
-- Cross-IDE: Cursor, Codex, Claude Code support subdir AGENTS.md natively. OpenCode needs `opencode.json` glob workaround. Antigravity — no evidence of support.
-- Python scripts rewritten to Deno/TS (FR-13)
-- Benchmarks must cover all scenarios (TDD)
-- No `<!-- AF:BEGIN/END -->` markers (dropped from design)
+- Multi-IDE: Cursor, Claude Code, OpenCode. No IDE-specific tool names in skill text.
+- Workers MUST NOT spawn sub-agents (existing invariant, keep it)
+- Max 6 directions (existing invariant, keep it)
+- playwright-cli must be the primary search/fetch engine (user requirement)
+- Other search methods remain as fallbacks (preserve backward compat)
+- Report format (`assets/report_template.md`) stays compatible
+- All changes must be tested through benchmarks
+- Skill must remain a single SKILL.md (no TypeScript code in the skill itself)
 
 ## Definition of Done
 
-- [ ] Declarative manifest (`manifest.json`) defines all 3 target files, templates, vars, preservation rules
-- [ ] `generate_agents.ts` (Deno/TS) reads manifest, renders templates, computes diffs
-- [ ] 3 separate templates: root, documents/, scripts/
-- [ ] SKILL.md updated: manifest-driven workflow, per-file diff confirmation, OpenCode compat check
-- [ ] `brownfield-idempotent` benchmark: all 3 files preserved after re-run
-- [ ] New `brownfield-update` benchmark: template change → diff shown, user content preserved
-- [ ] `greenfield` + `brownfield` benchmarks updated for 3-file output
-- [ ] This project's own AGENTS.md split into 3 files
-- [ ] SRS/SDS updated (FR-12 criteria, SDS 3.7 rewrite)
+- [ ] SKILL.md rewritten with iterative research loop architecture (search → fetch → extract → update scratchpad → gap analysis → repeat)
+- [ ] Scratchpad state machine defined (plan, completed, pending, facts, contradictions, draft_sections)
+- [ ] Selective extraction: worker knows current sub-question before fetching, extracts only relevant content
+- [ ] Self-reflection prompt pattern after each iteration (unanswered questions, contradictions, confidence, stop criteria)
+- [ ] Planning phase produces report outline as research anchor + optional dependency graph between directions
+- [ ] playwright-cli is primary search method (priority 1); other methods demoted to fallbacks
+- [ ] Loop termination: mix of hard limit (max iterations per direction) + soft signal (gap analysis says "sufficient")
+- [ ] Citation provenance: every fact traceable to source URL from extraction through synthesis
+- [ ] Worker sub-agent files (3 IDE variants) updated to match new iterative workflow
+- [ ] `assets/report_template.md` updated if needed (backward-compatible)
+- [ ] Context management strategy documented (selective extraction + scratchpad size limits)
+- [ ] Benchmarks created/updated for deep-research skill
 - [ ] `deno task check` passes
-- [ ] `analyze_project.py` rewritten to `analyze_project.ts`
 
 ## Solution
 
-### Architecture: 3 AGENTS.md files
-
-```
-./AGENTS.md              — core agent rules + project metadata
-./documents/AGENTS.md    — documentation system rules
-./scripts/AGENTS.md      — development commands & scripts conventions
-```
-
-Content distribution:
-
-- **`./AGENTS.md`**: # YOU MUST, `---` + PROJECT_RULES, Project Info, Vision, Stack, Architecture, Key Decisions, Planning Rules, CODE DOCS, TDD FLOW
-- **`./documents/AGENTS.md`**: DOCS STRUCTURE & RULES (hierarchy, rules, SRS/SDS/GODS formats, compressed style rules, whiteboard rules)
-- **`./scripts/AGENTS.md`**: Development Commands (standard interface description, detected commands, command scripts)
-
-### Declarative Manifest (`manifest.json`)
-
-```json
-{
-  "version": 1,
-  "files": [
-    {
-      "path": "AGENTS.md",
-      "template": "assets/AGENTS.template.md",
-      "vars": ["PROJECT_NAME", "PROJECT_VISION", "TOOLING_STACK", "ARCHITECTURE", "KEY_DECISIONS", "PROJECT_RULES"],
-      "preserve": {
-        "type": "markers",
-        "start": "---",
-        "end": "## ",
-        "inject_as": "PROJECT_RULES"
-      },
-      "update": "diff-confirm"
-    },
-    {
-      "path": "documents/AGENTS.md",
-      "template": "assets/AGENTS.documents.template.md",
-      "vars": [],
-      "preserve": null,
-      "update": "diff-confirm"
-    },
-    {
-      "path": "scripts/AGENTS.md",
-      "template": "assets/AGENTS.scripts.template.md",
-      "vars": ["DEVELOPMENT_COMMANDS", "COMMAND_SCRIPTS"],
-      "preserve": null,
-      "update": "diff-confirm"
-    }
-  ],
-  "generated_by_llm": [
-    {"path": "documents/requirements.md", "skip_if_lines_gt": 50, "description": "SRS from interview/analysis data"},
-    {"path": "documents/design.md", "skip_if_lines_gt": 50, "description": "SDS initial structure"},
-    {"path": "documents/whiteboard.md", "skip_if_lines_gt": 10, "description": "Whiteboard with discovered context (brownfield) or empty (greenfield)"}
-  ],
-  "ide_compat": {
-    "opencode": {
-      "check": "opencode.json",
-      "warn_if_missing_globs": ["documents/AGENTS.md", "scripts/AGENTS.md"],
-      "explain_before_read": "I need to check your OpenCode config to ensure subdirectory AGENTS.md files are discoverable by the IDE."
-    }
-  }
-}
-```
-
-### Diff-Based Update Flow
-
-For each file in `manifest.files`:
-1. Script renders template → proposed content (deterministic)
-2. If target doesn't exist → write directly, report "created"
-3. If target exists:
-   a. Extract preserved content (if `preserve` defined)
-   b. Inject preserved content into proposed version
-   c. Compute unified diff (proposed vs current)
-   d. If no diff → report "up to date", skip
-   e. If diff exists → print diff, agent asks user
-4. Agent shows diff to user, asks "Apply changes to <path>? [y/n]"
-5. If yes → run script with `apply` command for that path
-6. If no → skip that file
-
-### Script: `generate_agents.ts` (Deno)
-
-Replaces both `generate_agents.py` and `analyze_project.py`.
-
-CLI:
-```
-deno run generate_agents.ts <command> [options]
-
-Commands:
-  analyze <dir>                  Analyze project, output JSON to stdout
-  render <manifest> <data>       Render all templates, show diffs (JSON output)
-  apply <manifest> <data> <path> Apply rendered template to specific file
-```
-
-### Templates
-
-**`AGENTS.template.md`** (trimmed root):
-- # YOU MUST, `---`/PROJECT_RULES, Project Info, Vision, Stack, Architecture, Key Decisions, Planning Rules, CODE DOCS, TDD FLOW
-
-**`AGENTS.documents.template.md`** (new):
-- DOCS STRUCTURE & RULES, Hierarchy, Rules, SRS Format, SDS Format, GODS Format, Compressed Style
-
-**`AGENTS.scripts.template.md`** (new):
-- Development Commands, Standard Interface, Detected Commands, Command Scripts
-
-### SKILL.md Workflow Changes
-
-Steps 5-6 replaced with manifest-driven flow:
-- Step 5: Read manifest, inventory existing files, report to user
-- Step 6: `deno run generate_agents.ts render`, show diffs per file, confirm per file, apply confirmed
-- Step 6a: OpenCode compat check (explain purpose → read config → warn if globs missing)
-
-### Implementation Order (TDD)
-
-1. **RED**: Update/write benchmarks
-2. **GREEN**: Create templates, manifest, scripts, update SKILL.md
-3. **REFACTOR**: Split this project's AGENTS.md, update SRS/SDS, run checks
+[Awaiting variant selection]
