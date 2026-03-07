@@ -6,6 +6,8 @@ disable-model-invocation: true
 
 # Task: Initialize Project Agent Documentation
 
+> **Script paths**: `<this-skill-dir>` in commands below refers to the directory containing this SKILL.md. Before running any bundled script, locate this file's absolute path and use it as the base.
+
 ## Overview
 
 Analyze the project, conduct an interview (for Greenfield projects), and
@@ -50,7 +52,7 @@ The user wants to bootstrap an AI agent's understanding of the project. The agen
 2. **Analyze Project**
    - Run the analysis script to detect stack and project state.
      ```bash
-     deno run --allow-read scripts/generate_agents.ts analyze .
+     deno run --allow-read <this-skill-dir>/scripts/generate_agents.ts analyze .
      ```
    - Read the JSON output.
    - **Decision Point** (agent judgment, NOT a script flag):
