@@ -132,7 +132,7 @@ Every task follows the same supervised loop:
 2. **Plan** (`flow-plan`) — AI proposes a plan in GODS format. You review, adjust, approve
 3. **Execute** — AI implements the approved plan. You watch the diffs
 4. **Verify** — `deno task check` (or your project's equivalent) must pass. No exceptions
-5. **Commit** (`flow-commit`) — AI prepares atomic commits. You review before push
+5. **Review & Commit** (`flow-review-and-commit`) — AI reviews changes, then prepares atomic commits. You review before push
 
 ### 3. Maintenance
 
@@ -148,6 +148,7 @@ Every task follows the same supervised loop:
 - `flow-plan` — task planning (GODS format)
 - `flow-commit` — atomic commits with QA
 - `flow-review` — QA + code review of current changes
+- `flow-review-and-commit` — review quality, then commit if approved
 - `flow-reflect` — self-analysis of recent work
 - `flow-maintenance` — project health check
 - `flow-investigate` — deep bug investigation
