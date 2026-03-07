@@ -55,7 +55,11 @@
       "Bash(CLAUDECODE=\"\" claude -p --model claude-sonnet-4-6 \"say OK\")",
       "Bash(deno check benchmarks/flow-answer/scenarios/basic/mod.ts)",
       "Bash(deno fmt --check)",
-      "Bash(deno fmt)"
+      "Bash(deno fmt)",
+      "WebFetch(domain:forum.cursor.com)",
+      "Bash(GIT_PAGER=cat git add framework/skills/flow-engineer-command/SKILL.md framework/skills/flow-engineer-rule/SKILL.md framework/skills/flow-engineer-skill/SKILL.md framework/skills/flow-init/SKILL.md framework/skills/flow-skill-analyze-context/SKILL.md framework/skills/flow-skill-draw-mermaid-diagrams/SKILL.md)",
+      "Bash(git commit:*)",
+      "Bash(GIT_PAGER=cat git add README.md documents/requirements.md .claude/settings.json)"
     ],
     "deny": []
   }

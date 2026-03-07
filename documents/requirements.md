@@ -37,8 +37,9 @@
   reads the command file and follows the steps.
 - **Acceptance criteria:**
   - [x] Support for task commands including planning, execution, investigation,
-        and documentation. Evidence: `framework/skills/flow-plan/SKILL.md:9`,
+        review, and documentation. Evidence: `framework/skills/flow-plan/SKILL.md:9`,
         `framework/skills/flow-commit/SKILL.md:7`,
+        `framework/skills/flow-review/SKILL.md:7`,
         `framework/skills/flow-investigate/SKILL.md:7`,
         `framework/skills/flow-answer/SKILL.md:9`
   - [x] Commands follow `/<command>` naming convention (file name without
@@ -222,6 +223,7 @@ The benchmarking system must cover all core AssistFlow components to ensure reli
 | `flow-maintenance`                         | Periodic project health checks       |     [ ]     |                          |
 | `flow-plan`                                | Task planning (GODS)                 |     [x]     | `flow-plan-*`            |
 | `flow-review`                              | QA + code review of changes          |     [ ]     |                          |
+| `flow-review-and-commit`                   | Review quality then commit           |     [ ]     |                          |
 | `flow-reflect`                             | Self-reflection on task              |     [x]     | `flow-reflect-*`         |
 | `flow-setup-code-style-ts-deno`            | Setup Deno/TS code style             |     [ ]     |                          |
 | `flow-setup-code-style-ts-strict`          | Setup strict TypeScript              |     [ ]     |                          |
@@ -332,6 +334,8 @@ Per-IDE subdirectories with IDE-native frontmatter. Body (system prompt) shared.
         AGENTS.md files exist, verifies no duplication between root and
         subdirectory files. Evidence:
         `framework/skills/flow-init/SKILL.md:163-168`
+  - [ ] **FR-8.16 CLAUDE.md generation**: Generate `./CLAUDE.md` for Claude Code
+        compatibility (see FR-19 for detailed requirements).
   - [x] **FR-8.12 OpenCode compatibility check**: SKILL.md step 7 checks
         `opencode.json` for subdirectory AGENTS.md glob entries, warns if
         missing. Evidence: `framework/skills/flow-init/SKILL.md:135-139`
@@ -631,6 +635,50 @@ Per-IDE subdirectories with IDE-native frontmatter. Body (system prompt) shared.
         "IDE/Agent" terminology in algorithms section. Evidence:
         `documents/design.md:14-23`, `documents/design.md:26`,
         `documents/design.md:38`
+
+### 3.18 Review-and-Commit Workflow — `flow-review-and-commit` (FR-18)
+
+- **Description:** A composite command that first performs a quality review of the
+  current implementation (using `flow-review` logic) and then, if the review passes,
+  automatically invokes `flow-commit` to create atomic commits. Combines the review
+  and commit steps into a single user action.
+- **Use case scenario:** User completes a task and runs `/flow-review-and-commit`.
+  The agent reviews the diff for task completion and code quality. If the review
+  verdict is **Approve**, the agent proceeds to the commit workflow. If
+  **Request Changes** or **Needs Discussion**, the agent reports findings and stops
+  without committing.
+- **Acceptance criteria:**
+  - [ ] **FR-18.1 Review phase**: Executes the full `flow-review` workflow (QA +
+        code review) on current changes.
+  - [ ] **FR-18.2 Gate logic**: Proceeds to commit ONLY if the review verdict is
+        **Approve** (no critical issues). Stops and reports findings otherwise.
+  - [ ] **FR-18.3 Commit phase**: Invokes `flow-commit` workflow (documentation
+        audit, pre-commit verification, atomic grouping, commit execution).
+  - [ ] **FR-18.4 Single command**: Available as `/flow-review-and-commit` chat
+        command. User does not need to run review and commit separately.
+  - [ ] **FR-18.5 Transparency**: Reports both review results and commit results
+        to the user in a single output.
+
+### 3.19 CLAUDE.md Generation in flow-init (FR-19)
+
+- **Description:** `flow-init` must generate a `CLAUDE.md` file in the project root
+  during initialization. `CLAUDE.md` is the Claude Code-specific project instruction
+  file (equivalent to `AGENTS.md` but read natively by Claude Code). The generated
+  file should reference or include the core project rules from `AGENTS.md`.
+- **Use case scenario:** User runs `/flow-init` on a project that uses Claude Code.
+  In addition to the 3 `AGENTS.md` files, the agent generates `./CLAUDE.md` with
+  project-specific instructions for Claude Code.
+- **Acceptance criteria:**
+  - [ ] **FR-19.1 Generation**: `flow-init` generates `./CLAUDE.md` during
+        initialization (both Greenfield and Brownfield).
+  - [ ] **FR-19.2 Content**: Generated `CLAUDE.md` includes core project rules,
+        project metadata, and references to `AGENTS.md` for detailed context.
+  - [ ] **FR-19.3 Idempotency**: If `CLAUDE.md` already exists, show diff and
+        ask for per-file confirmation before applying (same as `AGENTS.md` handling).
+  - [ ] **FR-19.4 User content preservation**: In Brownfield, preserve user's
+        existing custom instructions in `CLAUDE.md`.
+  - [ ] **FR-19.5 Template**: Add `CLAUDE.template.md` to
+        `framework/skills/flow-init/assets/` as reference template.
 
 ## 4. Non-functional requirements
 
