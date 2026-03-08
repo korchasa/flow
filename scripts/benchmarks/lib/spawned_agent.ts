@@ -196,6 +196,7 @@ export class SpawnedAgent {
     }
   }
 
+  /** Reads stdout and stderr in parallel, waits for process exit, then parses output. */
   private async monitorProcess() {
     if (!this.process) return;
 
