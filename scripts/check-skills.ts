@@ -1,3 +1,8 @@
+/**
+ * Validates that each skill directory name in .dev/skills/ matches
+ * the `name` field in its SKILL.md frontmatter.
+ * Exits with code 1 if any mismatch is found.
+ */
 import { parse } from "@std/yaml";
 import { join } from "@std/path";
 

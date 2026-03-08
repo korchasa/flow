@@ -9,6 +9,7 @@ import { ClaudeAdapter } from "./claude.ts";
 export const SUPPORTED_IDES = ["cursor", "claude"] as const;
 export type SupportedIde = typeof SUPPORTED_IDES[number];
 
+/** Creates an IDE-specific adapter by name. Throws if IDE is unsupported. */
 export function createAdapter(ide: string): AgentAdapter {
   switch (ide) {
     case "cursor":

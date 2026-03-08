@@ -68,7 +68,18 @@
       "Bash(deno test scripts/install.test.ts --filter \"parseArgs\")",
       "Bash(deno fmt scripts/install.test.ts)",
       "Bash(GIT_PAGER=cat git add scripts/install.ts scripts/install.test.ts)",
-      "Bash(GIT_PAGER=cat git add framework/skills/flow-review-and-commit/SKILL.md framework/skills/flow-review/SKILL.md scripts/task-check.ts scripts/task-check.test.ts scripts/check-skill-sync.ts benchmarks/flow-review/ .claude/settings.json)"
+      "Bash(GIT_PAGER=cat git add framework/skills/flow-review-and-commit/SKILL.md framework/skills/flow-review/SKILL.md scripts/task-check.ts scripts/task-check.test.ts scripts/check-skill-sync.ts benchmarks/flow-review/ .claude/settings.json)",
+      "Read(//^[[:space:]]*\\(async[[:space:]]+\\)?\\(private|public|static|protected\\)?[[:space:]]*\\(async[[:space:]]+\\)?[a-zA-Z_][a-zA-Z0-9_]*\\\\s*\\\\\\(/ {start=NR; name=$0} start && /^[[:space:]]*\\\\}[[:space:]]*$/**)",
+      "Bash(grep -E \"^[0-9]+-[0-9]+: [5-9][0-9]|^[0-9]+-[0-9]+: [0-9]{3,}\")",
+      "Bash(grep -r \"^## Skills$\" /Users/korchasa/www/tools/flow/framework/skills/)",
+      "Read(//tmp/**)",
+      "Bash(deno lint scripts --fix)",
+      "Bash(deno fmt --check scripts)",
+      "Bash(deno test scripts --coverage=tmp/coverage)",
+      "Bash(while read f)",
+      "Bash(do echo \"=== $f ===\")",
+      "Read(//Users/korchasa/www/tools/flow/**)",
+      "Bash(fi)"
     ],
     "deny": [],
     "additionalDirectories": [
