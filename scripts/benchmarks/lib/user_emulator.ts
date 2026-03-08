@@ -7,6 +7,7 @@ export interface UserEmulatorOptions {
   llmClient?: typeof chatCompletion;
 }
 
+/** Simulates user responses in interactive benchmark scenarios using an LLM with a given persona. */
 export class UserEmulator {
   private persona: string;
   private config: ModelConfig;

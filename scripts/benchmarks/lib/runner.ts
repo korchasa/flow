@@ -19,6 +19,11 @@ export interface RunnerOptions {
   judgeClient?: typeof evaluateChecklist;
 }
 
+/**
+ * Orchestrates a complete benchmark run for a single scenario:
+ * sandbox setup → fixture copy → framework copy → agent execution →
+ * evidence gathering (git status/log) → LLM judge evaluation → scoring.
+ */
 export async function runScenario(
   scenario: BenchmarkScenario,
   options: RunnerOptions,
@@ -78,8 +83,9 @@ export async function runScenario(
     let fixturePath = scenario.fixturePath;
 
     if (!fixturePath) {
-      // Try to find fixture relative to the scenario's mod.ts
-      // This assumes the scenario is an instance of a class defined in a mod.ts
+      // Heuristic: derive fixture path from the call stack by finding the scenario's
+      // mod.ts file and looking for a sibling "fixture/" directory. This avoids
+      // requiring every scenario to explicitly set fixturePath.
       try {
         // @ts-ignore: Accessing internal property to find the file path
         const stack = new Error().stack;

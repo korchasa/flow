@@ -24,8 +24,6 @@ Automatically add stable "work agreements" and project norms (like README for ag
 - `.cursor/rules/*/RULE.md` with `alwaysApply: true`
 - `.cursor/rules/*.mdc` with `alwaysApply: true` **Legacy!**
 
-> TODO: Find out merge rules
-
 ### OpenAI Codex
 
 - `~/.codex/AGENTS.md` (global user rules) with CODEX_HOME support

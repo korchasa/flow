@@ -112,8 +112,8 @@ AI models lose context between sessions. AssistFlow compensates by storing all d
 
 This repository contains two distinct layers. Do not confuse them:
 
-- **`framework/`** — **the product itself**. Skills and agents that users copy into their projects (into `.cursor/skills/`, `.claude/`, etc.). This is what AssistFlow distributes.
-- **`.cursor/`, `.claude/`** — **internal development tooling**. Skills and agents used to develop AssistFlow itself (benchmark runner, cursor-agent integration, code generation helpers). These are not part of the product and are not distributed to users.
+- **`framework/`** — **the product itself**. Skills and agents that users install into their projects (into `~/.cursor/skills/`, `~/.claude/`, etc.). This is what AssistFlow distributes via the installer.
+- **`.dev/`** — **internal development tooling** (SPOT). Skills and agents used to develop AssistFlow itself (benchmark runner, cursor-agent integration, code generation helpers). These are NOT distributed to users. Symlinked to `.cursor/`, `.claude/`, `.opencode/` via `deno task link` for local development only.
 
 ## Developer Workflow
 

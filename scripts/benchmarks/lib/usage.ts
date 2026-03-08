@@ -85,6 +85,12 @@ export async function calculateSessionUsage(
     s.trim()
   );
 
+  // Token approximation algorithm:
+  // - Split transcript into user:/assistant: sections
+  // - For each turn, estimate tokens as chars / CHARS_PER_TOKEN (≈4 chars/token)
+  // - Track cumulative context: each turn's cache_read = all previous turns' chars
+  // - Assumes new user input is always written to cache (cache_write = input_tokens)
+  // - Assistant responses add to cumulative context for subsequent turns
   let cumulativeContextChars = 0;
   let currentTurnInputChars = 0;
 
@@ -95,7 +101,6 @@ export async function calculateSessionUsage(
       const userMessage = sections[++i] || "";
       currentTurnInputChars = userMessage.length;
 
-      // Calculate tokens for this turn
       const inputTokens = Math.ceil(currentTurnInputChars / CHARS_PER_TOKEN);
       const cacheReadTokens = Math.ceil(
         cumulativeContextChars / CHARS_PER_TOKEN,
@@ -103,9 +108,8 @@ export async function calculateSessionUsage(
 
       totalInputTokens += inputTokens;
       totalCacheReadTokens += cacheReadTokens;
-      totalCacheWriteTokens += inputTokens; // Assume new input is written to cache
+      totalCacheWriteTokens += inputTokens;
 
-      // Update cumulative context for next turn
       cumulativeContextChars += currentTurnInputChars;
       continue;
     }
@@ -116,7 +120,6 @@ export async function calculateSessionUsage(
 
       totalOutputTokens += outputTokens;
 
-      // Assistant response also becomes part of the context for the next turn
       cumulativeContextChars += assistantMessage.length;
       continue;
     }

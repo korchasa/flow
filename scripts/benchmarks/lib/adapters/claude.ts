@@ -20,6 +20,7 @@ interface ClaudeEvent {
   };
 }
 
+/** Adapter for Claude Code CLI. Parses JSON event arrays and uses settings.local.json for mocking. */
 export class ClaudeAdapter implements AgentAdapter {
   readonly ide = "claude" as const;
   readonly configDir = ".claude";

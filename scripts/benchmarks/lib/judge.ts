@@ -1,6 +1,10 @@
 import { chatCompletion, ModelConfig } from "./llm.ts";
 import { BenchmarkChecklistItem, LLMMessage } from "./types.ts";
 
+/**
+ * Uses an LLM judge to evaluate agent performance against a checklist.
+ * Returns per-item pass/fail with reasoning, plus raw judge messages.
+ */
 export async function evaluateChecklist(
   userQuery: string,
   agentLogs: string,

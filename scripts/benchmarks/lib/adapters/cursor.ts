@@ -8,6 +8,7 @@ interface CursorAgentOutput {
   subtype?: string;
 }
 
+/** Adapter for the cursor-agent CLI. Handles JSON output parsing and Cursor hooks-based mocking. */
 export class CursorAdapter implements AgentAdapter {
   readonly ide = "cursor" as const;
   readonly configDir = ".cursor";
