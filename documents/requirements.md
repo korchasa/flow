@@ -256,6 +256,7 @@ The benchmarking system must cover all core AssistFlow components to ensure reli
 | `flow-skill-engineer-prompts-for-instant` | Prompt engineering (Instant models)  |     [ ]     |                          |
 | `flow-skill-engineer-prompts-for-reasoning` | Prompt engineering (Reasoning models) | [ ]     |                          |
 | `flow-skill-fix-tests`                    | Fixing broken tests                  |     [ ]     |                          |
+| `flow-skill-setup-ai-ide-devcontainer`    | AI devcontainer setup                |     [x]     | `flow-skill-setup-ai-ide-devcontainer-*` |
 | `flow-skill-manage-github-tickets-by-mcp` | Managing GitHub via MCP              |     [ ]     |                          |
 | `flow-skill-playwright-cli`               | Browser automation via CLI           |     [ ]     |                          |
 | `flow-skill-write-agent-benchmarks`       | Writing agent benchmarks             |     [x]     |                          |
@@ -737,7 +738,7 @@ Per-IDE subdirectories with IDE-native frontmatter. Body (system prompt) shared.
 ### 3.20 AI Devcontainer Setup — flow-skill-setup-ai-ide-devcontainer (FR-20)
 
 - **Description:** `flow-skill-setup-ai-ide-devcontainer` skill creates a `.devcontainer/`
-configuration optimized for AI IDE development. Can be invoked by the agent
+  configuration optimized for AI IDE development. Can be invoked by the agent
   or delegated from `flow-init` step 11. Generates `devcontainer.json` (and optionally
   `Dockerfile` + `init-firewall.sh`) based on detected tech stack, with Claude Code CLI
   integration, secrets handling, and optional global skills mounting.
@@ -746,40 +747,59 @@ configuration optimized for AI IDE development. Can be invoked by the agent
   generates `.devcontainer/` configuration. Also invoked from `flow-init` when user
   agrees to devcontainer setup.
 - **Acceptance criteria:**
-  - [ ] **FR-20.1 User consent**: Agent asks the user before creating devcontainer
+  - [x] **FR-20.1 User consent**: Agent asks the user before creating devcontainer
         files. Devcontainer is NOT created without explicit user agreement.
-  - [ ] **FR-20.2 Stack-aware generation**: `devcontainer.json` references a base
+        Evidence: `framework/skills/flow-skill-setup-ai-ide-devcontainer/SKILL.md` Step 4 "Determine Capabilities",
+        `benchmarks/flow-skill-setup-ai-ide-devcontainer/scenarios/node-basic/mod.ts` (userPersona confirms prompts)
+  - [x] **FR-20.2 Stack-aware generation**: `devcontainer.json` references a base
         image matching the detected stack (e.g., `mcr.microsoft.com/devcontainers/typescript-node`
         for Node/TS, community Deno feature for Deno). Extensions list includes
         relevant IDE extensions for the stack.
-  - [ ] **FR-20.3 Idempotency**: If `.devcontainer/` already exists, the agent shows
+        Evidence: `framework/skills/flow-skill-setup-ai-ide-devcontainer/SKILL.md` Step 1 "Detect Project Stack",
+        `framework/skills/flow-skill-setup-ai-ide-devcontainer/SKILL.md:152-176` (Stack Reference tables)
+  - [x] **FR-20.3 Idempotency**: If `.devcontainer/` already exists, the agent shows
         diff and asks for per-file confirmation before overwriting (same pattern as
         other brownfield files).
-  - [ ] **FR-20.4 Greenfield interview integration**: For greenfield projects via
+        Evidence: `framework/skills/flow-skill-setup-ai-ide-devcontainer/SKILL.md` Step 3 "Detect Existing Configuration",
+        `benchmarks/flow-skill-setup-ai-ide-devcontainer/scenarios/brownfield-existing/mod.ts`
+  - [x] **FR-20.4 Greenfield interview integration**: For greenfield projects via
         flow-init, the devcontainer question is included in the interview (step 3).
         flow-init delegates to flow-skill-setup-ai-ide-devcontainer when user agrees.
-  - [ ] **FR-20.5 Verification**: Generated `.devcontainer/devcontainer.json` is
+        Evidence: `framework/skills/flow-init/SKILL.md` step 3 (interview includes `use_devcontainer`),
+        `framework/skills/flow-init/SKILL.md` step 11 (delegation to devcontainer skill)
+  - [x] **FR-20.5 Verification**: Generated `.devcontainer/devcontainer.json` is
         valid JSON. Dockerfile (if generated) has valid `FROM` line. No hardcoded
         secrets in any generated file.
-  - [ ] **FR-20.6 AI CLI integration**: When Claude Code selected, configures native
+        Evidence: `framework/skills/flow-skill-setup-ai-ide-devcontainer/SKILL.md` Step 7 "Verify"
+  - [x] **FR-20.6 AI CLI integration**: When Claude Code selected, configures native
         installer or npm install, config persistence volume, and `ANTHROPIC_API_KEY`
         via `remoteEnv` with `${localEnv:}` (no hardcoded values).
-  - [ ] **FR-20.7 Global skills mounting**: Host `~/.claude/` is bind-mounted
+        Evidence: `framework/skills/flow-skill-setup-ai-ide-devcontainer/SKILL.md:207-268` (AI CLI Setup Reference),
+        `benchmarks/flow-skill-setup-ai-ide-devcontainer/scenarios/opencode-multi-cli/mod.ts` (multi-CLI coverage)
+  - [x] **FR-20.7 Global skills mounting**: Host `~/.claude/` is bind-mounted
         read-only to `~/.claude-host`. `~/.claude` itself is a Docker volume
         (isolates container state from host). `postStartCommand` syncs global
         user skills/commands from host into container on every start:
         `cp -rL ~/.claude-host/skills ~/.claude/skills` (dereferences symlinks
         into real files). Skills update on container restart, not real-time.
         Documents that bind mounts do not work in Codespaces.
-  - [ ] **FR-20.8 Security hardening**: Optional firewall (`init-firewall.sh`) with
+        Evidence: `framework/skills/flow-skill-setup-ai-ide-devcontainer/SKILL.md:248-253` (Global Skills Mount Rules),
+        `benchmarks/flow-skill-setup-ai-ide-devcontainer/scenarios/deno-with-claude/mod.ts` (global_skills_mount check)
+  - [x] **FR-20.8 Security hardening**: Optional firewall (`init-firewall.sh`) with
         default-deny policy, stack-aware domain allowlist, and verification tests.
-  - [ ] **FR-20.9 Sync timing**: Global skill/command sync MUST happen in
+        Evidence: `framework/skills/flow-skill-setup-ai-ide-devcontainer/references/firewall-template.md`,
+        `benchmarks/flow-skill-setup-ai-ide-devcontainer/scenarios/deno-with-claude/mod.ts` (firewall_script check)
+  - [x] **FR-20.9 Sync timing**: Global skill/command sync MUST happen in
         `postStartCommand` (not `postCreateCommand`), so updates from host
         are picked up on every container restart without rebuild.
-  - [ ] **FR-20.10 Symlink dereferencing**: `cp -rL` MUST be used (not `cp -r`)
+        Evidence: `framework/skills/flow-skill-setup-ai-ide-devcontainer/SKILL.md:286-293` (Lifecycle Hooks Reference),
+        `benchmarks/flow-skill-setup-ai-ide-devcontainer/scenarios/deno-with-claude/mod.ts` (global_skills_sync_in_post_start check)
+  - [x] **FR-20.10 Symlink dereferencing**: `cp -rL` MUST be used (not `cp -r`)
         because host skills may be symlinks with host-relative paths that are
         unresolvable inside the container.
-  - [ ] **FR-20.11 Feature discovery**: Agent scans project files for indicators
+        Evidence: `framework/skills/flow-skill-setup-ai-ide-devcontainer/SKILL.md:252` (cp -rL in Global Skills Mount Rules),
+        `benchmarks/flow-skill-setup-ai-ide-devcontainer/scenarios/deno-with-claude/mod.ts` (symlink_dereference check)
+  - [x] **FR-20.11 Feature discovery**: Agent scans project files for indicators
         (lockfiles, config files, dependency manifests) and suggests relevant
         devcontainer features from the catalog (`references/features-catalog.md`).
         High-confidence matches (secondary runtimes, build tools) are auto-added;
@@ -787,6 +807,9 @@ configuration optimized for AI IDE development. Can be invoked by the agent
         presented to the user for confirmation. Features already covered by the
         base image are excluded. The user sees a grouped list with detection
         rationale before generation.
+        Evidence: `framework/skills/flow-skill-setup-ai-ide-devcontainer/SKILL.md` Step 2 "Discover Relevant Features",
+        `framework/skills/flow-skill-setup-ai-ide-devcontainer/references/features-catalog.md`,
+        `benchmarks/flow-skill-setup-ai-ide-devcontainer/scenarios/feature-discovery/mod.ts`
 
 ### 3.21 Universal Skill & Script Requirements (FR-21)
 
