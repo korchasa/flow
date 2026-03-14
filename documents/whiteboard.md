@@ -1,282 +1,227 @@
-# Create `flow-spec` Skill for Specification-Driven Development of Large Features
+# flow-cli: Universal Agent Format Support
 
 ## Goal
 
-Enable developers to create structured, decomposed specifications for features that exceed a single AI agent context window (~200K tokens for Claude Opus 4.6 / OpenAI o3, ~1M for Gemini 2.5 Pro). The spec must serve as a persistent, executable artifact that guides multi-session implementation while maintaining architectural coherence.
+Adapt flow-cli to read agents from flat `framework/agents/` (universal format containing data for all IDEs) instead of per-IDE subdirectories (`framework/agents/{claude,cursor,opencode}/`). Add IDE-specific frontmatter extraction at sync time.
 
-Dependency: `flow-plan` handles tasks that fit in one context window. `flow-spec` fills the gap for larger features requiring phased, multi-session execution.
+**Why:** The flow repo now stores one universal definition per agent. flow-cli extracts IDE-relevant fields from it during sync, rather than expecting pre-formatted per-IDE variants.
 
 ## Overview
 
 ### Context
 
-Current `flow-plan` produces a single whiteboard.md using GODS framework — sufficient for tasks completable within one agent session. For large features (new subsystems, cross-cutting refactors, multi-component integrations), the plan either becomes too large for context or loses critical details between sessions.
+The flow repo has been restructured (spec-flow-cli-integration.md):
+- `framework/agents/` is now flat — 4 `.md` files with universal frontmatter (superset of all IDE fields)
+- Per-IDE subdirectories (`claude/`, `cursor/`, `opencode/`) are deleted
+- flow-cli (v0.1.4) still expects `framework/agents/{ide}/*.md` — this is now broken
 
-### Industry State (2025-2026)
+flow-cli is a git submodule at `flow-cli/` in the flow repo. Changes here affect flow-cli's own repo.
 
-Spec-driven development (SDD) emerged as a dominant practice:
-- **GitHub Spec Kit** (2025): 4-phase model — Specify → Plan → Tasks → Implement
-- **Pimzino/claude-code-spec-workflow**: Requirements → Design → Tasks → Implementation with auto-generated per-task commands
-- **Thoughtworks analysis**: SDD separates design from implementation, reducing "vibe coding" failures
-- **Addy Osmani (O'Reilly)**: Specs must cover 6 areas — Commands, Testing, Project structure, Code style, Git workflow, Boundaries
+### Current State
 
-### What Works for AI Agents
+**flow-cli agent pipeline:**
+1. `extractAgentNames(paths, ide.agentSubdir)` — regex matches `framework/agents/{ide}/name.md`
+2. `readAgentFiles(names, ide, paths, source)` — reads from `framework/agents/{ide.agentSubdir}/{name}.md`
+3. Writes agent content as-is to `{ide_configDir}/agents/{name}.md`
 
-- **Dependency-ordered, testable phases** with bounded scope per phase
-- **Atomic task decomposition** — each task implementable and testable in isolation
-- **Modular context delivery** — feed only relevant spec sections per task, not entire document
-- **Three-tier boundaries** (always/ask-first/never) for agent autonomy control
-- **Living document** approach — spec evolves as implementation reveals new information
-- **Explicit non-goals** — AI cannot infer from omission; must state what NOT to do
-- **~150-200 instruction limit** — frontier LLMs degrade beyond this threshold per session
+**Affected files:**
+- `src/types.ts` — `IDE.agentSubdir` field, `KNOWN_IDES` definitions
+- `src/source.ts` — `extractAgentNames()` function
+- `src/sync.ts` — `readAgentFiles()` function, agent sync loop
+- `src/config_generator.ts` — agent discovery via `extractAgentNames()`
+- `src/source_test.ts` — test for `extractAgentNames()`
+- `src/main_test.ts` — mock source with per-IDE agents
 
-### What Doesn't Work
+**IDE frontmatter transformation rules** (from `documents/ides-difference.md`):
+- Claude Code: `name` (keep), `description` (keep), `tools` (list), `disallowedTools`
+- Cursor: `name` (keep), `description` (keep), `readonly` (bool)
+- OpenCode: remove `name`, add `mode: subagent`, `tools` (map: write/edit→bool)
 
-- **Monolithic specs** overloading context window → performance degradation, instruction following drops
-- **Vague requirements** without concrete inputs/outputs/constraints → hallucination
-- **Implementation details in spec phase** → premature coupling, wasted context tokens
-- **No validation checkpoints** → spec drift accumulates silently across sessions
-- **Over-specification of trivial parts** → wastes context budget on unnecessary instructions
-
-### Risks & Limitations
-
-- **Spec drift**: Non-deterministic code generation means spec and implementation can diverge. Mitigation: validation checkpoints after each phase
-- **Multi-file context degradation**: Research shows Pass@1 drops to ~20% for infrastructure code spanning many files. Mitigation: atomic tasks targeting 1-3 files
-- **Session boundary loss**: Agent loses context between sessions. Mitigation: persistent spec files with status tracking
-- **Hallucination in edge cases**: LLMs generate vulnerable code at 9.8-42.1% rates across benchmarks. Mitigation: explicit security constraints in spec
-- **Waterfall trap**: Over-specifying upfront defeats agile feedback. Mitigation: iterative spec refinement, not "freeze and execute"
-
-### Model Capabilities (2026)
-
-- **Claude Opus 4.6**: 200K context, strongest coding (SWE-bench 72.5%), 14.5h autonomous task horizon (METR record), sub-agent spawning
-- **Gemini 2.5 Pro**: 1M context (91.5% accuracy at 128K, 83.1% at 1M), WebDev Arena leader, native multimodal
-- **OpenAI o3**: 200K context, 100K output tokens, strong reasoning (69.1% SWE-bench)
-
-Implication: Even with 1M context (Gemini), modular spec delivery outperforms monolithic loading due to attention degradation at scale.
+However, not all agents need the same frontmatter additions. The transformation rules depend on the agent itself (e.g., `flow-diff-specialist` is read-only, `flow-skill-executor` is not).
 
 ### Constraints
 
-- Must follow agentskills.io SKILL.md format
-- Must be IDE-agnostic (Cursor, Claude Code, OpenCode)
-- Output files only in `documents/` directory (spec files)
-- Must integrate with existing `flow-plan` and GODS framework
-- Skill is a Command (`flow-spec`), not a sub-skill
+- flow-cli is a separate repo (git submodule). Changes must be valid in isolation.
+- `deno task check` must pass in flow-cli.
+- TDD: tests first.
+- No stubs.
+- The transformation must produce output equivalent to the previous per-IDE variants.
 
 ## Definition of Done
 
-- [ ] `framework/skills/flow-spec/SKILL.md` created following agentskills.io format
-- [ ] Skill produces structured spec document(s) in `documents/` directory
-- [ ] Spec format supports decomposition into phases/tasks that fit individual context windows
-- [ ] Each phase/task is self-contained with: goal, inputs, outputs, constraints, verification criteria
-- [ ] Spec includes explicit non-goals, boundaries, and security constraints
-- [ ] Spec tracks status per phase (not-started / in-progress / done)
-- [ ] Workflow includes validation checkpoints between phases
-- [ ] Skill references existing project skills where appropriate (flow-skill-write-prd, flow-skill-write-dep)
-- [ ] Benchmark scenario created for the skill
-- [ ] `deno task check` passes
-- [ ] Skill tested through benchmark (TDD for skills)
+- [x] Universal agent format in flow repo: superset frontmatter with all IDE fields (`name`, `description`, `tools`, `disallowedTools`, `readonly`, `mode`). Evidence: `framework/agents/*.md`
+- [x] `extractAgentNames()` reads from flat `framework/agents/` (no IDE subdir). Evidence: `flow-cli/src/source.ts:146-160`
+- [x] `readAgentFiles()` reads from flat path, applies IDE-specific frontmatter extraction. Evidence: `flow-cli/src/sync.ts:247-262`
+- [x] `IDE.agentSubdir` field removed from types and KNOWN_IDES. Evidence: `flow-cli/src/types.ts:1-6,47-55`
+- [x] New `transformAgent(content, ideName)` function: extracts IDE-relevant fields, unknown fields pass-through. Evidence: `flow-cli/src/transform.ts:31-60`
+- [x] `config_generator.ts` agent discovery works with flat structure. Evidence: `flow-cli/src/config_generator.ts:59-61`
+- [x] All tests updated and passing (`source_test.ts`, `main_test.ts`, new transform tests). Evidence: 141 passed, 0 failed
+- [x] Tests cover YAML edge cases (multiline description, colons, quotes). Evidence: `flow-cli/src/transform_test.ts:125-134`
+- [x] `main_test.ts` assertions verify IDE-specific frontmatter in output. Evidence: `flow-cli/src/main_test.ts:71-97`
+- [x] Integration test (`GitCloneSource`) marked skip until flow repo pushed with new format. Evidence: `flow-cli/src/source_test.ts:86-104`
+- [x] `deno task check` passes in flow-cli. Evidence: "All checks passed!"
+- [x] flow-cli SRS updated (FR-1 acceptance criteria for agents). Evidence: `flow-cli/documents/requirements.md:30`
+- [x] flow repo `documents/design.md` §3.2 updated to describe universal format. Evidence: `documents/design.md:93-97`
+- [x] Universal agents in flow repo contain all IDE fields. Evidence: `framework/agents/*.md`
 
 ## Solution
 
-**Selected Variant: A — Single-File Phased Spec**
+**Selected Variant: C — Flat Read + Universal Frontmatter + IDE Extraction**
 
-One file `documents/spec-{name}.md` containing all phases. Agent reads header + relevant phase per session.
+Two repos affected: flow (universal source) and flow-cli (extraction + delivery).
 
 ---
 
-### Phase 1: Design SKILL.md for `flow-spec`
+### Part 1: Universal Agent Format (flow repo)
 
-**Goal:** Create `framework/skills/flow-spec/SKILL.md` — the skill definition.
+Update `framework/agents/*.md` to contain **superset of all IDE fields**. Each agent file holds all data needed by every IDE. flow-cli extracts what each IDE needs.
 
-**1.1 Skill Structure**
+**Universal frontmatter fields (superset):**
+- `name` (required) — agent identifier (Claude, Cursor use; OpenCode ignores — uses filename)
+- `description` (required) — agent purpose (all IDEs)
+- `tools` (optional, string) — allowed tools as comma-separated list (Claude)
+- `disallowedTools` (optional, string) — disallowed tools (Claude)
+- `readonly` (optional, bool) — read-only mode (Cursor)
+- `mode` (optional, string) — agent mode, e.g., `subagent` (OpenCode)
+- `opencode_tools` (optional, map) — tool permissions map (OpenCode), e.g., `{write: false, edit: false}`
+
+**Agent updates:**
+
+1. `flow-diff-specialist.md`:
+   ```yaml
+   name: flow-diff-specialist
+   description: ...
+   tools: Read, Grep, Glob, Bash
+   disallowedTools: Write, Edit
+   readonly: true
+   mode: subagent
+   opencode_tools:
+     write: false
+     edit: false
+   ```
+2. `deep-research-worker.md` — same pattern, `tools: Read, Grep, Glob, Bash, WebFetch`
+3. `flow-console-expert.md` — same pattern as flow-diff-specialist
+4. `flow-skill-executor.md` — only `name`, `description`, `mode: subagent` (no restrictions)
+
+**Update `documents/design.md` §3.2:** Change "Frontmatter contains only IDE-agnostic metadata (`name`, `description`)" → describe universal format with all IDE fields.
+
+**Verification:** `deno task check` passes in flow repo.
+
+---
+
+### Part 2: flow-cli Changes
+
+#### Step 1: Remove `agentSubdir` from types
+
+**File: `src/types.ts`**
+- Remove `agentSubdir` field from `IDE` interface
+- Remove `agentSubdir` values from `KNOWN_IDES`
+
+#### Step 2: Update `extractAgentNames()` to flat structure
+
+**File: `src/source.ts`**
+- Change signature: `extractAgentNames(paths: string[])` — remove `ideSubdir` parameter
+- Change regex: `^framework/agents/([^/]+)\.md$` (flat, no IDE subdir)
+
+#### Step 3: Create `transformAgent()` function
+
+**New file: `src/transform.ts`**
 
 ```
-framework/skills/flow-spec/
-└── SKILL.md
+transformAgent(content: string, ideName: string): string
 ```
 
-Frontmatter:
-```yaml
----
-name: flow-spec
-description: >-
-  Create structured specification for large features using phased decomposition.
-  Produces documents/spec-{name}.md with dependency-ordered phases, atomic tasks,
-  explicit boundaries, and per-phase status tracking.
-disable-model-invocation: true
----
-```
+Parses YAML frontmatter from universal agent, extracts IDE-relevant fields, returns transformed content with IDE-native frontmatter.
 
-**1.1a When to Use**
+**Extraction rules (from universal → IDE-specific):**
 
-Add a "When to Use" section at the top of SKILL.md:
-- Use `flow-spec` when feature spans >3 files AND requires >2 sessions, OR has >5 phases
-- Use `flow-plan` for tasks completable within one agent session
-- When unsure: start with `flow-plan`; if it outgrows whiteboard.md → upgrade to `flow-spec`
+| Universal field | Claude Code | Cursor | OpenCode |
+|:---|:---|:---|:---|
+| `name` | keep | keep | **drop** (filename = ID) |
+| `description` | keep | keep | keep |
+| `tools` (string) | keep | **drop** | **drop** |
+| `disallowedTools` (string) | keep | **drop** | **drop** |
+| `readonly` (bool) | **drop** | keep | **drop** |
+| `mode` (string) | **drop** | **drop** | keep |
+| `opencode_tools` (map) | **drop** | **drop** | rename to `tools` |
+| unknown fields | **pass-through** | **pass-through** | **pass-through** |
 
-**1.2 Workflow Steps (in SKILL.md)**
+Body (system prompt) passed through unchanged for all IDEs.
 
-The skill follows a 7-step workflow, extending flow-plan's pattern:
+**YAML edge case handling:** Test multiline descriptions (with colons, quotes, special chars). Use `@std/yaml` (already a dependency via `src/config.ts`).
 
-1. **Initialize** — Create todo list, read AGENTS.md rules.
-2. **Deep Context & Research** — Analyze prompt, codebase, docs, web. Resolve uncertainties proactively. If gaps remain → ask user, STOP.
-3. **Draft Spec Header** — Write to `documents/spec-{name}.md`:
-   - Title, Status (Draft), Date
-   - Goal (business/user value)
-   - Overview (current state, why now, constraints)
-   - Non-Goals (explicit exclusions — critical for AI agents)
-   - Architecture & Boundaries (three-tier: always/ask-first/never)
-   - Definition of Done (measurable acceptance criteria)
-   - **DO NOT fill Phases yet.**
-4. **Decompose into Phases (Chat Only)** — Present phase breakdown in chat:
-   - Each phase: goal, scope (files/components), dependencies, estimated task count
-   - Phases ordered by dependency (foundations first)
-   - Target: ≤30-50 requirements per phase (within 150-200 instruction limit)
-   - Present to user. STOP and wait for approval/adjustments.
-5. **Detail Phases** — Write approved phases into spec file. Each phase contains:
-   - Phase N: {Name}
-     - Status: not-started | in-progress | done
-     - Goal: what this phase achieves
-     - Prerequisites: which phases must be done first
-     - Scope: files/components affected (target 1-5 files per task)
-     - Tasks: numbered list of atomic, testable tasks
-     - Verification: specific commands/checks to confirm phase completion
-     - Notes: implementation hints, gotchas, references
-6. **Critique** — Present spec to user in chat. Offer critique for:
-   - Missing phases or hidden dependencies
-   - Tasks too large (should be split) or too small (should be merged)
-   - Vague verification criteria
-   - Missing non-goals or boundary gaps
-   - Over-specification of trivial parts
-7. **Refine & Finalize** — Apply accepted critique points. Update status to "Ready".
+#### Step 4: Update `readAgentFiles()` in sync.ts
 
-**1.3 Rules & Constraints (in SKILL.md)**
+**File: `src/sync.ts`**
+- Remove `ide` parameter from `readAgentFiles()` (no longer needed for path)
+- Read from `framework/agents/{name}.md` (flat)
+- After reading content, call `transformAgent(content, ide.name)` before returning
 
-- Pure Specification: MUST NOT write code. Only `documents/spec-{name}.md`.
-- Chat-First Reasoning: Phase decomposition presented in chat before writing.
-- Proactive Resolution: Exhaust codebase/docs/web before asking user.
-- Stop-Analysis Protocol: If stuck after 2 attempts → STOP-ANALYSIS REPORT.
-- Living Document: Spec status fields are updated during implementation. Implementer MUST update Phase Status (`not-started` → `in-progress` → `done`) when starting/completing a phase.
-- Phase Size Guard: Each phase SHOULD contain ≤50 requirements and target ≤5 files per task. If exceeded → split.
-- Implementation Hints Only in Notes: Spec describes WHAT and WHY. HOW — only in Notes section as implementation hints (patterns, gotchas, references), not as code.
+#### Step 5: Update agent sync loop in sync.ts
 
-**1.4 Output Format Template**
+**File: `src/sync.ts` (lines 108-138)**
+- Change `extractAgentNames(allPaths, ide.agentSubdir)` → `extractAgentNames(allPaths)`
+- Move agent name extraction outside the IDE loop (names are the same for all IDEs now)
+- Pass `ide.name` to `readAgentFiles()` for transformation
 
-```markdown
-# Spec: {Feature Name}
+#### Step 6: Update config_generator.ts
 
-| Field   | Value        |
-|---------|--------------|
-| Status  | Draft/Ready/In-Progress/Done |
-| Created | YYYY-MM-DD   |
-| Updated | YYYY-MM-DD   |
+**File: `src/config_generator.ts` (lines 61-70)**
+- Simplify: single `extractAgentNames(allPaths)` call instead of per-IDE loop
+- Remove `agentSubdir` usage
 
-## Goal
-{Why are we building this? Business/user value.}
+#### Step 7: Update tests (TDD)
 
-## Overview
-{Current state, why now, relevant context.}
+**File: `src/source_test.ts`**
+- Update `extractAgentNames` test: flat paths instead of per-IDE
+  - Input: `["framework/agents/agent1.md", "framework/agents/agent2.md"]`
+  - Expected: `["agent1", "agent2"]`
 
-## Non-Goals
-<!-- Examples: "No backward compatibility with v1 API", "No UI changes in this phase", "No performance optimization", "No migration of existing data" -->
-- {Explicit exclusion 1}
-- {Explicit exclusion 2}
+**File: `src/main_test.ts`**
+- Update `createMockSource()`: flat agent paths with universal frontmatter
+  - Single `"framework/agents/test-agent.md"` with all fields
+- Update assertions: verify IDE-specific frontmatter in written content (not just file existence)
+  - Claude output has `tools`, `disallowedTools`, no `readonly`, no `mode`
+  - Cursor output has `readonly`, no `tools`, no `mode`
 
-## Architecture & Boundaries
+**File: `src/source_test.ts`**
+- `GitCloneSource` integration test: mark as `ignore: true` until flow repo pushed with universal format
+- Update after coordinated push
 
-### Always (agent autonomy)
-- {Things agent can always do}
+**New file: `src/transform_test.ts`**
+- Test Claude extraction: universal → keeps `name`, `description`, `tools`, `disallowedTools`; drops `readonly`, `mode`, `opencode_tools`
+- Test Cursor extraction: universal → keeps `name`, `description`, `readonly`; drops `tools`, `disallowedTools`, `mode`, `opencode_tools`
+- Test OpenCode extraction: universal → keeps `description`, `mode`; renames `opencode_tools` → `tools`; drops `name`, `tools` (string), `disallowedTools`
+- Test no-restriction agent (only `name` + `description` + `mode`) → minimal extraction per IDE
+- Test body preservation: system prompt unchanged across all IDEs
+- Test unknown fields: pass-through for all IDEs
+- Test YAML edge cases: multiline description with colons and quotes
 
-### Ask First
-- {Things requiring user confirmation}
+#### Step 8: Update documentation
 
-### Never
-- {Things agent must never do}
+**File: `documents/requirements.md`**
+- FR-1 acceptance criterion: "Agents written to `{ide_dir}/agents/{name}.md` (single file, per-IDE variant)" → update to describe canonical source + transformation
 
-## Definition of Done
-- [ ] {Measurable criterion 1}
-- [ ] {Measurable criterion 2}
-
----
-
-## Phase 1: {Name}
-
-**Status:** not-started | **Prerequisites:** none
-
-### Goal
-{What this phase achieves.}
-
-### Scope
-- {file/component 1}
-- {file/component 2}
-
-### Tasks
-1. {Atomic, testable task}
-2. {Atomic, testable task}
-
-### Verification
-- [ ] {Specific check or command}
-
-### Notes
-- {Implementation hints, gotchas}
-
----
-
-## Phase 2: {Name}
-...
-```
-
-**1.5 Verification (in SKILL.md)**
-
-```
-- [ ] ONLY `documents/spec-{name}.md` modified
-- [ ] Each phase has: Goal, Prerequisites, Scope, Tasks, Verification
-- [ ] Non-Goals section is non-empty
-- [ ] Boundaries (always/ask-first/never) are specified
-- [ ] No phase exceeds 50 requirements
-- [ ] Tasks target ≤5 files each
-- [ ] All phases have dependency ordering (no circular deps)
-```
-
----
-
-### Phase 2: Create Benchmark Scenario
-
-**Goal:** TDD for skills — benchmark validates that flow-spec produces correct output.
-
-**2.1 Create scenario file**
-- Location: `.dev/benchmarks/scenarios/flow-spec-basic.md` (following existing benchmark patterns)
-- Scenario: "Create spec for adding skill versioning to AssistFlow" (uses real project codebase as context)
-- Expected: spec file created in documents/, contains all required sections (Goal, Non-Goals, Phases, etc.)
-- Validation criteria: file exists, has correct structure, phases are dependency-ordered, non-goals present, references real project files
-
-**2.2 Run benchmark**
-- Execute via `deno task benchmark` or equivalent
-- Verify scenario passes
-- Fix any issues in SKILL.md
-
----
-
-### Phase 3: Integration & Verification
-
-**3.1 Validate skill format**
-- Run `deno task check` — ensures SKILL.md passes skill validation
-- Verify no lint/format errors
-
-**3.2 Update project documentation**
-- Add flow-spec to skill registry if one exists
-- Ensure `deno task link` picks up the new skill
+**File: `documents/design.md`**
+- Update agent architecture section to describe canonical format + transformation pipeline
 
 ---
 
 ### Execution Order
 
 ```
-Phase 1 (SKILL.md) ──→ Phase 2 (Benchmark) ──→ Phase 3 (Integration)
+Part 1 (flow repo: extend canonical agents)
+  ↓
+Part 2, Step 7 (TDD: write tests first)
+  ↓
+Part 2, Steps 1-6 (implement: types → source → transform → sync → config_generator)
+  ↓
+Part 2, Step 8 (documentation)
+  ↓
+Verify: deno task check in both repos
 ```
 
 ### Estimated Scope
 
-- **New files:** 2 (SKILL.md, benchmark scenario)
-- **Modified files:** 0-1 (skill registry if exists)
-- **Net file delta:** +2-3
+- **flow repo:** 4 files modified (3 universal agents + `documents/design.md` §3.2)
+- **flow-cli:** 6 files modified, 2 new files (`transform.ts`, `transform_test.ts`), ~150 lines net new code

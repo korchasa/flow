@@ -1,8 +1,3 @@
 {
-  "mcpServers": {
-    "cloudflare-browser-rendering": {
-      "command": "npx",
-      "args": ["mcp-remote", "https://browser.mcp.cloudflare.com/mcp"]
-    }
-  }
+  "mcpServers": {}
 }
