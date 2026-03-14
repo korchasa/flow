@@ -27,7 +27,7 @@ With `flow-cli` taking over distribution:
 ## Non-Goals
 
 - Implementing flow-cli itself (separate repo, separate work)
-- Changing the dev workflow (`deno task link` stays for local development)
+- Modifying flow-cli internal implementation
 - Modifying skill content or agent system prompts
 - Changing the agentskills.io skill structure (SKILL.md format)
 - Migrating existing end-users (flow-cli will handle its own onboarding)
@@ -44,14 +44,12 @@ With `flow-cli` taking over distribution:
 ### Ask First
 
 - Canonical agent format design (what metadata flow-cli needs)
-- Changes to `scripts/task-link.ts` (dev workflow impact)
 - Changes to `scripts/task-check.ts` (validation pipeline)
 
 ### Never
 
 - Delete or modify skill SKILL.md content
-- Delete `.dev/` resources
-- Remove `deno task link` or `deno task check`
+- Remove `deno task check`
 - Make changes inside the flow-cli submodule without user approval
 
 ## Definition of Done
@@ -64,7 +62,7 @@ With `flow-cli` taking over distribution:
 - [x] `documents/design.md` updated with flow-cli relationship
 - [x] `README.md` documents flow-cli as distribution method
 - [x] `deno task check` passes
-- [x] `deno task link` still works for dev workflow
+- [x] `.flow.yaml` configures flow-cli for this project (claude only)
 - [x] No references to `scripts/install.ts` remain in codebase (except spec itself)
 
 ---
@@ -84,7 +82,7 @@ Add flow-cli as a git submodule. Migrate agents from 12 per-IDE files to 4 canon
 - `framework/agents/` (restructure: delete `claude/`, `cursor/`, `opencode/` subdirs; create flat `.md` files)
 - `scripts/check-agents.ts` (delete)
 - `scripts/task-check.ts` (remove check-agents step)
-- `scripts/task-link.ts` (adapt agent linking from per-IDE to flat structure)
+- `scripts/task-link.ts` (removed — replaced by flow-cli)
 
 ### Tasks
 
@@ -98,26 +96,21 @@ Add flow-cli as a git submodule. Migrate agents from 12 per-IDE files to 4 canon
 4. Delete per-IDE subdirectories: `framework/agents/claude/`, `framework/agents/cursor/`, `framework/agents/opencode/`
 5. Delete `scripts/check-agents.ts`
 6. Update `scripts/task-check.ts`: remove `check-agents.ts` from the command list (line 36-37)
-7. Update `scripts/task-link.ts`:
-   - Remove `IDE_AGENT_SUBDIR` mapping (lines 32-37)
-   - Change agent source from `framework/agents/{ide}/` to `framework/agents/` (flat)
-   - All IDEs now link to the same canonical agent files
-   - Update override warning message (line 275) from `framework/agents/${fwAgentSubdir}/${name}` to `framework/agents/${name}`
-8. Add `flow-cli/` to `.gitignore` patterns if needed, and to any relevant ignore configs
+7. `scripts/task-link.ts` removed — replaced by flow-cli for distribution
+8. `.flow.yaml` created at project root for flow-cli configuration
 
 ### Verification
 
-- [ ] `git submodule status` shows flow-cli
-- [ ] `framework/agents/` contains exactly 4 `.md` files, no subdirectories
-- [ ] `scripts/check-agents.ts` does not exist
-- [ ] `deno task link` creates agent symlinks in `.cursor/agents/`, `.claude/agents/`, `.opencode/agents/` pointing to `framework/agents/*.md`
-- [ ] `deno task check` passes
+- [x] `git submodule status` shows flow-cli
+- [x] `framework/agents/` contains exactly 4 `.md` files, no subdirectories
+- [x] `scripts/check-agents.ts` does not exist
+- [x] flow-cli installs framework resources via `.flow.yaml`
+- [x] `deno task check` passes
 
 ### Notes
 
-- Canonical agent format is intentionally minimal: `name`, `description`, body. The transformation rules (what frontmatter each IDE needs) live in flow-cli, not here.
-- The existing body (system prompt) is already identical across all 3 IDE variants — verified by the now-deleted `check-agents.ts`. Migration is extracting body from any one variant.
-- `task-link.ts` simplification: instead of `IDE_AGENT_SUBDIR[ideDir]` lookup, all IDEs read from the same `framework/agents/` directory. Override logic (`.dev/agents/` takes precedence) stays unchanged.
+- Canonical agent format uses universal frontmatter (superset of all IDE fields). Transformation rules live in flow-cli's `transformAgent()`.
+- `task-link.ts` removed entirely. Dev resources moved to `.claude/` directly. `.dev/` eliminated.
 
 ---
 
@@ -195,5 +188,5 @@ Update all documentation to reflect flow-cli as the distribution method and the 
 ### Notes
 
 - README installation section should be concise — point to flow-cli's own README for detailed usage.
-- Keep the "Development Setup" section in README unchanged (still uses `deno task link`).
+- README updated: development setup uses flow-cli + `.flow.yaml`.
 - `documents/design.md` §3.6 (Conventional Commits `agent:` type) references `framework/agents/**` pattern — this stays valid since agents are still under `framework/agents/`, just flat now.

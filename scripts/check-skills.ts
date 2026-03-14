@@ -307,7 +307,7 @@ if (import.meta.main) {
 
   const errors = await validateAllSkills([
     "framework/skills",
-    ".dev/skills",
+    ".claude/skills",
   ]);
 
   if (errors.length > 0) {

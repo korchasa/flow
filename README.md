@@ -65,24 +65,10 @@ For contributors working on AssistFlow itself (not end-user installation):
 ```sh
 git clone https://github.com/korchasa/flow.git
 cd flow
-deno task link
-```
-
-`deno task link` creates symlinks from `.dev/` (the single source of truth for dev resources) to IDE-specific directories:
-
-- `.dev/skills/` -> `.cursor/skills/`, `.claude/skills/`, `.opencode/skills/`
-- `.dev/agents/` -> `.cursor/agents/`, `.claude/agents/`, `.opencode/agents/`
-- `.dev/hooks/`, `.dev/hooks.json` -> `.cursor/hooks/`, `.cursor/hooks.json` (Cursor-only)
-
-The command is idempotent — safe to run multiple times. It will not overwrite existing real files (warns and skips instead).
-
-Alternatively, `deno task dev` runs `link` automatically on startup.
-
-**Verify setup:**
-
-```sh
 deno task check
 ```
+
+Dev-only skills and agents live directly in `.claude/skills/` and `.claude/agents/` (tracked in git). Framework skills/agents are installed by flow-cli from remote via `.flow.yaml`.
 
 ## How It Works
 
@@ -98,8 +84,8 @@ AI models lose context between sessions. AssistFlow compensates by storing all d
 
 This repository contains two distinct layers. Do not confuse them:
 
-- **`framework/`** — **the product itself**. Skills and agents that users install into their projects (into `~/.cursor/skills/`, `~/.claude/`, etc.). This is what AssistFlow distributes via `flow-cli`.
-- **`.dev/`** — **internal development tooling** (SPOT). Skills and agents used to develop AssistFlow itself (benchmark runner, cursor-agent integration, code generation helpers). These are NOT distributed to users. Symlinked to `.cursor/`, `.claude/`, `.opencode/` via `deno task link` for local development only.
+- **`framework/`** — **the product itself**. Skills and agents that users install into their projects via `flow-cli`. This is what AssistFlow distributes.
+- **`.claude/skills/`, `.claude/agents/`** — **internal development tooling**. Skills and agents used to develop AssistFlow itself (benchmark runner, cursor-agent integration, code generation helpers). These are NOT distributed to users. Tracked in git directly.
 
 ## Developer Workflow
 
@@ -189,17 +175,17 @@ Every task follows the same supervised loop:
 ```
 framework/              # THE PRODUCT — distributed to users via flow-cli
   skills/               #   Skills (SKILL.md per folder)
-  agents/               #   Agents (canonical .md files, IDE-agnostic)
+  agents/               #   Agents (universal .md files with all IDE fields)
 flow-cli/               # Git submodule — distribution tool (transforms & installs)
 documents/              # Project documentation (SRS, SDS, whiteboard)
 scripts/                # Deno task scripts
 benchmarks/             # Evidence-based agent benchmarks
 AGENTS.md               # Project vision, rules, agent instructions
+.flow.yaml              # flow-cli config (claude only)
 
-.cursor/                # INTERNAL — AssistFlow development tooling (not distributed)
-  skills/               #   Dev-only skills (benchmarks, code generation, etc.)
-  agents/               #   Dev-only agents (benchmark-runner, etc.)
-.claude/                # INTERNAL — Claude Code settings for this repo
+.claude/                # INTERNAL — dev tooling + flow-cli installed resources
+  skills/               #   Dev-only skills (tracked) + framework skills (via flow-cli)
+  agents/               #   Dev-only agents (tracked) + framework agents (via flow-cli)
 ```
 
 ## Documentation as Memory
