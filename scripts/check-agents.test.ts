@@ -49,123 +49,125 @@ Deno.test("AG: valid minimal agent (name + description) passes", () => {
   assertEquals(errors.length, 0);
 });
 
-Deno.test("AG-1.1: missing name is error", () => {
+Deno.test("AG: missing name is error", () => {
   const errors = validateAgentFrontmatter("test-agent", {
     description: "A test agent",
   });
-  assertHasCriterion(errors, "AG-1.1");
+  assertHasMessage(errors, "Required");
 });
 
-Deno.test("AG-1.1: name does not match filename is error", () => {
+Deno.test("AG: name does not match filename is error", () => {
   const errors = validateAgentFrontmatter("test-agent", {
     name: "wrong-name",
     description: "A test agent",
   });
-  assertHasCriterion(errors, "AG-1.1");
+  assertHasMessage(errors, "does not match");
 });
 
-Deno.test("AG-1.1: name with uppercase is error", () => {
+Deno.test("AG: name with uppercase is error", () => {
   const errors = validateAgentFrontmatter("Test-Agent", {
     name: "Test-Agent",
     description: "A test agent",
   });
-  assertHasCriterion(errors, "AG-1.1");
+  assertHasMessage(errors, "leading/trailing/consecutive");
 });
 
-Deno.test("AG-1.1: name exceeding 64 chars is error", () => {
+Deno.test("AG: name exceeding 64 chars is error", () => {
   const longName = "a".repeat(65);
   const errors = validateAgentFrontmatter(longName, {
     name: longName,
     description: "A test agent",
   });
-  assertHasCriterion(errors, "AG-1.1");
+  assertHasMessage(errors, "≤64");
 });
 
-Deno.test("AG-1.2: missing description is error", () => {
+Deno.test("AG: missing description is error", () => {
   const errors = validateAgentFrontmatter("test-agent", {
     name: "test-agent",
   });
-  assertHasCriterion(errors, "AG-1.2");
+  assertHasMessage(errors, "Required");
 });
 
-Deno.test("AG-1.2: description exceeding 1024 chars is error", () => {
+Deno.test("AG: description exceeding 1024 chars is error", () => {
   const errors = validateAgentFrontmatter("test-agent", {
     name: "test-agent",
     description: "x".repeat(1025),
   });
-  assertHasCriterion(errors, "AG-1.2");
+  assertHasMessage(errors, "≤1024");
 });
 
-Deno.test("AG-1.3: tools as non-string is error", () => {
+Deno.test("AG: tools as non-string is error", () => {
   const errors = validateAgentFrontmatter("test-agent", {
     name: "test-agent",
     description: "A test agent",
     tools: ["Read", "Grep"],
   });
-  assertHasCriterion(errors, "AG-1.3");
+  assertHasMessage(errors, "string");
 });
 
-Deno.test("AG-1.4: disallowedTools as non-string is error", () => {
+Deno.test("AG: disallowedTools as non-string is error", () => {
   const errors = validateAgentFrontmatter("test-agent", {
     name: "test-agent",
     description: "A test agent",
     disallowedTools: 42,
   });
-  assertHasCriterion(errors, "AG-1.4");
+  assertHasMessage(errors, "string");
 });
 
-Deno.test("AG-1.5: readonly as non-boolean is error", () => {
+Deno.test("AG: readonly as non-boolean is error", () => {
   const errors = validateAgentFrontmatter("test-agent", {
     name: "test-agent",
     description: "A test agent",
     readonly: "yes",
   });
-  assertHasCriterion(errors, "AG-1.5");
+  assertHasMessage(errors, "boolean");
 });
 
-Deno.test("AG-1.6: mode as non-string is error", () => {
+Deno.test("AG: mode as non-string is error", () => {
   const errors = validateAgentFrontmatter("test-agent", {
     name: "test-agent",
     description: "A test agent",
     mode: 123,
   });
-  assertHasCriterion(errors, "AG-1.6");
+  assertHasMessage(errors, "string");
 });
 
-Deno.test("AG-1.7: opencode_tools as non-object is error", () => {
+Deno.test("AG: opencode_tools as non-object is error", () => {
   const errors = validateAgentFrontmatter("test-agent", {
     name: "test-agent",
     description: "A test agent",
     opencode_tools: "invalid",
   });
-  assertHasCriterion(errors, "AG-1.7");
+  assertHasMessage(errors, "object");
 });
 
-Deno.test("AG-1.7: opencode_tools with non-boolean values is error", () => {
+Deno.test("AG: opencode_tools with non-boolean values is error", () => {
   const errors = validateAgentFrontmatter("test-agent", {
     name: "test-agent",
     description: "A test agent",
     opencode_tools: { write: "no" },
   });
-  assertHasCriterion(errors, "AG-1.7");
+  assertHasMessage(errors, "boolean");
 });
 
-Deno.test("AG-1.8: unknown field is error", () => {
+Deno.test("AG: unknown field is error", () => {
   const errors = validateAgentFrontmatter("test-agent", {
     name: "test-agent",
     description: "A test agent",
     unknown_field: "value",
   });
-  assertHasCriterion(errors, "AG-1.8");
+  assertHasMessage(errors, "Unrecognized key");
 });
 
 // --- Helpers ---
 
-function assertHasCriterion(errors: AgentError[], criterion: string): void {
-  const found = errors.some((e) => e.criterion === criterion);
+function assertHasMessage(errors: AgentError[], substring: string): void {
+  const found = errors.some((e) => e.message.includes(substring));
   if (!found) {
     throw new Error(
-      `Expected criterion ${criterion} in errors: ${JSON.stringify(errors)}`,
+      `Expected message containing '${substring}' in: ${
+        JSON.stringify(errors)
+      }`,
     );
   }
 }
