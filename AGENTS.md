@@ -57,9 +57,10 @@ Assumes users will follow the defined workflows and keep documentation up-to-dat
 ## Architecture
 - `.dev/`: SPOT for dev resources (skills, agents, hooks, IDE configs). Symlinked to IDE dirs via `deno task link`.
 - `framework/skills/`: Source of truth for product skills (logical Commands and Skills)
-- `framework/agents/`: Source of truth for product agents
+- `framework/agents/`: Source of truth for product agents (universal format with all IDE fields)
 - `documents/`: SRS/SDS and supporting documentation
 - `scripts/`: Deno task scripts
+- `flow-cli/`: Distribution tool for the framework. Separate project with its own release cycle, CLAUDE.md, tests, and CI/CD. Clones `framework/` from this repo and transforms resources (skills, agents) into IDE-specific formats. Changes to `framework/` may require updating flow-cli's transformation logic and tests.
 
 ## Terminology (agentskills.io)
 
