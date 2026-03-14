@@ -1,1 +1,1 @@
-../../framework/agents/cursor/flow-skill-executor.md
+../../framework/agents/flow-skill-executor.md

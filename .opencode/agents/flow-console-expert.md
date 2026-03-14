@@ -1,1 +1,1 @@
-../../framework/agents/opencode/flow-console-expert.md
+../../framework/agents/flow-console-expert.md

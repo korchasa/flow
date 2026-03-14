@@ -5,7 +5,7 @@
  *   - .dev/skills/*          → dev-only skills (IDE-specific guides, etc.)
  *   - .dev/agents/*          → dev-only agents
  *   - framework/skills/*     → product skills (flow-commit, flow-init, etc.)
- *   - framework/agents/<ide> → product agents per IDE (claude, cursor, opencode)
+ *   - framework/agents/*     → product agents (canonical, IDE-agnostic)
  *
  * Targets (per IDE):
  *   .cursor/skills/<name>  → symlink to source
@@ -28,13 +28,6 @@ import { join, resolve } from "@std/path";
 /** IDE directories to populate */
 const IDE_DIRS = [".cursor", ".claude", ".opencode"] as const;
 type IdeDir = typeof IDE_DIRS[number];
-
-/** Map IDE dir name to framework/agents/ subdirectory */
-const IDE_AGENT_SUBDIR: Record<IdeDir, string> = {
-  ".cursor": "cursor",
-  ".claude": "claude",
-  ".opencode": "opencode",
-};
 
 /** Non-skill/agent resources to link as-is from .dev/ */
 interface StaticLinkSpec {
@@ -243,9 +236,8 @@ async function linkAgents(projectRoot: string): Promise<LinkResult[]> {
     await replaceDirSymlinkWithRealDir(targetDir);
 
     const devAgents = await listDir(resolve(projectRoot, ".dev/agents"));
-    const fwAgentSubdir = IDE_AGENT_SUBDIR[ideDir];
     const fwAgents = await listDir(
-      resolve(projectRoot, "framework/agents", fwAgentSubdir),
+      resolve(projectRoot, "framework/agents"),
     );
 
     const validSources = new Set<string>();
@@ -260,19 +252,14 @@ async function linkAgents(projectRoot: string): Promise<LinkResult[]> {
       );
     }
 
-    // framework/agents/<ide>/*
+    // framework/agents/*
     for (const name of fwAgents) {
-      const absSource = resolve(
-        projectRoot,
-        "framework/agents",
-        fwAgentSubdir,
-        name,
-      );
+      const absSource = resolve(projectRoot, "framework/agents", name);
       validSources.add(absSource);
       const absTarget = resolve(targetDir, name);
       if (devAgents.includes(name)) {
         console.error(
-          `  Warning: .dev/agents/${name} overrides framework/agents/${fwAgentSubdir}/${name}`,
+          `  Warning: .dev/agents/${name} overrides framework/agents/${name}`,
         );
         continue;
       }

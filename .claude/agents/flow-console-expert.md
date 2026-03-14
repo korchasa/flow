@@ -1,1 +1,1 @@
-../../framework/agents/claude/flow-console-expert.md
+../../framework/agents/flow-console-expert.md

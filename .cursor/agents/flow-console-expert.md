@@ -1,1 +1,1 @@
-../../framework/agents/cursor/flow-console-expert.md
+../../framework/agents/flow-console-expert.md

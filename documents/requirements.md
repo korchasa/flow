@@ -35,15 +35,14 @@ Dependencies between unclosed requirements define execution order:
 
 1. **FR-21.3–21.6** Universal Skill & Script Requirements — standardize before distribution
 2. **FR-12.5** flow-init idempotent re-run — independent, can run in parallel with 1
-3. **FR-10** Global Framework Distribution — requires FR-21
 
 ```
-FR-21.3–21.6 ──→ FR-10
+FR-21.3–21.6
 FR-12.5 (parallel)
 ```
 
 Note: FR-20 (Devcontainer) is complete for the framework's own dev workflow.
-For end-user projects, global skills mounting depends on FR-10 (real files, not symlinks).
+FR-10 (Global Framework Distribution) has been delegated to flow-cli (external tool).
 
 ### 3.1 Command Execution (FR-1)
 
@@ -265,9 +264,9 @@ The benchmarking system must cover all core AssistFlow components to ensure reli
 | `flow-skill-write-in-informational-style` | Writing in info style                |     [ ]     |                          |
 | `flow-skill-write-prd`                    | Writing PRDs                         |     [ ]     |                          |
 
-#### Agents (`framework/agents/{claude,cursor,opencode}/`)
+#### Agents (`framework/agents/`)
 
-Per-IDE subdirectories with IDE-native frontmatter. Body (system prompt) shared.
+Canonical agent definitions (IDE-agnostic). `name` + `description` frontmatter, shared body. IDE-specific transformation handled by flow-cli.
 
 | Agent ID                | Description                              | Benchmarked | Scenario ID |
 | :---------------------- | :--------------------------------------- | :---------: | :---------- |
@@ -405,42 +404,13 @@ Per-IDE subdirectories with IDE-native frontmatter. Body (system prompt) shared.
 
 ### 3.10 Global Framework Distribution (FR-10)
 
-- **Description:** Framework is distributed globally via a CLI tool or package
-  manager. Skills and agents are installed as real files (not symlinks) into IDE
-  config directories, so they work in any environment including devcontainers
-  and Codespaces.
-- **Use case scenario:** Developer installs AssistFlow via a package manager or
-  CLI tool. The installer copies skills and agents into `~/.claude/skills/`,
-  `~/.cursor/skills/`, `~/.config/opencode/skills/`. On upgrade, files are
-  updated and stale items removed. User-created files are never touched.
-- **Note:** The project's own dev workflow (FR-9) uses symlinks via `deno task link`
-  to see live changes during development. This is distinct from the user-facing
-  distribution which copies files.
-- **Acceptance criteria:**
-  - [ ] **FR-10.1 Distribution mechanism**: Framework is distributed via a
-        package manager or CLI tool (e.g., Homebrew, npm global, standalone
-        binary). No Deno dependency required for end users.
-        `scripts/install.ts` is removed; replaced by the chosen mechanism.
-  - [ ] **FR-10.2 File copy, not symlinks**: Installer copies skill and
-        agent files into IDE config directories (`~/.claude/skills/`,
-        `~/.cursor/skills/`, `~/.config/opencode/skills/`). Real files, not
-        symlinks. This ensures compatibility with devcontainers, Codespaces,
-        and environments where symlink targets are unavailable.
-  - [ ] **FR-10.3 Multi-IDE support**: Installs into Cursor (`~/.cursor/`),
-        Claude Code (`~/.claude/`), OpenCode (`~/.config/opencode/`). Agents
-        are per-IDE: reads from `framework/agents/{claude,cursor,opencode}/`.
-  - [ ] **FR-10.4 Idempotent**: Safe to run multiple times (upgrade).
-        Framework-managed files are updated. User-created files are never
-        overwritten (skip with warning).
-  - [ ] **FR-10.5 No user data loss**: User-created files/directories in IDE
-        config dirs are never modified or removed. The `flow-*` namespace is
-        reserved for the framework; user skills MUST NOT use this prefix.
-  - [ ] **FR-10.6 Upgrade path**: Upgrade pulls latest version and re-copies
-        files. No manual flags needed.
-  - [ ] **FR-10.7 Clean-and-copy strategy**: On install/upgrade, installer
-        removes all `flow-*` items from IDE config dirs, then copies fresh
-        files. No manifest needed — the `flow-*` prefix namespace belongs
-        to the framework exclusively.
+- **Status:** Delegated to [flow-cli](https://github.com/korchasa/flow-cli) (external tool, git submodule at `flow-cli/`).
+- **Description:** All distribution responsibilities (installing, upgrading, transforming
+  skills/agents for end-user IDEs) are handled by flow-cli. This repository stores
+  canonical resource definitions; flow-cli transforms and delivers them.
+- **Note:** The project's own dev workflow (FR-9) continues to use symlinks via
+  `deno task link`. This section's acceptance criteria are now tracked in the
+  flow-cli repository.
 
 ### 3.11 Conventional Commits — `agent` Type (FR-11)
 
@@ -660,7 +630,7 @@ Per-IDE subdirectories with IDE-native frontmatter. Body (system prompt) shared.
 
 - **Description:** Root `AGENTS.md` line 25 lists 5 IDEs (Cursor, Claude Code,
   Antigravity, OpenAI Codex, OpenCode) but all infrastructure (scripts, agent
-  directories, install.ts) supports only 3 (Cursor, Claude Code, OpenCode).
+  directories, flow-cli) supports only 3 (Cursor, Claude Code, OpenCode).
   Several skill SKILL.md files and their Python scripts reference Codex and
   Antigravity paths. This inconsistency must be resolved.
 - **Use case scenario:** A contributor reads AGENTS.md, expects Codex/Antigravity
@@ -940,7 +910,7 @@ Per-IDE subdirectories with IDE-native frontmatter. Body (system prompt) shared.
 - **Acceptance criteria:**
   - [x] **FR-21.6.1 Framework distribution**: Framework skills are distributed
         from `framework/skills/` to IDE directories via `deno task link`
-        (symlinks). See FR-9, FR-10.
+        (symlinks). See FR-9. End-user distribution delegated to flow-cli.
         `scripts/task-link.ts` distributes framework skills via symlinks to IDE config dirs.
   - [x] **FR-21.6.2 Cross-IDE discovery**: Skills MUST be discoverable by all
         three IDEs. IDE-specific paths: `.cursor/skills/`, `.claude/skills/`,

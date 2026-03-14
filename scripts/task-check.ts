@@ -33,10 +33,6 @@ export function buildCheckCommands(): CommandSpec[] {
     },
     {
       cmd: "deno",
-      args: ["run", "-A", "scripts/check-agents.ts"],
-    },
-    {
-      cmd: "deno",
       args: ["run", "-A", "scripts/check-skill-sync.ts"],
     },
   ];

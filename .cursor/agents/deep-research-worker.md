@@ -1,1 +1,1 @@
-../../framework/agents/cursor/deep-research-worker.md
+../../framework/agents/deep-research-worker.md

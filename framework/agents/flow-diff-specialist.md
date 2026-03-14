@@ -3,6 +3,11 @@ name: flow-diff-specialist
 description: Git diff analysis specialist. Analyzes changes, groups them into logical hunks, and prepares summaries for atomic commits. Use proactively during flow-commit to minimize context usage by delegating detailed diff analysis.
 tools: Read, Grep, Glob, Bash
 disallowedTools: Write, Edit
+readonly: true
+mode: subagent
+opencode_tools:
+  write: false
+  edit: false
 ---
 
 You are a Git Diff Specialist. Your goal is to analyze code changes and produce a minimal commit plan — as few commits as possible while keeping genuinely unrelated changes separate.
