@@ -16,7 +16,7 @@
     "ghcr.io/devcontainers/features/github-cli:1": {}
     // Stack-specific features added here (e.g., Deno feature)
     // Secondary stack features added here (e.g., Node feature for Deno+Node projects)
-    // AI CLI features added here (e.g., claude-code, opencode — from registry)
+    // AI CLI features added here (e.g., opencode — from registry; Claude Code installed via postCreateCommand)
     // Discovered features from project scan (Step 2) added here
   },
 
@@ -65,7 +65,6 @@
 ## Dockerfile-Based (custom setup)
 
 Replace `"image"` with:
-
 ```jsonc
 {
   "build": {
@@ -78,7 +77,6 @@ Replace `"image"` with:
 ## With Firewall (security hardening)
 
 Add:
-
 ```jsonc
 {
   "runArgs": [
@@ -95,7 +93,6 @@ Add:
 ## Stack-Specific Settings
 
 ### Deno
-
 ```jsonc
 "settings": {
   "deno.enable": true,
@@ -106,7 +103,6 @@ Add:
 ```
 
 ### Node/TS (ESLint + Prettier)
-
 ```jsonc
 "settings": {
   "editor.defaultFormatter": "esbenp.prettier-vscode",
@@ -118,7 +114,6 @@ Add:
 ```
 
 ### Python
-
 ```jsonc
 "settings": {
   "python.defaultInterpreterPath": "/usr/local/bin/python",
@@ -128,7 +123,6 @@ Add:
 ```
 
 ### Go
-
 ```jsonc
 "settings": {
   "go.toolsManagement.autoUpdate": true,
@@ -138,7 +132,6 @@ Add:
 ```
 
 ### Rust
-
 ```jsonc
 "settings": {
   "rust-analyzer.check.command": "clippy",
@@ -152,7 +145,6 @@ Add:
 Add only mounts for selected AI CLIs.
 
 ### Claude Code (when selected)
-
 ```jsonc
 // Config persistence volume (auth tokens in .credentials.json survive here)
 "source=claude-config-${devcontainerId},target=/home/{{remote_user}}/.claude,type=volume"
@@ -163,7 +155,6 @@ Add only mounts for selected AI CLIs.
 ```
 
 ### OpenCode (when selected)
-
 ```jsonc
 // Config persistence volume
 "source=opencode-config-${devcontainerId},target=/home/{{remote_user}}/.config/opencode,type=volume"
@@ -172,7 +163,6 @@ Add only mounts for selected AI CLIs.
 ```
 
 ### Bash history persistence (always)
-
 ```jsonc
 "source=bashhistory-${devcontainerId},target=/commandhistory,type=volume"
 ```
@@ -180,7 +170,6 @@ Add only mounts for selected AI CLIs.
 ### Volume ownership fix
 
 Docker named volumes are created with root ownership before `remoteUser` takes effect. AI CLI installers and extensions fail to write config/auth tokens without this fix. Each CLI install command in `postCreateCommand` MUST chain `sudo chown` first:
-
 ```jsonc
 "postCreateCommand": {
   "claude-cli": "sudo chown {{remote_user}}:{{remote_user}} ~/.claude && curl -fsSL https://claude.ai/install.sh | bash",
@@ -194,13 +183,11 @@ Docker named volumes are created with root ownership before `remoteUser` takes e
 Auth tokens live in `~/.claude/.credentials.json` inside the config volume. On first container creation (empty volume), tokens are copied from the host Keychain staging file. On subsequent rebuilds, the volume already has tokens — copy is skipped.
 
 **initializeCommand** (runs on host, macOS only):
-
 ```jsonc
 "initializeCommand": "security find-generic-password -s 'Claude Code-credentials' -w > ~/.claude-auth-staging.json 2>/dev/null || echo '{}' > ~/.claude-auth-staging.json"
 ```
 
 **postCreateCommand** (copy once if volume is empty):
-
 ```jsonc
 "claude-auth": "[ ! -f ~/.claude/.credentials.json ] && [ -s ~/.claude-auth-staging.json ] && cp ~/.claude-auth-staging.json ~/.claude/.credentials.json && chmod 600 ~/.claude/.credentials.json || true"
 ```
