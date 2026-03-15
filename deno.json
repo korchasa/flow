@@ -4,7 +4,8 @@
   "exports": "./cli/src/main.ts",
   "license": "MIT",
   "publish": {
-    "include": ["cli/src/"]
+    "include": ["cli/src/"],
+    "exclude": ["!cli/src/bundled.json", "!cli/src/_version.ts"]
   },
   "imports": {
     "@cliffy/command": "jsr:@cliffy/command@^1.0.0",
