@@ -39,6 +39,8 @@ Developer: sets task
 
 ## Installation
 
+**Prerequisite:** [Deno](https://deno.land/) v2.x (`curl -fsSL https://deno.land/install.sh | sh`)
+
 Install the `flowai` CLI globally, then run it in your project:
 
 ```sh

@@ -1,51 +1,81 @@
-name: CI
+name: CI/CD
 
 on:
   push:
     branches: [main]
+    tags: ['v*']
   pull_request:
     branches: [main]
 
-permissions:
-  contents: read
-  id-token: write
-
 jobs:
-  check:
-    name: Check
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: denoland/setup-deno@v2
-        with:
-          deno-version: v2.x
-      - run: deno task check
-
-  verify-install:
-    name: Verify CLI Install
-    needs: [check]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: denoland/setup-deno@v2
-        with:
-          deno-version: v2.x
-      - run: deno task bundle
-      - run: deno install --global -A --config deno.json --name flowai ./cli/src/main.ts
-      - run: flowai --help
-
-  release-cli:
-    name: Release CLI to JSR
-    needs: [check, verify-install]
-    if: github.ref == 'refs/heads/main' && !contains(github.event.head_commit.message, 'chore(release)')
+  pipeline:
     runs-on: ubuntu-latest
     permissions:
       contents: write
       id-token: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: denoland/setup-deno@v2
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
-      - run: deno task bundle
-      - run: deno publish --allow-dirty
+
+      - name: Run checks
+        run: deno task check
+
+      - name: Verify CLI install
+        run: |
+          deno task bundle
+          deno install --global -A --config deno.json --name flowai ./cli/src/main.ts
+          flowai --help
+
+      - name: Create release and push tags
+        id: create-release
+        if: |
+          github.event_name == 'push' &&
+          github.ref == 'refs/heads/main' &&
+          !contains(github.event.head_commit.message, 'chore(release):')
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -z "$LATEST_TAG" ]; then
+            RELEASABLE=true
+          else
+            COMMITS=$(git log --oneline ${LATEST_TAG}..HEAD --grep="^feat\|^fix\|^perf\|^break\|^refactor\|^build" | wc -l)
+            if [ "$COMMITS" -gt 0 ]; then RELEASABLE=true; else RELEASABLE=false; fi
+          fi
+
+          if [ "$RELEASABLE" = "true" ]; then
+            deno task bundle
+            deno task release
+            git push --follow-tags origin main
+
+            NEW_VERSION=$(deno eval "console.log(JSON.parse(Deno.readTextFileSync('deno.json')).version)")
+            echo "version=${NEW_VERSION}" >> $GITHUB_OUTPUT
+            echo "released=true" >> $GITHUB_OUTPUT
+          else
+            echo "Nothing to release"
+            echo "released=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Publish to JSR
+        if: steps.create-release.outputs.released == 'true'
+        run: |
+          deno task bundle
+          deno publish --allow-dirty
+
+      - name: Create GitHub Release
+        if: steps.create-release.outputs.released == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.create-release.outputs.version }}
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
