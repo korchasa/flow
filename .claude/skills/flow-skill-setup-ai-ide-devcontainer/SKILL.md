@@ -8,7 +8,6 @@ description: Set up .devcontainer for AI IDE development. Generates devcontainer
 Creates a `.devcontainer/` configuration for AI-agent-driven development.
 
 **Architecture**: VS Code or Cursor **opens** the devcontainer (they support the devcontainer spec natively). AI tools work **inside** the container in two modes:
-
 - **VS Code extensions** (e.g., `anthropic.claude-code`, `github.copilot`) — installed automatically via `customizations.vscode.extensions`, share the same container config and env vars
 - **CLI/TUI tools** (e.g., `claude` CLI, `opencode` CLI) — run in the container terminal, use the same `~/.claude/` or `~/.config/opencode/` config
 
@@ -25,14 +24,14 @@ Both modes share config directories, env vars, and global skills. This skill con
 
 Scan the project root for stack indicators:
 
-| Indicator File                                     | Stack   | Base Image                                                   |
-| -------------------------------------------------- | ------- | ------------------------------------------------------------ |
-| `deno.json` / `deno.jsonc`                         | Deno    | `mcr.microsoft.com/devcontainers/base:ubuntu` + Deno feature |
-| `package.json` / `tsconfig.json`                   | Node/TS | `mcr.microsoft.com/devcontainers/typescript-node`            |
-| `pyproject.toml` / `requirements.txt` / `setup.py` | Python  | `mcr.microsoft.com/devcontainers/python`                     |
-| `go.mod`                                           | Go      | `mcr.microsoft.com/devcontainers/go`                         |
-| `Cargo.toml`                                       | Rust    | `mcr.microsoft.com/devcontainers/rust`                       |
-| None / mixed                                       | Generic | `mcr.microsoft.com/devcontainers/base:ubuntu`                |
+| Indicator File | Stack | Base Image |
+|---|---|---|
+| `deno.json` / `deno.jsonc` | Deno | `mcr.microsoft.com/devcontainers/base:ubuntu` + Deno feature |
+| `package.json` / `tsconfig.json` | Node/TS | `mcr.microsoft.com/devcontainers/typescript-node` |
+| `pyproject.toml` / `requirements.txt` / `setup.py` | Python | `mcr.microsoft.com/devcontainers/python` |
+| `go.mod` | Go | `mcr.microsoft.com/devcontainers/go` |
+| `Cargo.toml` | Rust | `mcr.microsoft.com/devcontainers/rust` |
+| None / mixed | Generic | `mcr.microsoft.com/devcontainers/base:ubuntu` |
 
 If multiple stacks detected, ask user which is primary. Secondary stacks will be added as features.
 
@@ -55,7 +54,6 @@ Skip this step only if user explicitly provided a complete feature list in their
 ### Step 3: Detect Existing Configuration
 
 Check if `.devcontainer/` exists:
-
 - **If exists**: read current `devcontainer.json`, show diff after generating new version, ask for per-file confirmation before overwriting.
 - **If not exists**: proceed to generation.
 
@@ -64,7 +62,7 @@ Check if `.devcontainer/` exists:
 Ask the user (skip items already answered in prior context):
 
 1. **AI CLI tools** (multi-select): "Which AI CLI tools to install in the container?"
-   - Claude Code — via registry feature (see [references/features-catalog.md](references/features-catalog.md) § AI IDE Features) + config volume + `ANTHROPIC_API_KEY`
+   - Claude Code — via `postCreateCommand` install script (see Claude Code § Install) + config volume + `ANTHROPIC_API_KEY`
    - OpenCode — via registry feature + config volume + `ANTHROPIC_API_KEY` (or other provider key)
    - Cursor CLI, Gemini CLI — via registry features
    - Both/multiple — installs and configures all selected
@@ -86,17 +84,16 @@ Ask the user (skip items already answered in prior context):
 Generate using the template logic in [references/devcontainer-template.md](references/devcontainer-template.md).
 
 Key structure:
-
 ```jsonc
 {
   "name": "<project-name>",
   // Image-based OR Dockerfile-based (see step 4.4)
-  "image": "<base-image>", // OR "build": { "dockerfile": "Dockerfile" }
-  "features": {/* stack features + common-utils + github-cli */},
+  "image": "<base-image>",  // OR "build": { "dockerfile": "Dockerfile" }
+  "features": { /* stack features + common-utils + github-cli */ },
   "customizations": {
     "vscode": {
-      "extensions": [/* stack extensions + AI extensions */],
-      "settings": {/* stack-specific settings */}
+      "extensions": [ /* stack extensions + AI extensions */ ],
+      "settings": { /* stack-specific settings */ }
     }
   },
   "remoteEnv": {
@@ -113,7 +110,7 @@ Key structure:
       "description": "GitHub PAT for gh CLI"
     }
   },
-  "mounts": [/* global config mount if enabled */],
+  "mounts": [ /* global config mount if enabled */ ],
   "postCreateCommand": "<dependency-install-command>",
   "postStartCommand": "git config --global --add safe.directory ${containerWorkspaceFolder}",
   "remoteUser": "<non-root-user>"
@@ -143,61 +140,67 @@ Generate only when user chose firewall in step 4.3. See [references/firewall-tem
 - [ ] `remoteUser` matches the user in the base image (e.g., `node` for Node images, `vscode` for mcr base images)
 - [ ] No secrets/API keys hardcoded in any generated file
 
+### Step 8: Post-Setup Notes
+
+If Claude Code was selected, display this note to the user after generation:
+
+> **Claude Code auth**: After the container starts, open a terminal inside it and run `claude` to log in via OAuth. Auth forwarding from macOS Keychain may handle this automatically, but if Claude Code reports auth errors, a manual `claude login` in the container terminal will fix it. Credentials are persisted in the config volume and survive container rebuilds.
+
 ---
 
 ## Stack Reference
 
 ### Features by Stack
 
-| Stack           | Features to Add                                                                                                          |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| Deno            | `ghcr.io/devcontainers-extra/features/deno:latest`                                                                       |
-| Node/TS         | (included in base image)                                                                                                 |
-| Python          | (included in base image)                                                                                                 |
-| Go              | (included in base image)                                                                                                 |
-| Rust            | (included in base image)                                                                                                 |
-| Common (always) | `ghcr.io/devcontainers/features/common-utils:2`, `ghcr.io/devcontainers/features/github-cli:1`                           |
-| Secondary Node  | `ghcr.io/devcontainers/features/node:1` (when Node needed alongside non-Node primary)                                    |
-| Discovered      | Additional features from [references/features-catalog.md](references/features-catalog.md) based on project scan (Step 2) |
+| Stack | Features to Add |
+|---|---|
+| Deno | `ghcr.io/devcontainers-extra/features/deno:latest` |
+| Node/TS | (included in base image) |
+| Python | (included in base image) |
+| Go | (included in base image) |
+| Rust | (included in base image) |
+| Common (always) | `ghcr.io/devcontainers/features/common-utils:2`, `ghcr.io/devcontainers/features/github-cli:1` |
+| Secondary Node | `ghcr.io/devcontainers/features/node:1` (when Node needed alongside non-Node primary) |
+| Discovered | Additional features from [references/features-catalog.md](references/features-catalog.md) based on project scan (Step 2) |
 
 ### Extensions by Stack
 
-| Stack           | Extensions                                         |
-| --------------- | -------------------------------------------------- |
-| Deno            | `denoland.vscode-deno`                             |
-| Node/TS         | `dbaeumer.vscode-eslint`, `esbenp.prettier-vscode` |
-| Python          | `ms-python.python`, `ms-python.vscode-pylance`     |
-| Go              | `golang.go`                                        |
-| Rust            | `rust-lang.rust-analyzer`                          |
-| Common (always) | `eamodio.gitlens`, `editorconfig.editorconfig`     |
+| Stack | Extensions |
+|---|---|
+| Deno | `denoland.vscode-deno` |
+| Node/TS | `dbaeumer.vscode-eslint`, `esbenp.prettier-vscode` |
+| Python | `ms-python.python`, `ms-python.vscode-pylance` |
+| Go | `golang.go` |
+| Rust | `rust-lang.rust-analyzer` |
+| Common (always) | `eamodio.gitlens`, `editorconfig.editorconfig` |
 
 ### AI CLI Extensions (VS Code/Cursor)
 
-| Tool           | Extension ID                            | Notes                                |
-| -------------- | --------------------------------------- | ------------------------------------ |
-| Claude Code    | `anthropic.claude-code`                 | IDE extension + CLI inside container |
-| GitHub Copilot | `github.copilot`, `github.copilot-chat` | IDE extension only                   |
+| Tool | Extension ID | Notes |
+|---|---|---|
+| Claude Code | `anthropic.claude-code` | IDE extension + CLI inside container |
+| GitHub Copilot | `github.copilot`, `github.copilot-chat` | IDE extension only |
 
 > OpenCode is a standalone TUI/CLI — no VS Code extension. It runs in the container terminal.
 
 ### postCreateCommand by Stack
 
-| Stack   | Command                                                                 |
-| ------- | ----------------------------------------------------------------------- |
-| Deno    | `deno install` or `deno cache` (check deno.json for deps)               |
-| Node/TS | `npm install` or `yarn install` or `pnpm install` (match lockfile)      |
-| Python  | `pip install -r requirements.txt` or `pip install -e .` (match project) |
-| Go      | `go mod download`                                                       |
-| Rust    | `cargo fetch`                                                           |
+| Stack | Command |
+|---|---|
+| Deno | `deno install` or `deno cache` (check deno.json for deps) |
+| Node/TS | `npm install` or `yarn install` or `pnpm install` (match lockfile) |
+| Python | `pip install -r requirements.txt` or `pip install -e .` (match project) |
+| Go | `go mod download` |
+| Rust | `cargo fetch` |
 
 ### remoteUser by Base Image
 
-| Base Image Pattern                  | remoteUser                         |
-| ----------------------------------- | ---------------------------------- |
-| `mcr.microsoft.com/devcontainers/*` | `vscode`                           |
-| `node:*`                            | `node`                             |
-| `denoland/deno:*`                   | `deno`                             |
-| `debian:*` / `ubuntu:*`             | Create non-root user in Dockerfile |
+| Base Image Pattern | remoteUser |
+|---|---|
+| `mcr.microsoft.com/devcontainers/*` | `vscode` |
+| `node:*` | `node` |
+| `denoland/deno:*` | `deno` |
+| `debian:*` / `ubuntu:*` | Create non-root user in Dockerfile |
 
 ---
 
@@ -205,44 +208,45 @@ Generate only when user chose firewall in step 4.3. See [references/firewall-tem
 
 Each AI CLI has its own installation, config persistence, and global skills pattern. Apply only for selected tools.
 
-**Preferred method**: Use devcontainer registry features (handle install, PATH, updates automatically).
-See [references/features-catalog.md](references/features-catalog.md) § AI IDE Features for feature IDs.
-Fall back to manual install only if registry feature is unavailable or user requests pinned version.
+**Preferred method**: Install via official script in `postCreateCommand` (`curl -fsSL https://claude.ai/install.sh | bash`).
+Registry features (e.g., `ghcr.io/devcontainers-extra/features/claude-code:1`) are **NOT recommended** — they install outdated versions with broken OAuth.
+For other AI CLIs, use devcontainer registry features where available (see [references/features-catalog.md](references/features-catalog.md)).
 
 ### Claude Code
 
-| Aspect                           | Details                                                                                                                                                                                        |
-| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Install (feature, preferred)** | `ghcr.io/devcontainers-extra/features/claude-code:1` (npm) or `ghcr.io/stu-bell/devcontainer-features/claude-code:0` (native installer)                                                        |
-| **Install (manual fallback)**    | `postCreateCommand`: `curl -fsSL https://claude.ai/install.sh \| bash` or `npm install -g @anthropic-ai/claude-code@latest`                                                                    |
-| **Config dir**                   | `~/.claude/` (settings, skills, auth tokens in `.credentials.json`). `~/.claude.json` (metadata, caches — auto-recreated, no tokens)                                                           |
-| **Auth tokens**                  | Stored in `~/.claude/.credentials.json` inside the config dir. On macOS host: Keychain service `Claude Code-credentials`. See [references/auth-forwarding.md](references/auth-forwarding.md)   |
-| **Config volume**                | `source=claude-config-${devcontainerId},target=/home/<user>/.claude,type=volume`                                                                                                               |
-| **Auth forwarding**              | Host Keychain → staging file → container volume. See [references/auth-forwarding.md](references/auth-forwarding.md)                                                                            |
-| **Global skills mount**          | `source=${localEnv:HOME}/.claude,target=/home/<user>/.claude-host,type=bind,readonly`                                                                                                          |
-| **Skills sync**                  | `rm -rf ~/.claude/skills ~/.claude/commands && cp -rL ~/.claude-host/skills ~/.claude/skills 2>/dev/null \|\| true && cp -rL ~/.claude-host/commands ~/.claude/commands 2>/dev/null \|\| true` |
-| **Env vars**                     | `ANTHROPIC_API_KEY` (API key auth). Do NOT set `CLAUDE_CONFIG_DIR` (breaks volume auth strategy). `DISABLE_AUTOUPDATER=1` (optional, pin version)                                              |
-| **Extension**                    | `anthropic.claude-code`                                                                                                                                                                        |
+| Aspect | Details |
+|---|---|
+| **Install (preferred)** | `postCreateCommand`: `curl -fsSL https://claude.ai/install.sh \| bash` — always installs latest version with working OAuth |
+| **Install (alternative)** | `postCreateCommand`: `npm install -g @anthropic-ai/claude-code@latest` |
+| **Install (NOT recommended)** | Registry features (`ghcr.io/devcontainers-extra/features/claude-code:1`, `ghcr.io/stu-bell/devcontainer-features/claude-code:0`) — install outdated versions with broken OAuth callback |
+| **Config dir** | `~/.claude/` (settings, skills, auth tokens in `.credentials.json`). `~/.claude.json` (metadata, caches — auto-recreated, no tokens) |
+| **Auth tokens** | Stored in `~/.claude/.credentials.json` inside the config dir. On macOS host: Keychain service `Claude Code-credentials`. See [references/auth-forwarding.md](references/auth-forwarding.md) |
+| **Config volume** | `source=claude-config-${devcontainerId},target=/home/<user>/.claude,type=volume` |
+| **Auth forwarding** | Host Keychain → staging file → container volume. See [references/auth-forwarding.md](references/auth-forwarding.md) |
+| **Global skills mount** | `source=${localEnv:HOME}/.claude,target=/home/<user>/.claude-host,type=bind,readonly` |
+| **Skills sync** | `rm -rf ~/.claude/skills ~/.claude/commands && cp -rL ~/.claude-host/skills ~/.claude/skills 2>/dev/null \|\| true && cp -rL ~/.claude-host/commands ~/.claude/commands 2>/dev/null \|\| true` |
+| **Env vars** | `ANTHROPIC_API_KEY` (API key auth). Do NOT set `CLAUDE_CONFIG_DIR` (breaks volume auth strategy). `DISABLE_AUTOUPDATER=1` (optional, pin version) |
+| **Extension** | `anthropic.claude-code` |
 
 ### OpenCode
 
-| Aspect                           | Details                                                                                                                     |
-| -------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| **Install (feature, preferred)** | `ghcr.io/jsburckhardt/devcontainer-features/opencode:1`                                                                     |
-| **Install (manual fallback)**    | `postCreateCommand`: `curl -fsSL https://opencode.ai/install \| bash`                                                       |
-| **Config dir**                   | `~/.config/opencode/` (settings, skills, commands, plugins)                                                                 |
-| **Config volume**                | `source=opencode-config-${devcontainerId},target=/home/<user>/.config/opencode,type=volume`                                 |
-| **Global skills mount**          | `source=${localEnv:HOME}/.config/opencode,target=/home/<user>/.config/opencode-host,type=bind,readonly`                     |
-| **Skills sync**                  | `rm -rf ~/.config/opencode/skills && cp -rL ~/.config/opencode-host/skills ~/.config/opencode/skills 2>/dev/null \|\| true` |
-| **Env vars**                     | `ANTHROPIC_API_KEY` (if using Anthropic provider)                                                                           |
-| **Extension**                    | None (standalone TUI/CLI, runs in terminal)                                                                                 |
+| Aspect | Details |
+|---|---|
+| **Install (feature, preferred)** | `ghcr.io/jsburckhardt/devcontainer-features/opencode:1` |
+| **Install (manual fallback)** | `postCreateCommand`: `curl -fsSL https://opencode.ai/install \| bash` |
+| **Config dir** | `~/.config/opencode/` (settings, skills, commands, plugins) |
+| **Config volume** | `source=opencode-config-${devcontainerId},target=/home/<user>/.config/opencode,type=volume` |
+| **Global skills mount** | `source=${localEnv:HOME}/.config/opencode,target=/home/<user>/.config/opencode-host,type=bind,readonly` |
+| **Skills sync** | `rm -rf ~/.config/opencode/skills && cp -rL ~/.config/opencode-host/skills ~/.config/opencode/skills 2>/dev/null \|\| true` |
+| **Env vars** | `ANTHROPIC_API_KEY` (if using Anthropic provider) |
+| **Extension** | None (standalone TUI/CLI, runs in terminal) |
 
 ### Cursor CLI
 
-| Aspect                | Details                                               |
-| --------------------- | ----------------------------------------------------- |
+| Aspect | Details |
+|---|---|
 | **Install (feature)** | `ghcr.io/stu-bell/devcontainer-features/cursor-cli:0` |
-| **Extension**         | N/A (Cursor is the IDE host itself)                   |
+| **Extension** | N/A (Cursor is the IDE host itself) |
 
 ### Global Skills Mount Rules
 
@@ -254,7 +258,6 @@ Fall back to manual install only if registry feature is unavailable or user requ
 ### Environment Variables (remoteEnv)
 
 Add only for selected AI CLIs:
-
 ```jsonc
 {
   // Claude Code (when selected)
@@ -271,7 +274,6 @@ Add only for selected AI CLIs:
 ### Secrets (Codespaces metadata)
 
 Add only for selected AI CLIs:
-
 ```jsonc
 {
   "ANTHROPIC_API_KEY": {
@@ -287,15 +289,14 @@ Add only for selected AI CLIs:
 
 ## Lifecycle Hooks Reference
 
-| Hook                | When                               | Use For                                                                    |
-| ------------------- | ---------------------------------- | -------------------------------------------------------------------------- |
+| Hook | When | Use For |
+|---|---|---|
 | `initializeCommand` | On host, before container creation | Auth forwarding: extract host Keychain tokens to staging file (macOS only) |
-| `postCreateCommand` | Once after container creation      | Dependency install, CLI install, auth token copy from staging to volume    |
-| `postStartCommand`  | Every container start              | `git safe.directory`, global skills sync                                   |
-| `postAttachCommand` | Every IDE attach                   | Shell customization                                                        |
+| `postCreateCommand` | Once after container creation | Dependency install, CLI install, auth token copy from staging to volume |
+| `postStartCommand` | Every container start | `git safe.directory`, global skills sync |
+| `postAttachCommand` | Every IDE attach | Shell customization |
 
 All hooks accept string, array, or object (parallel execution) format:
-
 ```jsonc
 // Object form for parallel execution
 "postCreateCommand": {

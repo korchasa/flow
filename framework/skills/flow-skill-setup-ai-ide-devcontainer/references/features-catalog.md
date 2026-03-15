@@ -16,19 +16,16 @@ registry at https://containers.dev/features for matching feature IDs.
 
 ## AI IDE Features
 
-The devcontainer registry already provides features for AI CLI tools.
-Use these instead of manual installation scripts in `postCreateCommand`:
+Registry features exist for some AI CLI tools, but not all are reliable.
 
-- **Claude Code**: `ghcr.io/devcontainers-extra/features/claude-code:1` (via npm) or `ghcr.io/stu-bell/devcontainer-features/claude-code:0` (via claude.ai/install.sh)
+- **Claude Code**: Install via `postCreateCommand`: `curl -fsSL https://claude.ai/install.sh | bash`. Do **NOT** use registry features (`ghcr.io/devcontainers-extra/features/claude-code:1`, `ghcr.io/stu-bell/devcontainer-features/claude-code:0`) — they install outdated versions (e.g., 2.1.72) with broken OAuth callback.
 - **OpenCode**: `ghcr.io/jsburckhardt/devcontainer-features/opencode:1` (via opencode.ai/install)
 - **Cursor CLI**: `ghcr.io/stu-bell/devcontainer-features/cursor-cli:0` (via cursor.com/install)
 - **Gemini CLI**: `ghcr.io/stu-bell/devcontainer-features/gemini-cli:0` (via npm)
 - **GitHub Copilot CLI**: `ghcr.io/devcontainers/features/copilot-cli:1`
 
-When user selects an AI CLI in Step 4, prefer the registry feature over a raw
-`curl | bash` in `postCreateCommand`. The feature handles installation, PATH
-setup, and updates. Config persistence and global skills mounting still require
-explicit `mounts` configuration (see SKILL.md).
+For Claude Code, always use the official install script in `postCreateCommand` — it installs the latest version with working OAuth. Config persistence and global skills mounting still require explicit `mounts` configuration (see SKILL.md).
+For other AI CLIs, prefer registry features where available.
 
 ## Indicator → Need Mapping
 
@@ -58,6 +55,7 @@ Skip if runtime is the primary stack or included in the base image.
 
 - `Dockerfile` (in project root, not `.devcontainer/`) / `docker-compose.yml` / `.dockerignore` → need: Docker-in-Docker
 - `*.tf` / `.terraform.lock.hcl` → need: Terraform
+- `ansible.cfg` / `playbooks/` / `roles/` / `galaxy.yml` / `molecule/` / `requirements.yml` with `roles`/`collections` → need: Ansible
 - `k8s/` / `kubernetes/` / `Chart.yaml` / `kustomization.yaml` → need: kubectl, Helm
 - `serverless.yml` / `samconfig.toml` / `cdk.json` / dependency `aws-sdk`/`boto3` → need: AWS CLI
 - `azure-pipelines.yml` / `*.bicep` / dependency `@azure/*` → need: Azure CLI
@@ -72,6 +70,18 @@ Skip if runtime is the primary stack or included in the base image.
 ### Testing (suggest — heavy)
 
 - `playwright.config.ts` / dependency `@playwright/test` → need: Playwright (large, installs browsers)
+
+## Known Feature IDs
+
+Shortcut reference for commonly detected needs. Use these IDs directly instead of searching containers.dev each time. For needs not listed here, search https://containers.dev/features.
+
+- **Terraform**: `ghcr.io/devcontainers/features/terraform:1` — installs Terraform CLI, optionally TFLint and Terragrunt
+- **Ansible**: No official registry feature. Install via `postCreateCommand`: `pip install ansible ansible-lint` (requires Python in base image or as secondary runtime feature). VS Code extension: `redhat.ansible`
+- **Docker-in-Docker**: `ghcr.io/devcontainers/features/docker-in-docker:2`
+- **kubectl + Helm**: `ghcr.io/devcontainers/features/kubectl-helm-minikube:1`
+- **AWS CLI**: `ghcr.io/devcontainers/features/aws-cli:1`
+- **Azure CLI**: `ghcr.io/devcontainers/features/azure-cli:1`
+- **Google Cloud CLI**: `ghcr.io/devcontainers/features/gcloud:1` (community: search registry)
 
 ## Always Included (base template)
 
@@ -94,7 +104,7 @@ Suggested (confirm to add):
   - Docker-in-Docker (found docker-compose.yml)
 
 AI CLI (from Step 4):
-  - Claude Code feature (ghcr.io/devcontainers-extra/features/claude-code:1)
+  - Claude Code (install via postCreateCommand: curl -fsSL https://claude.ai/install.sh | bash)
 
 Already included:
   - GitHub CLI (base template)

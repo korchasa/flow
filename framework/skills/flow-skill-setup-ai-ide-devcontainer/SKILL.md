@@ -62,7 +62,7 @@ Check if `.devcontainer/` exists:
 Ask the user (skip items already answered in prior context):
 
 1. **AI CLI tools** (multi-select): "Which AI CLI tools to install in the container?"
-   - Claude Code — via registry feature (see [references/features-catalog.md](references/features-catalog.md) § AI IDE Features) + config volume + `ANTHROPIC_API_KEY`
+   - Claude Code — via `postCreateCommand` install script (see Claude Code § Install) + config volume + `ANTHROPIC_API_KEY`
    - OpenCode — via registry feature + config volume + `ANTHROPIC_API_KEY` (or other provider key)
    - Cursor CLI, Gemini CLI — via registry features
    - Both/multiple — installs and configures all selected
@@ -140,6 +140,12 @@ Generate only when user chose firewall in step 4.3. See [references/firewall-tem
 - [ ] `remoteUser` matches the user in the base image (e.g., `node` for Node images, `vscode` for mcr base images)
 - [ ] No secrets/API keys hardcoded in any generated file
 
+### Step 8: Post-Setup Notes
+
+If Claude Code was selected, display this note to the user after generation:
+
+> **Claude Code auth**: After the container starts, open a terminal inside it and run `claude` to log in via OAuth. Auth forwarding from macOS Keychain may handle this automatically, but if Claude Code reports auth errors, a manual `claude login` in the container terminal will fix it. Credentials are persisted in the config volume and survive container rebuilds.
+
 ---
 
 ## Stack Reference
@@ -202,16 +208,17 @@ Generate only when user chose firewall in step 4.3. See [references/firewall-tem
 
 Each AI CLI has its own installation, config persistence, and global skills pattern. Apply only for selected tools.
 
-**Preferred method**: Use devcontainer registry features (handle install, PATH, updates automatically).
-See [references/features-catalog.md](references/features-catalog.md) § AI IDE Features for feature IDs.
-Fall back to manual install only if registry feature is unavailable or user requests pinned version.
+**Preferred method**: Install via official script in `postCreateCommand` (`curl -fsSL https://claude.ai/install.sh | bash`).
+Registry features (e.g., `ghcr.io/devcontainers-extra/features/claude-code:1`) are **NOT recommended** — they install outdated versions with broken OAuth.
+For other AI CLIs, use devcontainer registry features where available (see [references/features-catalog.md](references/features-catalog.md)).
 
 ### Claude Code
 
 | Aspect | Details |
 |---|---|
-| **Install (feature, preferred)** | `ghcr.io/devcontainers-extra/features/claude-code:1` (npm) or `ghcr.io/stu-bell/devcontainer-features/claude-code:0` (native installer) |
-| **Install (manual fallback)** | `postCreateCommand`: `curl -fsSL https://claude.ai/install.sh \| bash` or `npm install -g @anthropic-ai/claude-code@latest` |
+| **Install (preferred)** | `postCreateCommand`: `curl -fsSL https://claude.ai/install.sh \| bash` — always installs latest version with working OAuth |
+| **Install (alternative)** | `postCreateCommand`: `npm install -g @anthropic-ai/claude-code@latest` |
+| **Install (NOT recommended)** | Registry features (`ghcr.io/devcontainers-extra/features/claude-code:1`, `ghcr.io/stu-bell/devcontainer-features/claude-code:0`) — install outdated versions with broken OAuth callback |
 | **Config dir** | `~/.claude/` (settings, skills, auth tokens in `.credentials.json`). `~/.claude.json` (metadata, caches — auto-recreated, no tokens) |
 | **Auth tokens** | Stored in `~/.claude/.credentials.json` inside the config dir. On macOS host: Keychain service `Claude Code-credentials`. See [references/auth-forwarding.md](references/auth-forwarding.md) |
 | **Config volume** | `source=claude-config-${devcontainerId},target=/home/<user>/.claude,type=volume` |
