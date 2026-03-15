@@ -125,19 +125,20 @@ Every task follows the same supervised loop:
 - `flow-maintenance` — project health check
 - `flow-investigate` — deep bug investigation
 - `flow-answer` — codebase questions
+- `flow-spec` — structured feature specification
 
-### Extending AssistFlow
+### Extending AssistFlow (Skills)
 
-- `flow-engineer-command` — create/modify a command
-- `flow-engineer-skill` — create/modify a skill
-- `flow-engineer-rule` — create/modify a rule
-- `flow-engineer-hook` — create/modify a hook
-- `flow-engineer-subagent` — create/modify a subagent
+- `flow-skill-engineer-command` — create/modify a command
+- `flow-skill-engineer-skill` — create/modify a skill
+- `flow-skill-engineer-rule` — create/modify a rule
+- `flow-skill-engineer-hook` — create/modify a hook
+- `flow-skill-engineer-subagent` — create/modify a subagent
 
 ### Setup & Configuration
 
-- `flow-setup-code-style-ts-deno` — Deno/TS code style
-- `flow-setup-code-style-ts-strict` — strict TypeScript
+- `flow-setup-agent-code-style-ts-deno` — Deno/TS code style
+- `flow-setup-agent-code-style-ts-strict` — strict TypeScript
 - `flow-skill-configure-deno-commands` — configure Deno tasks
 - `flow-skill-ai-skel-ts` — scaffold AI agent skeleton
 

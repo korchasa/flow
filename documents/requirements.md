@@ -74,8 +74,8 @@ FR-10 (Global Framework Distribution) has been delegated to flow-cli (external t
   coding style (e.g., TypeScript, Swift) and principles (e.g., Zen, TDD).
 - **Acceptance criteria:**
   - [x] Code style rules (TS, Swift, etc.). Evidence:
-        `framework/skills/flow-setup-code-style-ts-deno/SKILL.md:17-35`,
-        `framework/skills/flow-setup-code-style-ts-strict/SKILL.md:17-105`
+        `framework/skills/flow-setup-agent-code-style-ts-deno/SKILL.md:17-35`,
+        `framework/skills/flow-setup-agent-code-style-ts-strict/SKILL.md:17-105`
   - [x] Development principles (Autonomous, Zen, TDD). Evidence:
         `AGENTS.md:92-105`, `AGENTS.md:1-20`
   - [x] Documentation standards. Evidence: `documents/AGENTS.md:1-127`,
@@ -227,11 +227,6 @@ The benchmarking system must cover all core AssistFlow components to ensure reli
 | **Commands (`flow-*`)**                    |                                      |             |                          |
 | `flow-answer`                              | Answering user questions             |     [ ]     |                          |
 | `flow-commit`                              | Atomic commits and QA                |     [x]     | `flow-commit-*`          |
-| `flow-engineer-command`                    | Creating new AF commands             |     [ ]     |                          |
-| `flow-engineer-hook`                       | Creating hooks                       |     [ ]     |                          |
-| `flow-engineer-rule`                       | Creating rules                       |     [ ]     |                          |
-| `flow-engineer-skill`                      | Creating skills                      |     [ ]     |                          |
-| `flow-engineer-subagent`                   | Creating subagents                   |     [ ]     |                          |
 | `flow-init`                                | Project initialization               |     [x]     | `flow-init-*`            |
 | `flow-investigate`                         | Code investigation/debugging         |     [ ]     |                          |
 | `flow-maintenance`                         | Periodic project health checks       |     [ ]     |                          |
@@ -239,9 +234,16 @@ The benchmarking system must cover all core AssistFlow components to ensure reli
 | `flow-review`                              | QA + code review of changes          |     [ ]     |                          |
 | `flow-review-and-commit`                   | Review quality then commit           |     [x]     | `flow-review-and-commit-approve`, `flow-review-and-commit-reject` |
 | `flow-reflect`                             | Self-reflection on task              |     [x]     | `flow-reflect-*`         |
-| `flow-setup-code-style-ts-deno`            | Setup Deno/TS code style             |     [ ]     |                          |
-| `flow-setup-code-style-ts-strict`          | Setup strict TypeScript              |     [ ]     |                          |
+| `flow-spec`                                | Feature specification (phased)       |     [ ]     |                          |
+| **Setup (`flow-setup-agent-*`)**           |                                      |             |                          |
+| `flow-setup-agent-code-style-ts-deno`            | Setup Deno/TS code style             |     [ ]     |                          |
+| `flow-setup-agent-code-style-ts-strict`          | Setup strict TypeScript              |     [ ]     |                          |
 | **Skills (`flow-skill-*`)**                |                                      |             |                          |
+| `flow-skill-engineer-command`              | Creating new AF commands             |     [ ]     |                          |
+| `flow-skill-engineer-hook`                 | Creating hooks                       |     [x]     | `flow-skill-engineer-hook-*` |
+| `flow-skill-engineer-rule`                 | Creating rules                       |     [ ]     |                          |
+| `flow-skill-engineer-skill`               | Creating skills                      |     [ ]     |                          |
+| `flow-skill-engineer-subagent`            | Creating subagents                   |     [ ]     |                          |
 | `flow-skill-ai-skel-ts`                   | AI agent scaffold                    |     [ ]     |                          |
 | `flow-skill-analyze-context`              | Analyze token usage in context       |     [x]     |                          |
 | `flow-skill-conduct-qa-session`           | Conducting QA sessions               |     [ ]     |                          |
@@ -481,38 +483,38 @@ Canonical agent definitions (IDE-agnostic). `name` + `description` frontmatter, 
   environments).
 - **Acceptance criteria:**
   - [x] **FR-13.1 Framework scripts migrated** (8 files → Deno/TS). Evidence:
-    - `framework/skills/flow-engineer-command/scripts/init_command.ts`
-    - `framework/skills/flow-engineer-command/scripts/validate_command.ts`
-    - `framework/skills/flow-engineer-command/scripts/package_command.ts`
-    - `framework/skills/flow-engineer-rule/scripts/init_rule.ts`
-    - `framework/skills/flow-engineer-rule/scripts/validate_rule.ts`
-    - `framework/skills/flow-engineer-skill/scripts/init_skill.ts`
-    - `framework/skills/flow-engineer-skill/scripts/validate_skill.ts`
-    - `framework/skills/flow-engineer-skill/scripts/package_skill.ts`
+    - `framework/skills/flow-skill-engineer-command/scripts/init_command.ts`
+    - `framework/skills/flow-skill-engineer-command/scripts/validate_command.ts`
+    - `framework/skills/flow-skill-engineer-command/scripts/package_command.ts`
+    - `framework/skills/flow-skill-engineer-rule/scripts/init_rule.ts`
+    - `framework/skills/flow-skill-engineer-rule/scripts/validate_rule.ts`
+    - `framework/skills/flow-skill-engineer-skill/scripts/init_skill.ts`
+    - `framework/skills/flow-skill-engineer-skill/scripts/validate_skill.ts`
+    - `framework/skills/flow-skill-engineer-skill/scripts/package_skill.ts`
   - [x] **FR-13.2 General-purpose scripts remain Python** (2 files). Evidence:
     - `framework/skills/flow-skill-analyze-context/scripts/count_tokens.py`
     - `framework/skills/flow-skill-draw-mermaid-diagrams/scripts/validate.py`
   - [x] **FR-13.3 Behavioral parity**: Each migrated `.ts` script produces identical
         output (stdout messages, exit codes) as the Python original. Verified via
         56 unit tests covering all validation logic. Evidence:
-        `framework/skills/flow-engineer-command/scripts/command_scripts_test.ts`,
-        `framework/skills/flow-engineer-rule/scripts/rule_scripts_test.ts`,
-        `framework/skills/flow-engineer-skill/scripts/skill_scripts_test.ts`
-  - [x] **FR-13.4 SKILL.md references updated**: `flow-engineer-command`,
-        `flow-engineer-rule`, `flow-engineer-skill` SKILL.md files reference
+        `framework/skills/flow-skill-engineer-command/scripts/command_scripts_test.ts`,
+        `framework/skills/flow-skill-engineer-rule/scripts/rule_scripts_test.ts`,
+        `framework/skills/flow-skill-engineer-skill/scripts/skill_scripts_test.ts`
+  - [x] **FR-13.4 SKILL.md references updated**: `flow-skill-engineer-command`,
+        `flow-skill-engineer-rule`, `flow-skill-engineer-skill` SKILL.md files reference
         `deno run -A scripts/*.ts` instead of `python3 scripts/*.py`. Evidence:
-        `framework/skills/flow-engineer-command/SKILL.md:292`,
-        `framework/skills/flow-engineer-rule/SKILL.md:215`,
-        `framework/skills/flow-engineer-skill/SKILL.md:259-282`
+        `framework/skills/flow-skill-engineer-command/SKILL.md:292`,
+        `framework/skills/flow-skill-engineer-rule/SKILL.md:215`,
+        `framework/skills/flow-skill-engineer-skill/SKILL.md:259-282`
   - [x] **FR-13.5 Stack update**: `AGENTS.md` tooling stack notes Python as
         "general-purpose utility scripts only" (not removed entirely). Evidence:
         `AGENTS.md:54`
   - [x] **FR-13.6 Tests**: 56 unit tests across 3 test files:
         `command_scripts_test.ts` (18), `skill_scripts_test.ts` (19),
         `rule_scripts_test.ts` (19). All pass. Evidence:
-        `framework/skills/flow-engineer-command/scripts/command_scripts_test.ts`,
-        `framework/skills/flow-engineer-rule/scripts/rule_scripts_test.ts`,
-        `framework/skills/flow-engineer-skill/scripts/skill_scripts_test.ts`
+        `framework/skills/flow-skill-engineer-command/scripts/command_scripts_test.ts`,
+        `framework/skills/flow-skill-engineer-rule/scripts/rule_scripts_test.ts`,
+        `framework/skills/flow-skill-engineer-skill/scripts/skill_scripts_test.ts`
 
 ### 3.14 Cross-IDE Hook/Plugin Format Transformation (FR-14)
 
@@ -520,7 +522,7 @@ Canonical agent definitions (IDE-agnostic). `name` + `description` frontmatter, 
   different formats: Cursor hooks (`.cursor/hooks.json`), Claude Code hooks
   (`settings.json`, 18 event types), and OpenCode plugins
   (`.opencode/plugins/*.ts` with `plugin()` API). The framework provides
-  comprehensive cross-IDE documentation in `flow-engineer-hook` SKILL.md
+  comprehensive cross-IDE documentation in `flow-skill-engineer-hook` SKILL.md
   with IDE-specific reference files, enabling AI agents to generate correct
   hook configurations from natural language requests.
 - **Use case scenario:** Developer asks the agent to create a hook. The agent
@@ -534,35 +536,35 @@ Canonical agent definitions (IDE-agnostic). `name` + `description` frontmatter, 
 - **Acceptance criteria:**
   - [x] **FR-14.1 Canonical format**: IDE-agnostic hook documentation with
         cross-IDE mapping tables, type availability matrix, and per-IDE
-        reference files in `flow-engineer-hook/references/`. Evidence:
-        `framework/skills/flow-engineer-hook/SKILL.md:33-68` (mapping table,
+        reference files in `flow-skill-engineer-hook/references/`. Evidence:
+        `framework/skills/flow-skill-engineer-hook/SKILL.md:33-68` (mapping table,
         availability matrix),
-        `framework/skills/flow-engineer-hook/references/hooks_api.md`,
-        `framework/skills/flow-engineer-hook/references/claude_code_hooks_api.md`,
-        `framework/skills/flow-engineer-hook/references/opencode_plugins_api.md`
+        `framework/skills/flow-skill-engineer-hook/references/hooks_api.md`,
+        `framework/skills/flow-skill-engineer-hook/references/claude_code_hooks_api.md`,
+        `framework/skills/flow-skill-engineer-hook/references/opencode_plugins_api.md`
   - [x] **FR-14.2 Cursor output**: SKILL.md + reference provide templates for
         generating correct Cursor `hooks.json` configuration. Evidence:
-        `framework/skills/flow-engineer-hook/SKILL.md:80-104` (Cursor section),
-        `framework/skills/flow-engineer-hook/references/hooks_api.md`
+        `framework/skills/flow-skill-engineer-hook/SKILL.md:80-104` (Cursor section),
+        `framework/skills/flow-skill-engineer-hook/references/hooks_api.md`
   - [x] **FR-14.3 Claude Code output**: SKILL.md + reference provide templates
         for generating correct Claude Code `settings.json` hooks section.
         Cover all 18 event types. Evidence:
-        `framework/skills/flow-engineer-hook/SKILL.md:106-147` (Claude Code section),
-        `framework/skills/flow-engineer-hook/references/claude_code_hooks_api.md`,
-        `benchmarks/flow-engineer-hook/scenarios/basic-claude-code/mod.ts` (benchmark PASSED)
+        `framework/skills/flow-skill-engineer-hook/SKILL.md:106-147` (Claude Code section),
+        `framework/skills/flow-skill-engineer-hook/references/claude_code_hooks_api.md`,
+        `benchmarks/flow-skill-engineer-hook/scenarios/basic-claude-code/mod.ts` (benchmark PASSED)
   - [x] **FR-14.4 OpenCode output**: SKILL.md + reference provide templates
         for generating correct OpenCode plugin `.ts` files using `Plugin` type
         and `tool()` helper. Evidence:
-        `framework/skills/flow-engineer-hook/SKILL.md:149-184` (OpenCode section),
-        `framework/skills/flow-engineer-hook/references/opencode_plugins_api.md`
+        `framework/skills/flow-skill-engineer-hook/SKILL.md:149-184` (OpenCode section),
+        `framework/skills/flow-skill-engineer-hook/references/opencode_plugins_api.md`
   - [x] **FR-14.5 Hook types**: Documentation covers `command` (script-based),
         `prompt` (LLM-based), `agent` (subagent-based), `http` (webhook), and
         programmatic (OpenCode) hook types with availability matrix per IDE.
-        Evidence: `framework/skills/flow-engineer-hook/SKILL.md:33-41`
+        Evidence: `framework/skills/flow-skill-engineer-hook/SKILL.md:33-41`
 
-### 3.15 Update `flow-engineer-hook` for Cross-IDE Support (FR-15)
+### 3.15 Update `flow-skill-engineer-hook` for Cross-IDE Support (FR-15)
 
-- **Description:** The `flow-engineer-hook` skill currently documents hook
+- **Description:** The `flow-skill-engineer-hook` skill currently documents hook
   creation primarily for Cursor. It must be updated to cover Claude Code's
   expanded hook system (17+ events, three hook types: command/prompt/agent)
   and OpenCode's plugin system.
@@ -572,48 +574,48 @@ Canonical agent definitions (IDE-agnostic). `name` + `description` frontmatter, 
 - **Acceptance criteria:**
   - [x] **FR-15.1 Claude Code hooks**: Document all 18 event types, four hook
         types (command, prompt, agent, http), and `settings.json` configuration.
-        Evidence: `framework/skills/flow-engineer-hook/references/claude_code_hooks_api.md`
+        Evidence: `framework/skills/flow-skill-engineer-hook/references/claude_code_hooks_api.md`
         (277 lines, all events with I/O schemas, 4 hook types with examples)
   - [x] **FR-15.2 OpenCode plugins**: Document `.opencode/plugins/*.ts` format,
         `tool()` helper, event API, and npm package distribution. Evidence:
-        `framework/skills/flow-engineer-hook/references/opencode_plugins_api.md`
+        `framework/skills/flow-skill-engineer-hook/references/opencode_plugins_api.md`
         (207 lines, 17 hooks, 22+ system events, tool() helper, npm distribution)
   - [x] **FR-15.3 Cursor hooks**: Retain existing Cursor hook documentation.
-        Evidence: `framework/skills/flow-engineer-hook/SKILL.md:80-104`,
-        `framework/skills/flow-engineer-hook/references/hooks_api.md` (updated
+        Evidence: `framework/skills/flow-skill-engineer-hook/SKILL.md:80-104`,
+        `framework/skills/flow-skill-engineer-hook/references/hooks_api.md` (updated
         with failClosed, loop_limit, env vars, Claude Code compatibility),
-        `framework/skills/flow-engineer-hook/assets/hook_template.sh`
+        `framework/skills/flow-skill-engineer-hook/assets/hook_template.sh`
   - [x] **FR-15.4 Cross-IDE guidance**: Skill provides IDE-specific examples
         and notes which events/types are available per IDE. Evidence:
-        `framework/skills/flow-engineer-hook/SKILL.md:33-68` (event mapping
+        `framework/skills/flow-skill-engineer-hook/SKILL.md:33-68` (event mapping
         table + type availability matrix),
-        `framework/skills/flow-engineer-hook/SKILL.md:106-184` (same hook
+        `framework/skills/flow-skill-engineer-hook/SKILL.md:106-184` (same hook
         "block rm -rf" shown in all 3 IDE formats)
 
-### 3.16 Update `flow-engineer-command` for Claude Code Unification (FR-16)
+### 3.16 Update `flow-skill-engineer-command` for Claude Code Unification (FR-16)
 
 - **Description:** Claude Code has unified commands and skills under a single
   namespace — `.claude/commands/` and `.claude/skills/` are now merged, with
-  skills as the recommended format. The `flow-engineer-command` skill must
+  skills as the recommended format. The `flow-skill-engineer-command` skill must
   reflect this change.
 - **Use case scenario:** User asks to create a command for Claude Code. The skill
   informs them that Claude Code uses skills (SKILL.md) as the unified format
   and guides them accordingly.
 - **Acceptance criteria:**
-  - [x] **FR-16.1 Documentation update**: `flow-engineer-command/SKILL.md` notes
+  - [x] **FR-16.1 Documentation update**: `flow-skill-engineer-command/SKILL.md` notes
         that Claude Code commands = skills (unified namespace). Evidence:
-        `framework/skills/flow-engineer-command/SKILL.md:37` (Note about
+        `framework/skills/flow-skill-engineer-command/SKILL.md:37` (Note about
         `.claude/commands/` legacy vs `.claude/skills/` recommended)
   - [x] **FR-16.2 IDE-specific guidance**: Skill provides correct path and format
         for each IDE (Cursor: `.cursor/commands/`, Claude Code: `.claude/skills/`,
         OpenCode: `.opencode/commands/`). Evidence:
-        `framework/skills/flow-engineer-command/SKILL.md:31-37`
+        `framework/skills/flow-skill-engineer-command/SKILL.md:31-37`
   - [x] **FR-16.3 No breaking changes**: Existing command creation workflow for
         Cursor and OpenCode remains unchanged. Scripts are IDE-agnostic, operate
         on generic directory paths. Evidence:
-        `framework/skills/flow-engineer-command/scripts/init_command.ts`,
-        `framework/skills/flow-engineer-command/scripts/validate_command.ts`,
-        `framework/skills/flow-engineer-command/scripts/package_command.ts`
+        `framework/skills/flow-skill-engineer-command/scripts/init_command.ts`,
+        `framework/skills/flow-skill-engineer-command/scripts/validate_command.ts`,
+        `framework/skills/flow-skill-engineer-command/scripts/package_command.ts`
 
 ### 3.17 Resolve IDE Support Scope (FR-17)
 
@@ -627,20 +629,20 @@ Canonical agent definitions (IDE-agnostic). `name` + `description` frontmatter, 
 - **Acceptance criteria:**
   - [x] **FR-17.1 Decision**: Codex and Antigravity are **unsupported**. Supported
         IDEs: Cursor, Claude Code, OpenCode. Evidence: removed from all SKILL.md
-        files, scripts, and detection logic in `flow-engineer-rule/`,
-        `flow-engineer-skill/`.
+        files, scripts, and detection logic in `flow-skill-engineer-rule/`,
+        `flow-skill-engineer-skill/`.
   - [x] **FR-17.2 AGENTS.md alignment**: Root `AGENTS.md` IDE list narrowed to
         3 supported IDEs (Cursor, Claude Code, OpenCode). Evidence:
         `AGENTS.md:25`, `AGENTS.md:37`, `AGENTS.md:73`
-  - [x] **FR-17.3 Skill references**: `flow-engineer-rule`, `flow-engineer-skill`
+  - [x] **FR-17.3 Skill references**: `flow-skill-engineer-rule`, `flow-skill-engineer-skill`
         SKILL.md files and their scripts updated to 3-IDE scope. Antigravity/Codex
         columns, sections, detection logic, and IDE options removed.
-        `flow-engineer-command` had no Codex/Antigravity references.
+        `flow-skill-engineer-command` had no Codex/Antigravity references.
         Legacy Python scripts (`init_rule.py`, `validate_rule.py`) deleted.
-        Evidence: `flow-engineer-rule/SKILL.md`, `flow-engineer-rule/scripts/init_rule.ts`,
-        `flow-engineer-rule/scripts/validate_rule.ts`,
-        `flow-engineer-rule/references/examples.md`,
-        `flow-engineer-skill/SKILL.md`
+        Evidence: `flow-skill-engineer-rule/SKILL.md`, `flow-skill-engineer-rule/scripts/init_rule.ts`,
+        `flow-skill-engineer-rule/scripts/validate_rule.ts`,
+        `flow-skill-engineer-rule/references/examples.md`,
+        `flow-skill-engineer-skill/SKILL.md`
   - [x] **FR-17.4 Design doc**: `design.md` replaced "Cursor" with generic
         "IDE/Agent" terminology in algorithms section. Evidence:
         `documents/design.md:14-23`, `documents/design.md:26`,
@@ -872,7 +874,7 @@ Canonical agent definitions (IDE-agnostic). `name` + `description` frontmatter, 
         Policy documented in SDS (section 3.1.2 "Script Language Policy"). Project uses Deno/TS exclusively — no Python.
   - [x] **FR-21.4.3 User-facing skills are language-agnostic**: The
         agentskills.io standard allows any language. Framework documentation
-        (e.g., `flow-engineer-skill`) MUST NOT restrict users to a single
+        (e.g., `flow-skill-engineer-skill`) MUST NOT restrict users to a single
         language. Common options: Python, Bash, JavaScript/TypeScript.
         `flow-skill-engineer-skill` does not restrict script language; examples mention multiple options.
 
