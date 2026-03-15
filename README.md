@@ -39,22 +39,21 @@ Developer: sets task
 
 ## Installation
 
-Install AssistFlow skills and agents into your IDE config directories (`~/.cursor/`, `~/.claude/`, `~/.config/opencode/`) using [flow-cli](https://github.com/korchasa/flow-cli):
+Install the `flow` CLI globally, then run it in your project:
 
 ```sh
-# Install flow-cli (see flow-cli README for full instructions)
-# Then run:
-flow-cli install
+deno install -g -A jsr:@korchasa/flow-cli
+flow
 ```
 
 **What happens:**
 
-1. flow-cli reads canonical skill and agent definitions from this repository
+1. `flow` reads skills and agents bundled inside the CLI (no network needed)
 2. Detects which IDEs you have installed (Cursor, Claude Code, OpenCode)
 3. Transforms resources into IDE-specific format (adds required frontmatter per IDE)
 4. Copies files into IDE config directories — your own files are never touched
 
-Re-running is safe (idempotent). See the [flow-cli README](https://github.com/korchasa/flow-cli) for detailed usage.
+Re-running is safe (idempotent). On first run, `flow` interactively creates `.flow.yaml` to configure which skills/agents to sync.
 
 ## Development Setup
 
@@ -68,7 +67,7 @@ cd flow
 deno task check
 ```
 
-Dev-only skills and agents live directly in `.claude/skills/` and `.claude/agents/` (tracked in git). Framework skills/agents are installed by flow-cli from remote via `.flow.yaml`.
+Dev-only skills and agents live in `.claude/skills/` and `.claude/agents/` (tracked in git). Framework skills/agents are installed by flow-cli from bundled source.
 
 ## How It Works
 
@@ -84,7 +83,7 @@ AI models lose context between sessions. AssistFlow compensates by storing all d
 
 This repository contains two distinct layers. Do not confuse them:
 
-- **`framework/`** — **the product itself**. Skills and agents that users install into their projects via `flow-cli`. This is what AssistFlow distributes.
+- **`framework/`** — **the product itself**. Skills and agents that users install into their projects via `flow`. This is what AssistFlow distributes.
 - **`.claude/skills/`, `.claude/agents/`** — **internal development tooling**. Skills and agents used to develop AssistFlow itself (benchmark runner, cursor-agent integration, code generation helpers). These are NOT distributed to users. Tracked in git directly.
 
 ## Developer Workflow
@@ -174,19 +173,21 @@ Every task follows the same supervised loop:
 ## Project Structure
 
 ```
-framework/              # THE PRODUCT — distributed to users via flow-cli
+framework/              # THE PRODUCT — distributed to users via flow CLI
   skills/               #   Skills (SKILL.md per folder)
   agents/               #   Agents (universal .md files with all IDE fields)
-flow-cli/               # Git submodule — distribution tool (transforms & installs)
+cli/                    # Distribution tool — published to JSR as @korchasa/flow-cli
+  src/                  #   CLI source (BundledSource, sync, transform, plan)
+  scripts/              #   Bundle script (generates bundled.json + _version.ts)
 documents/              # Project documentation (SRS, SDS, whiteboard)
-scripts/                # Deno task scripts
+scripts/                # Deno task scripts + benchmark infrastructure
 benchmarks/             # Evidence-based agent benchmarks
+deno.json               # Single config: JSR metadata, imports, tasks
 AGENTS.md               # Project vision, rules, agent instructions
-.flow.yaml              # flow-cli config (claude only)
 
-.claude/                # INTERNAL — dev tooling + flow-cli installed resources
-  skills/               #   Dev-only skills (tracked) + framework skills (via flow-cli)
-  agents/               #   Dev-only agents (tracked) + framework agents (via flow-cli)
+.claude/                # INTERNAL — dev tooling + framework resources
+  skills/               #   Dev-only skills (tracked) + framework skills (via flow)
+  agents/               #   Dev-only agents (tracked) + framework agents (via flow)
 ```
 
 ## Documentation as Memory
