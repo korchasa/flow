@@ -57,7 +57,7 @@ export class DenoFsAdapter implements FsAdapter {
   }
 
   async remove(path: string): Promise<void> {
-    await Deno.remove(path);
+    await Deno.remove(path, { recursive: true });
   }
 }
 
@@ -183,9 +183,18 @@ export class InMemoryFsAdapter implements FsAdapter {
   }
 
   remove(path: string): Promise<void> {
+    // Remove exact match
     this.files.delete(path);
     this.dirs.delete(path);
     this.symlinks.delete(path);
+    // Recursive: remove all entries under path/ prefix
+    const prefix = path.endsWith("/") ? path : path + "/";
+    for (const key of this.files.keys()) {
+      if (key.startsWith(prefix)) this.files.delete(key);
+    }
+    for (const dir of this.dirs) {
+      if (dir.startsWith(prefix)) this.dirs.delete(dir);
+    }
     return Promise.resolve();
   }
 }

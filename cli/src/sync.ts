@@ -11,7 +11,12 @@ import {
 import { syncClaudeSymlinks } from "./symlinks.ts";
 import { transformAgent } from "./transform.ts";
 import { runUserSync } from "./user_sync.ts";
-import type { FlowConfig, PlanItem, UpstreamFile } from "./types.ts";
+import type {
+  FlowConfig,
+  PlanItem,
+  PlanItemType,
+  UpstreamFile,
+} from "./types.ts";
 import { writeFiles } from "./writer.ts";
 
 /** Sync options */
@@ -29,6 +34,7 @@ export interface SyncOptions {
 export interface SyncResult {
   totalWritten: number;
   totalSkipped: number;
+  totalDeleted: number;
   totalConflicts: number;
   errors: Array<{ path: string; error: string }>;
   symlinkResult?: { created: string[]; skipped: string[]; updated: string[] };
@@ -45,6 +51,7 @@ export async function sync(
   const result: SyncResult = {
     totalWritten: 0,
     totalSkipped: 0,
+    totalDeleted: 0,
     totalConflicts: 0,
     errors: [],
   };
@@ -104,13 +111,13 @@ export async function sync(
       log(`\nSyncing to ${ide.name}...`);
 
       // Skills
+      const skillTargetDir = join(cwd, ide.configDir, "skills");
       if (skillNames.length > 0) {
         const skillFiles = await readSkillFiles(
           skillNames,
           allPaths,
           source,
         );
-        const skillTargetDir = join(cwd, ide.configDir, "skills");
         const skillPlan = await computePlan(
           skillFiles,
           skillTargetDir,
@@ -121,7 +128,20 @@ export async function sync(
         await processPlan(skillPlan, fs, options, result, log);
       }
 
+      // Delete excluded skills
+      const skillDeletePlan = await computeDeletePlan(
+        allSkillNames,
+        skillNames,
+        skillTargetDir,
+        "skill",
+        fs,
+      );
+      if (skillDeletePlan.length > 0) {
+        await processPlan(skillDeletePlan, fs, options, result, log);
+      }
+
       // Agents (read from flat path, transform per IDE)
+      const agentTargetDir = join(cwd, ide.configDir, "agents");
       if (agentNames.length > 0) {
         const agentFiles = await readAgentFiles(
           agentNames,
@@ -129,7 +149,6 @@ export async function sync(
           allPaths,
           source,
         );
-        const agentTargetDir = join(cwd, ide.configDir, "agents");
         const agentPlan = await computePlan(
           agentFiles,
           agentTargetDir,
@@ -138,6 +157,18 @@ export async function sync(
         );
 
         await processPlan(agentPlan, fs, options, result, log);
+      }
+
+      // Delete excluded agents
+      const agentDeletePlan = await computeDeletePlan(
+        allAgentNames,
+        agentNames,
+        agentTargetDir,
+        "agent",
+        fs,
+      );
+      if (agentDeletePlan.length > 0) {
+        await processPlan(agentDeletePlan, fs, options, result, log);
       }
     }
 
@@ -200,6 +231,7 @@ export async function processPlan(
   const summary = planSummary(plan);
 
   if (summary.create > 0) log(`  Create: ${summary.create}`);
+  if (summary.delete > 0) log(`  Delete: ${summary.delete}`);
   if (summary.ok > 0) log(`  Unchanged: ${summary.ok}`);
   if (summary.conflict > 0) log(`  Conflicts: ${summary.conflict}`);
 
@@ -234,6 +266,7 @@ export async function processPlan(
   const writeResult = await writeFiles(plan, fs);
   result.totalWritten += writeResult.written;
   result.totalSkipped += writeResult.skipped;
+  result.totalDeleted += writeResult.deleted;
   result.errors.push(...writeResult.errors);
 }
 
@@ -273,6 +306,38 @@ async function readAgentFiles(
     }
   }
   return files;
+}
+
+/** Compute delete plan for excluded framework resources that exist locally */
+export async function computeDeletePlan(
+  allFrameworkNames: string[],
+  includedNames: string[],
+  targetDir: string,
+  type: "skill" | "agent",
+  fs: FsAdapter,
+): Promise<PlanItem[]> {
+  const includedSet = new Set(includedNames);
+  const excludedNames = allFrameworkNames.filter((n) => !includedSet.has(n));
+  const plan: PlanItem[] = [];
+
+  for (const name of excludedNames) {
+    const targetPath = type === "skill"
+      ? join(targetDir, name)
+      : join(targetDir, `${name}.md`);
+
+    if (await fs.exists(targetPath)) {
+      plan.push({
+        type: type as PlanItemType,
+        name,
+        action: "delete",
+        sourcePath: "",
+        targetPath,
+        content: "",
+      });
+    }
+  }
+
+  return plan;
 }
 
 /** Filter names by include/exclude lists */

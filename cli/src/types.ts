@@ -31,7 +31,7 @@ export interface UpstreamFile {
 }
 
 /** Plan item action */
-export type PlanAction = "create" | "update" | "ok" | "conflict";
+export type PlanAction = "create" | "update" | "ok" | "conflict" | "delete";
 
 /** Plan item type */
 export type PlanItemType = "skill" | "agent" | "command";
