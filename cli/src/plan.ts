@@ -65,6 +65,7 @@ export function planSummary(
     update: 0,
     ok: 0,
     conflict: 0,
+    delete: 0,
   };
   for (const item of plan) {
     summary[item.action]++;

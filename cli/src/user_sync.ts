@@ -333,6 +333,7 @@ export async function runUserSync(
   const result: SyncResult = {
     totalWritten: 0,
     totalSkipped: 0,
+    totalDeleted: 0,
     totalConflicts: 0,
     errors: [],
   };
