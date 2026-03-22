@@ -43,7 +43,7 @@ export const DeepResearchPlanBench = new class extends BenchmarkSkillScenario {
     {
       id: "output_files_defined",
       description:
-        "Did the plan define output file paths in _research_tmp/ for each direction?",
+        "Did the plan define output file paths in a temporary directory (system temp via mktemp or similar) for each direction?",
       critical: true,
       type: "semantic" as const,
     },

@@ -64,7 +64,7 @@ Confidence basis: [e.g., "3+ independent sources for all major claims except [ga
 
 ## Worker Output Format
 
-Each sub-agent saves to `_research_tmp/<slug>.md` using this structure:
+Each sub-agent saves to `<tmp_dir>/<slug>.md` (system temp directory created by orchestrator) using this structure:
 
 ```markdown
 # Direction: [direction name]
