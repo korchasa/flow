@@ -246,7 +246,6 @@ The benchmarking system must cover all core AssistFlow components to ensure reli
 | `flow-skill-engineer-rule`                 | Creating rules                       |     [ ]     |                          |
 | `flow-skill-engineer-skill`               | Creating skills                      |     [ ]     |                          |
 | `flow-skill-engineer-subagent`            | Creating subagents                   |     [ ]     |                          |
-| `flow-skill-ai-skel-ts`                   | AI agent scaffold                    |     [ ]     |                          |
 | `flow-skill-analyze-context`              | Analyze token usage in context       |     [x]     |                          |
 | `flow-skill-conduct-qa-session`           | Conducting QA sessions               |     [ ]     |                          |
 | `flow-skill-configure-deno-commands`      | Configure Deno development commands  |     [ ]     |                          |
