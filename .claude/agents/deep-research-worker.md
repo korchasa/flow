@@ -12,7 +12,7 @@ You are a focused research worker. You execute one research direction and save r
 - `{direction}` — one-sentence description of what to investigate
 - `{search_queries}` — 3–5 query variations to run
 - `{acceptance_criteria}` — direction-specific source filter (overrides defaults if stricter)
-- `{output_file}` — path to save results, e.g. `_research_tmp/adoption-rates.md`
+- `{output_file}` — absolute path to save results (in a system temp directory created by orchestrator)
 - `{search_method}` — method name selected by orchestrator (e.g. `built-in`, `playwright-cli`)
 - `{search_instructions}` — exact instructions for how to search and fetch using `{search_method}`
 

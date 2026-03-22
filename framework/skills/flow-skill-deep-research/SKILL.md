@@ -95,12 +95,13 @@ For each direction, define:
 - `direction`: one-sentence description of what to investigate
 - `search_queries`: 3–5 query variations (broad + narrow + negation/criticism)
 - `acceptance_criteria`: what makes a source acceptable (see `deep-research-worker.md` for authority scores and recency defaults)
-- `output_file`: path like `_research_tmp/<slug>.md`
+- `output_file`: path like `<tmp_dir>/<slug>.md` (where `<tmp_dir>` is created in this phase)
 
-Create the temp directory:
+Create a temporary directory using the system temp facility:
+```bash
+mktemp -d "${TMPDIR:-/tmp}/deep-research-XXXXXX"
 ```
-_research_tmp/
-```
+Save the returned path as `tmp_dir` — pass it to all workers and use in Phase 4–5.
 
 Output the plan as a markdown list before proceeding. Do not ask for approval — proceed automatically.
 
@@ -112,7 +113,7 @@ Queries:
   - "AI deployment survey 2024 2025"
   - "machine learning production usage report"
 Acceptance: data from surveys, analyst reports, or official sources; published 2022+
-Output: _research_tmp/adoption-rates.md
+Output: <tmp_dir>/adoption-rates.md
 ```
 
 ---
@@ -177,7 +178,7 @@ Triggered inline during Phase 2 when the main agent's post-worker review fails a
 
 ## Phase 4: Synthesis
 
-Read all `_research_tmp/*.md` files.
+Read all `<tmp_dir>/*.md` files.
 
 Produce the final report using `assets/report_template.md`.
 
@@ -203,10 +204,10 @@ Produce the final report using `assets/report_template.md`.
    - Contains `## Findings`, `## Gaps`, `## Bibliography` sections
    - Bibliography entry count matches `[N]` citation count in body
    - No unfilled template placeholders (strings like `[direction name]`, `[url]`)
-   - If any check fails: stop, print error, do NOT delete `_research_tmp/`
+   - If any check fails: stop, print error, do NOT delete `<tmp_dir>/`
 3. **Print executive summary** in chat (3–5 sentences: what was researched, key findings, confidence level, gaps).
 4. **Print report path.**
-5. **Delete** `_research_tmp/` directory — only after step 2 passes.
+5. **Delete** `<tmp_dir>/` directory — only after step 2 passes.
 
 **Executive summary format:**
 ```

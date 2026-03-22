@@ -8,6 +8,7 @@ benchmarks/runs/
 benchmarks/benchmarks.lock
 .env
 __pycache__/
+_research_tmp/
 
 # IDE directories no longer used (removed in favor of flow-cli + claude only)
 .cursor/
