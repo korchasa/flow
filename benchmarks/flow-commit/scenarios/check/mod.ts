@@ -1,3 +1,4 @@
+import { join } from "@std/path";
 import { BenchmarkSkillScenario } from "../../../../scripts/benchmarks/lib/types.ts";
 import {
   runGit,
@@ -11,6 +12,12 @@ export const CommitCheckBench = new class extends BenchmarkSkillScenario {
 
   async setup(sandboxPath: string) {
     await setupGitRepo(sandboxPath);
+
+    // Exclude IDE config dirs from git
+    await Deno.writeTextFile(
+      join(sandboxPath, ".gitignore"),
+      ".claude/\n.cursor/\n",
+    );
 
     // Initial commit with all files
     await runGit(sandboxPath, ["add", "."]);
