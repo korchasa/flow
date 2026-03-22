@@ -14,6 +14,12 @@ export const CommitDepsBench = new class extends BenchmarkSkillScenario {
   async setup(sandboxPath: string) {
     await setupGitRepo(sandboxPath);
 
+    // Exclude IDE config dirs from git
+    await Deno.writeTextFile(
+      join(sandboxPath, ".gitignore"),
+      ".claude/\n.cursor/\n",
+    );
+
     // Initial commit
     await runGit(sandboxPath, ["add", "."]);
     await runGit(sandboxPath, ["commit", "-m", "Initial commit"]);

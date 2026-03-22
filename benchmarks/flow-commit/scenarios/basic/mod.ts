@@ -1,3 +1,4 @@
+import { join } from "@std/path";
 import { BenchmarkSkillScenario } from "../../../../scripts/benchmarks/lib/types.ts";
 import {
   runGit,
@@ -12,8 +13,14 @@ export const CommitBasicBench = new class extends BenchmarkSkillScenario {
   override async setup(sandboxPath: string) {
     await setupGitRepo(sandboxPath);
 
-    // Initial commit with README, AGENTS.md and .cursor
-    await runGit(sandboxPath, ["add", "README.md", "AGENTS.md", ".cursor"]);
+    // Exclude IDE config dirs from git
+    await Deno.writeTextFile(
+      join(sandboxPath, ".gitignore"),
+      ".claude/\n.cursor/\n",
+    );
+
+    // Initial commit with README, AGENTS.md and .gitignore
+    await runGit(sandboxPath, ["add", "README.md", "AGENTS.md", ".gitignore"]);
     await runGit(sandboxPath, ["commit", "-m", "Initial commit"]);
 
     // utils.ts is already in sandbox but NOT in git yet.

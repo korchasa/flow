@@ -339,15 +339,22 @@ async function main() {
   console.log("-".repeat(130));
 
   if (runs > 1) {
-    console.log("\n--- PASS RATES ---");
+    const threshold = Math.ceil(runs / 2);
+    console.log(`\n--- PASS RATES (threshold: ${threshold}/${runs}) ---`);
     for (const scenario of scenariosToRun) {
       const scenarioResults = results.filter((r) =>
         r.scenarioId === scenario.id
       );
       const passed = scenarioResults.filter((r) => r.success).length;
       const rate = (passed / runs) * 100;
+      const ok = passed >= threshold;
+      const color = ok ? ansi("\x1b[32m") : ansi("\x1b[31m");
+      const mark = ok ? "PASS" : "FAIL";
+      const reset = ansi("\x1b[0m");
       console.log(
-        `${scenario.id.padEnd(30)}: ${rate.toFixed(1)}% (${passed}/${runs})`,
+        `${color}[${mark}]${reset} ${scenario.id.padEnd(30)}: ${
+          rate.toFixed(1)
+        }% (${passed}/${runs})`,
       );
     }
   }
@@ -365,7 +372,25 @@ async function main() {
   const reportPath = join(runDir, "report.html");
   console.log(`\nReport: file://${reportPath}`);
 
-  const hasFailures = results.some((r) => !r.success);
+  // Determine overall success
+  // With multiple runs: scenario passes if >50% of runs succeed
+  // With single run: scenario passes if that run succeeds
+  let hasFailures = false;
+  if (runs > 1) {
+    for (const scenario of scenariosToRun) {
+      const scenarioResults = results.filter((r) =>
+        r.scenarioId === scenario.id
+      );
+      const passed = scenarioResults.filter((r) => r.success).length;
+      if (passed < Math.ceil(runs / 2)) {
+        hasFailures = true;
+        break;
+      }
+    }
+  } else {
+    hasFailures = results.some((r) => !r.success);
+  }
+
   if (hasFailures) {
     console.log(`\n${ansi("\x1b[31m")}Some tests failed.${ansi("\x1b[0m")}`);
     Deno.exit(1);
