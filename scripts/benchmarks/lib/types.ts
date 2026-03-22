@@ -72,6 +72,12 @@ export interface BenchmarkScenario {
    * If not provided, the runner will try to load it from the scenario's fixture directory.
    */
   agentsMarkdown?: string;
+
+  /**
+   * Skip this scenario with a reason.
+   * If set, the scenario will not be executed and will be reported as skipped.
+   */
+  skip?: string;
 }
 
 /**

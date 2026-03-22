@@ -52,6 +52,7 @@ export class CursorAdapter implements AgentAdapter {
       sessionId: null,
       result: null,
       subtype: null,
+      assistantText: null,
       raw: null,
     };
 

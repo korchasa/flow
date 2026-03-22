@@ -19,10 +19,11 @@ Deno.test("ClaudeAdapter - buildArgs initial prompt", () => {
   });
   assertEquals(args, [
     "-p",
+    "--verbose",
     "--model",
     "sonnet",
     "--output-format",
-    "json",
+    "stream-json",
     "--permission-mode",
     "bypassPermissions",
     "say hello",
@@ -38,10 +39,11 @@ Deno.test("ClaudeAdapter - buildArgs with resume", () => {
   });
   assertEquals(args, [
     "-p",
+    "--verbose",
     "--model",
     "opus",
     "--output-format",
-    "json",
+    "stream-json",
     "--permission-mode",
     "bypassPermissions",
     "--resume",
@@ -58,21 +60,24 @@ Deno.test("ClaudeAdapter - buildArgs empty prompt", () => {
   });
   assertEquals(args, [
     "-p",
+    "--verbose",
     "--model",
     "sonnet",
     "--output-format",
-    "json",
+    "stream-json",
     "--permission-mode",
     "bypassPermissions",
   ]);
 });
 
-// Real captured output from claude -p --output-format json
-const REAL_CLAUDE_OUTPUT =
-  `[{"type":"system","subtype":"init","cwd":"/private/tmp","session_id":"61417c7a-03e5-428a-b68a-be085247f617","tools":["Bash","Read"],"model":"claude-sonnet-4-6"},{"type":"assistant","message":{"model":"claude-sonnet-4-6","content":[{"type":"text","text":"BANANA"}],"usage":{"input_tokens":3,"output_tokens":5}},"session_id":"61417c7a-03e5-428a-b68a-be085247f617"},{"type":"result","subtype":"success","is_error":false,"duration_ms":978,"result":"BANANA","session_id":"61417c7a-03e5-428a-b68a-be085247f617","total_cost_usd":0.0399525,"usage":{"input_tokens":3,"output_tokens":5}}]`;
+// Real captured output from claude -p --verbose --output-format stream-json (NDJSON)
+const REAL_CLAUDE_NDJSON =
+  `{"type":"system","subtype":"init","cwd":"/private/tmp","session_id":"61417c7a-03e5-428a-b68a-be085247f617","tools":["Bash","Read"],"model":"claude-sonnet-4-6"}
+{"type":"assistant","message":{"model":"claude-sonnet-4-6","content":[{"type":"text","text":"BANANA"}],"usage":{"input_tokens":3,"output_tokens":5}},"session_id":"61417c7a-03e5-428a-b68a-be085247f617"}
+{"type":"result","subtype":"success","is_error":false,"duration_ms":978,"result":"BANANA","session_id":"61417c7a-03e5-428a-b68a-be085247f617","total_cost_usd":0.0399525,"usage":{"input_tokens":3,"output_tokens":5}}`;
 
-Deno.test("ClaudeAdapter - parseOutput real success output", () => {
-  const parsed = adapter.parseOutput(REAL_CLAUDE_OUTPUT);
+Deno.test("ClaudeAdapter - parseOutput NDJSON success output", () => {
+  const parsed = adapter.parseOutput(REAL_CLAUDE_NDJSON);
   assertEquals(parsed.sessionId, "61417c7a-03e5-428a-b68a-be085247f617");
   assertEquals(parsed.result, "BANANA");
   assertEquals(parsed.subtype, "success");
@@ -80,7 +85,7 @@ Deno.test("ClaudeAdapter - parseOutput real success output", () => {
 
 Deno.test("ClaudeAdapter - parseOutput extracts from result event", () => {
   const output =
-    `[{"type":"result","subtype":"success","result":"Hello World","session_id":"sess-1","total_cost_usd":0.01}]`;
+    `{"type":"result","subtype":"success","result":"Hello World","session_id":"sess-1","total_cost_usd":0.01}`;
   const parsed = adapter.parseOutput(output);
   assertEquals(parsed.sessionId, "sess-1");
   assertEquals(parsed.result, "Hello World");
@@ -89,7 +94,7 @@ Deno.test("ClaudeAdapter - parseOutput extracts from result event", () => {
 
 Deno.test("ClaudeAdapter - parseOutput input_required", () => {
   const output =
-    `[{"type":"result","subtype":"input_required","result":"What should I do?","session_id":"sess-2"}]`;
+    `{"type":"result","subtype":"input_required","result":"What should I do?","session_id":"sess-2"}`;
   const parsed = adapter.parseOutput(output);
   assertEquals(parsed.sessionId, "sess-2");
   assertEquals(parsed.subtype, "input_required");
@@ -103,11 +108,21 @@ Deno.test("ClaudeAdapter - parseOutput no valid JSON", () => {
 });
 
 Deno.test("ClaudeAdapter - parseOutput extracts session_id from init event", () => {
-  // Even if result event is missing, session_id from init should be captured
-  const output =
-    `[{"type":"system","subtype":"init","session_id":"from-init"},{"type":"assistant","message":{"content":[{"type":"text","text":"hi"}]}}]`;
+  const output = `{"type":"system","subtype":"init","session_id":"from-init"}
+{"type":"assistant","message":{"content":[{"type":"text","text":"hi"}]}}`;
   const parsed = adapter.parseOutput(output);
   assertEquals(parsed.sessionId, "from-init");
+});
+
+Deno.test("ClaudeAdapter - parseOutput partial NDJSON (timeout case)", () => {
+  // On timeout, we may have partial output — init + some assistant events but no result
+  const output = `{"type":"system","subtype":"init","session_id":"partial-sess"}
+{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Read","input":{"file_path":"/tmp/foo.ts"}}]},"session_id":"partial-sess"}
+{"type":"assistant","message":{"content":[{"type":"text","text":"Reading file..."}]},"session_id":"partial-sess"}`;
+  const parsed = adapter.parseOutput(output);
+  assertEquals(parsed.sessionId, "partial-sess");
+  assertEquals(parsed.result, "Reading file...");
+  assertEquals(parsed.subtype, null); // No result event = no subtype
 });
 
 Deno.test("ClaudeAdapter - setupMocks creates settings.local.json hooks", async () => {

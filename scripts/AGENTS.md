@@ -1,5 +1,9 @@
 # Scripts Module
 
+## Shell Environment
+- ALWAYS prefix shell commands with `NO_COLOR=1` to disable ANSI color codes in output. Colored output is unreadable for agents and pollutes logs.
+- All project scripts MUST respect the `NO_COLOR` env var (https://no-color.org/). When `NO_COLOR` is set, scripts MUST NOT emit ANSI escape codes.
+
 ## Responsibility
 
 Build tooling, verification, and benchmark infrastructure for AssistFlow.

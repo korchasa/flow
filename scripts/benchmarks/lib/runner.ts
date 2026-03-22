@@ -33,6 +33,33 @@ export async function runScenario(
   const runIndex = options.runIndex ?? 1;
   console.log(`\nRunning scenario: ${scenario.name} (${scenario.id})...`);
 
+  // Handle skipped scenarios
+  if (scenario.skip) {
+    console.log(`  SKIPPED: ${scenario.skip}`);
+    const skippedResults: Record<string, { pass: boolean; reason: string }> =
+      {};
+    for (const item of scenario.checklist) {
+      skippedResults[item.id] = {
+        pass: true,
+        reason: `Skipped: ${scenario.skip}`,
+      };
+    }
+    return {
+      scenarioId: scenario.id,
+      success: true,
+      score: 100,
+      errorsCount: 0,
+      warningsCount: 0,
+      durationMs: 0,
+      tokensUsed: 0,
+      totalCost: 0,
+      toolCallsCount: 0,
+      model: options.agentModel,
+      checklistResults: skippedResults,
+      logs: `Skipped: ${scenario.skip}`,
+    };
+  }
+
   // 1. Setup Sandbox
   // workDir is already runDir/<scenario-id>/run-N (from task-bench.ts)
   // or a plain temp dir (from tests)

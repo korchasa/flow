@@ -35,5 +35,7 @@ export interface ParsedAgentOutput {
   sessionId: string | null;
   result: string | null;
   subtype: string | null; // "success" | "input_required" | "error"
+  /** Full concatenated text from all assistant messages (for UserEmulator context). */
+  assistantText: string | null;
   raw: unknown;
 }
