@@ -140,7 +140,6 @@ Every task follows the same supervised loop:
 - `flow-setup-agent-code-style-ts-deno` — Deno/TS code style
 - `flow-setup-agent-code-style-ts-strict` — strict TypeScript
 - `flow-skill-configure-deno-commands` — configure Deno tasks
-- `flow-skill-ai-skel-ts` — scaffold AI agent skeleton
 
 ### Specialized Skills
 
