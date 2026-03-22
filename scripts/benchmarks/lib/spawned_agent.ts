@@ -1,4 +1,5 @@
 import type { AgentAdapter } from "./adapters/types.ts";
+import { ansi } from "../../utils.ts";
 
 export interface AgentOptions {
   workspace: string;
@@ -123,8 +124,8 @@ export class SpawnedAgent {
     maxSteps: number,
     prompt?: string,
   ) {
-    const gray = "\x1b[90m";
-    const reset = "\x1b[0m";
+    const gray = ansi("\x1b[90m");
+    const reset = ansi("\x1b[0m");
 
     let message = "";
     switch (action) {
@@ -198,25 +199,35 @@ export class SpawnedAgent {
     }
   }
 
-  /** Reads stdout and stderr in parallel, waits for process exit, then parses output. */
+  /**
+   * Reads stdout (for parsing) and stderr (for debug) in parallel.
+   * With stream-json, stdout emits NDJSON lines in real-time,
+   * so logs are available even on timeout (unlike json format).
+   * Note: stream-json duplicates events to stderr, so we only parse stdout.
+   */
   private async monitorProcess() {
     if (!this.process) return;
 
-    const decoder = new TextDecoder("utf-8", { fatal: false, ignoreBOM: true });
+    const stdoutDecoder = new TextDecoder("utf-8", {
+      fatal: false,
+      ignoreBOM: true,
+    });
+    const stderrDecoder = new TextDecoder("utf-8", {
+      fatal: false,
+      ignoreBOM: true,
+    });
 
     try {
-      // We read both stdout and stderr
       const stdoutReader = this.process.stdout.getReader();
       const stderrReader = this.process.stderr.getReader();
 
-      const readStream = async (
-        reader: ReadableStreamDefaultReader<Uint8Array>,
-      ) => {
+      // Read stdout — primary source for parsing and logs
+      const readStdout = async () => {
         try {
           while (true) {
-            const { done, value } = await reader.read();
+            const { done, value } = await stdoutReader.read();
             if (done) break;
-            const text = decoder.decode(value, { stream: true });
+            const text = stdoutDecoder.decode(value, { stream: true });
             this.outputBuffer += text;
             this.fullLog.push(text);
           }
@@ -225,18 +236,33 @@ export class SpawnedAgent {
             this.fullLog.push(`\n[Stream Error] ${e}\n`);
           }
         } finally {
-          reader.releaseLock();
+          stdoutReader.releaseLock();
         }
       };
 
-      // Run both readers in parallel
-      await Promise.all([
-        readStream(stdoutReader),
-        readStream(stderrReader),
-      ]);
+      // Drain stderr to prevent pipe buffer deadlock (don't add to outputBuffer)
+      const drainStderr = async () => {
+        try {
+          while (true) {
+            const { done, value } = await stderrReader.read();
+            if (done) break;
+            // Only capture non-JSON stderr (error messages, not stream-json duplicates)
+            const text = stderrDecoder.decode(value, { stream: true });
+            if (text.trim() && !text.trim().startsWith("{")) {
+              this.fullLog.push(`[stderr] ${text}`);
+            }
+          }
+        } catch (_) {
+          // Ignore stderr read errors
+        } finally {
+          stderrReader.releaseLock();
+        }
+      };
 
-      // Final flush
-      const finalFlush = decoder.decode();
+      await Promise.all([readStdout(), drainStderr()]);
+
+      // Final flush for stdout
+      const finalFlush = stdoutDecoder.decode();
       if (finalFlush) {
         this.outputBuffer += finalFlush;
         this.fullLog.push(finalFlush);
@@ -257,8 +283,8 @@ export class SpawnedAgent {
   private async printFormattedOutput() {
     if (!this.parsedResultText) return;
 
-    const gray = "\x1b[90m";
-    const reset = "\x1b[0m";
+    const gray = ansi("\x1b[90m");
+    const reset = ansi("\x1b[0m");
     const firstLine = this.getFirstChars(this.parsedResultText);
 
     if (firstLine) {
@@ -282,13 +308,16 @@ export class SpawnedAgent {
     this.parsedSubtype = parsed.subtype;
     this.parsedResultText = parsed.result;
 
-    if (parsed.result) {
+    // Use full assistantText for messages (gives UserEmulator full context
+    // including proposals and questions, not just the final result summary)
+    const textForMessages = parsed.assistantText || parsed.result;
+    if (textForMessages) {
       const lastMsg = this.messages[this.messages.length - 1];
       if (
         !lastMsg || lastMsg.role !== "assistant" ||
-        lastMsg.content !== parsed.result
+        lastMsg.content !== textForMessages
       ) {
-        this.messages.push({ role: "assistant", content: parsed.result });
+        this.messages.push({ role: "assistant", content: textForMessages });
       }
     }
   }

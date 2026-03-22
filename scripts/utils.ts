@@ -1,6 +1,14 @@
 import { dirname } from "@std/path";
 
 /**
+ * Returns the ANSI code if colors are enabled, empty string otherwise.
+ * Respects NO_COLOR env via Deno.noColor.
+ */
+export function ansi(code: string): string {
+  return Deno.noColor ? "" : code;
+}
+
+/**
  * Specification for a command to be executed.
  */
 export type CommandSpec = {

@@ -20,7 +20,7 @@ interface ClaudeEvent {
   };
 }
 
-/** Adapter for Claude Code CLI. Parses JSON event arrays and uses settings.local.json for mocking. */
+/** Adapter for Claude Code CLI. Parses stream-json (NDJSON) output and uses settings.local.json for mocking. */
 export class ClaudeAdapter implements AgentAdapter {
   readonly ide = "claude" as const;
   readonly configDir = ".claude";
@@ -39,10 +39,11 @@ export class ClaudeAdapter implements AgentAdapter {
   }): string[] {
     const args = [
       "-p",
+      "--verbose",
       "--model",
       opts.model,
       "--output-format",
-      "json",
+      "stream-json",
       "--permission-mode",
       "bypassPermissions",
     ];
@@ -63,35 +64,28 @@ export class ClaudeAdapter implements AgentAdapter {
       sessionId: null,
       result: null,
       subtype: null,
+      assistantText: null,
       raw: null,
     };
 
-    // Claude outputs a JSON array of events: [{type:"system",...}, {type:"assistant",...}, {type:"result",...}]
-    let events: ClaudeEvent[] = [];
-    try {
-      const parsed = JSON.parse(stdout);
-      if (Array.isArray(parsed)) {
-        events = parsed;
-      }
-    } catch (_) {
-      // Try to find a JSON array in the output
-      const arrayStart = stdout.indexOf("[");
-      const arrayEnd = stdout.lastIndexOf("]");
-      if (arrayStart !== -1 && arrayEnd > arrayStart) {
-        try {
-          const parsed = JSON.parse(stdout.slice(arrayStart, arrayEnd + 1));
-          if (Array.isArray(parsed)) {
-            events = parsed;
-          }
-        } catch (_) {
-          // No parseable JSON array found
-        }
+    // stream-json outputs one JSON event per line (NDJSON)
+    const events: ClaudeEvent[] = [];
+    for (const line of stdout.split("\n")) {
+      const trimmed = line.trim();
+      if (!trimmed) continue;
+      try {
+        events.push(JSON.parse(trimmed));
+      } catch (_) {
+        // Skip malformed lines
       }
     }
 
     if (events.length === 0) return result;
 
     result.raw = events;
+
+    // Collect ALL text blocks from assistant messages (for UserEmulator context)
+    const assistantTexts: string[] = [];
 
     // Extract data from events in order
     for (const event of events) {
@@ -106,19 +100,24 @@ export class ClaudeAdapter implements AgentAdapter {
         }
       }
 
-      // Fallback: extract text from assistant message if no result event yet
-      if (
-        event.type === "assistant" && result.result === null &&
-        event.message?.content
-      ) {
+      // Collect text from all assistant messages
+      if (event.type === "assistant" && event.message?.content) {
         for (const block of event.message.content) {
           if (block.type === "text" && block.text) {
-            result.result = block.text;
-            break;
+            assistantTexts.push(block.text);
           }
         }
       }
     }
+
+    // Fallback: use last assistant text if no result event
+    if (result.result === null && assistantTexts.length > 0) {
+      result.result = assistantTexts[assistantTexts.length - 1];
+    }
+
+    result.assistantText = assistantTexts.length > 0
+      ? assistantTexts.join("\n\n")
+      : null;
 
     return result;
   }

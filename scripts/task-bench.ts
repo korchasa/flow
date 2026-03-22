@@ -10,6 +10,7 @@
 import { dirname, join } from "@std/path";
 import { parse } from "@std/flags";
 import { existsSync, walk } from "@std/fs";
+import { ansi } from "./utils.ts";
 import type {
   BenchmarkResult,
   BenchmarkScenario,
@@ -88,7 +89,11 @@ async function main() {
   if (existsSync(lockFile)) {
     const pid = await Deno.readTextFile(lockFile).catch(() => "unknown");
     console.error(
-      `\x1b[31mError: Another benchmark process (PID: ${pid}) is already running.\x1b[0m`,
+      `${
+        ansi("\x1b[31m")
+      }Error: Another benchmark process (PID: ${pid}) is already running.${
+        ansi("\x1b[0m")
+      }`,
     );
     Deno.exit(1);
   }
@@ -204,32 +209,35 @@ async function main() {
           const item = scenario.checklist.find((i) => i.id === id);
           const isCritical = item?.critical ?? true;
 
-          let color = "\x1b[32m"; // Green
+          let color = ansi("\x1b[32m"); // Green
           let mark = "x";
           let label = "";
 
           if (!res.pass) {
             if (isCritical) {
-              color = "\x1b[31m"; // Red
+              color = ansi("\x1b[31m"); // Red
               mark = " ";
               label = " (ERROR)";
             } else {
-              color = "\x1b[33m"; // Yellow
+              color = ansi("\x1b[33m"); // Yellow
               mark = "!";
               label = " (WARNING)";
             }
           }
 
-          const dim = "\x1b[2m";
+          const dim = ansi("\x1b[2m");
+          const reset = ansi("\x1b[0m");
           console.log(
-            `    ${color}[${mark}] ${id}${label}:\x1b[0m ${dim}${res.reason}\x1b[0m`,
+            `    ${color}[${mark}] ${id}${label}:${reset} ${dim}${res.reason}${reset}`,
           );
         }
 
         if (!result.success) {
           const reportPath = join(runDir, "report.html");
           console.log(
-            `\n  \x1b[31mSee trace for details: file://${reportPath}\x1b[0m\n`,
+            `\n  ${
+              ansi("\x1b[31m")
+            }See trace for details: file://${reportPath}${ansi("\x1b[0m")}\n`,
           );
         }
       } catch (e) {
@@ -252,11 +260,12 @@ async function main() {
         if (!res.pass) {
           const item = scenario?.checklist.find((i) => i.id === id);
           const isCritical = item?.critical ?? true;
-          const color = isCritical ? "\x1b[31m" : "\x1b[33m";
+          const color = isCritical ? ansi("\x1b[31m") : ansi("\x1b[33m");
           const label = isCritical ? "ERROR" : "WARNING";
-          const dim = "\x1b[2m";
+          const dim = ansi("\x1b[2m");
+          const reset = ansi("\x1b[0m");
           console.log(
-            `  ${color}[${label}] ${id}:\x1b[0m ${dim}${res.reason}\x1b[0m`,
+            `  ${color}[${label}] ${id}:${reset} ${dim}${res.reason}${reset}`,
           );
         }
       }
@@ -287,11 +296,11 @@ async function main() {
     totalTokens += r.tokensUsed;
 
     const nameColor = r.errorsCount > 0
-      ? "\x1b[31m"
-      : (r.warningsCount > 0 ? "\x1b[33m" : "\x1b[32m");
-    const errColor = r.errorsCount > 0 ? "\x1b[31m" : "";
-    const wrnColor = r.warningsCount > 0 ? "\x1b[33m" : "";
-    const reset = "\x1b[0m";
+      ? ansi("\x1b[31m")
+      : (r.warningsCount > 0 ? ansi("\x1b[33m") : ansi("\x1b[32m"));
+    const errColor = r.errorsCount > 0 ? ansi("\x1b[31m") : "";
+    const wrnColor = r.warningsCount > 0 ? ansi("\x1b[33m") : "";
+    const reset = ansi("\x1b[0m");
 
     const formattedTokens = r.tokensUsed.toString().replace(
       /\B(?=(\d{3})+(?!\d))/g,
@@ -358,7 +367,7 @@ async function main() {
 
   const hasFailures = results.some((r) => !r.success);
   if (hasFailures) {
-    console.log("\n\x1b[31mSome tests failed.\x1b[0m");
+    console.log(`\n${ansi("\x1b[31m")}Some tests failed.${ansi("\x1b[0m")}`);
     Deno.exit(1);
   }
 }
