@@ -91,6 +91,24 @@ Deno.test("isInsideIDE - returns true when multiple IDE vars set", () => {
   );
 });
 
+// --- CLI integration: --version prints version and checks for updates ---
+
+Deno.test("CLI - --version prints version string", async () => {
+  const cmd = new Deno.Command("deno", {
+    args: ["run", "-A", "cli/src/main.ts", "--version"],
+    stdout: "piped",
+    stderr: "piped",
+  });
+  const output = await cmd.output();
+  const stdout = new TextDecoder().decode(output.stdout);
+
+  assertEquals(output.code, 0);
+  assert(
+    stdout.includes("flowai "),
+    `Expected 'flowai <version>' output, got: ${stdout}`,
+  );
+});
+
 // --- CLI integration: bare command inside IDE prints message and does NOT sync ---
 
 Deno.test("CLI - bare command inside IDE prints message instead of syncing", async () => {
