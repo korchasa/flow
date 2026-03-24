@@ -10,12 +10,10 @@ benchmarks/benchmarks.lock
 __pycache__/
 _research_tmp/
 
-# IDE directories no longer used (removed in favor of flow-cli + claude only)
+# IDE directories (installed by flowai, not tracked)
 .cursor/
 .opencode/
-
-# IDE local settings (not shared)
-.claude/settings.local.json
+.claude/
 
 # Generated artifacts (cli)
 cli/src/bundled.json
