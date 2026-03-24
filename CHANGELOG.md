@@ -2,6 +2,33 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.8](https://github.com/korchasa/flowai/compare/v0.3.7...v0.3.8) (2026-03-24)
+
+
+### Features
+
+* **framework:** migrate whiteboard from single file to per-session directory ([0b12782](https://github.com/korchasa/flowai/commit/0b1278204bb2873d6548822d9a4cc4fdaad12c79))
+
+
+### Bug Fixes
+
+* correct deno fmt exclude config and sync flow-review whiteboard path ([0433dc1](https://github.com/korchasa/flowai/commit/0433dc1891c0bca54c93bdd77a27f8fc0a3ce981))
+
+
+### Chores
+
+* remove .claude/ from tracking and add to .gitignore ([63bc4e0](https://github.com/korchasa/flowai/commit/63bc4e0a3cd868b79593682ac42b4b8753359137))
+
+
+### Documentation
+
+* **agents:** update whiteboard references to per-session whiteboards directory ([c85e53d](https://github.com/korchasa/flowai/commit/c85e53d4042f33b1683d88113c7befdd4b190ab1))
+
+
+### Styles
+
+* apply deno fmt formatting ([d60beb2](https://github.com/korchasa/flowai/commit/d60beb29039a799de3b682274d293f6e66911bba))
+
 ### [0.3.7](https://github.com/korchasa/flowai/compare/v0.3.6...v0.3.7) (2026-03-24)
 
 

@@ -1,6 +1,6 @@
 {
   "name": "@korchasa/flowai",
-  "version": "0.3.7",
+  "version": "0.3.8",
   "exports": "./cli/src/main.ts",
   "license": "MIT",
   "publish": {
@@ -36,6 +36,11 @@
   },
   "fmt": {
     "proseWrap": "preserve",
-    "exclude": ["**/*.md", ".cursor/", ".claude/", ".flowai.yaml"]
+    "exclude": [
+      "**/*.md",
+      ".cursor/",
+      ".claude/",
+      ".flowai.yaml"
+    ]
   }
 }
