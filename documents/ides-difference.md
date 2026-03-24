@@ -4,8 +4,6 @@
 - **Cursor**: docs.cursor.com [^1]
 - **Claude Code**: code.claude.com/docs [^2]
 - **OpenCode**: opencode.ai/docs [^3]
-- **Antigravity**: antigravity.im/documentation [^4]
-- **OpenAI Codex**: developers.openai.com/codex [^5]
 
 ## 1. Built-in Tools Comparison
 
@@ -27,14 +25,6 @@
 - **Process**: `todowrite`, `todoread`, `task` (subagents), `skill`, `parallel`.
 - **Other**: `question`, `webfetch`, `websearch` (when `OPENCODE_ENABLE_EXA=1`), `lsp` (experimental) [^8]
 
-### OpenAI Codex
-- **Files**: `read_file`, `apply_patch` (via `shell` for edits).
-- **System**: `shell` (bwrap sandbox).
-- **Process**: plan mode, web search (cached/live).
-- **Other**: skills via `$skill` or `/` invocation [^13]
-
-### Antigravity
-- Multi-surface (editor, terminal, browser). Agent-specific tooling; no public tool list documented [^4]
 
 ---
 
@@ -44,21 +34,16 @@
 - **Cursor**: `AGENTS.md` (root/subdir), `.cursor/rules/` (`alwaysApply: true`).[^21]
 - **Claude Code**: `CLAUDE.md` (root/subdir), `~/.claude/CLAUDE.md` (global).[^2]
 - **OpenCode**: `AGENTS.md` > `CLAUDE.md`. `opencode.json` (`instructions`).[^3]
-- **OpenAI Codex**: `AGENTS.md` + `AGENTS.override.md`.[^17]
-- **Antigravity**: `GEMINI.md`, `.agent/rules/`.[^4]
 
 ### 2.2 Conditional Instructions
 - **Cursor**: `.cursor/rules/` (`globs`, `description`).[^21]
 - **Claude Code**: `.claude/rules/` (`paths`).[^2]
 - **OpenCode**: `opencode.json` (`instructions` with globs).[^3]
-- **Antigravity**: `.agent/rules/` (glob, model decision, always on, manual).[^20]
 
 ### 2.3 Custom Commands (`/command`)
 - **Cursor**: `.cursor/commands/*.md`.
 - **Claude Code**: `.claude/commands/*.md` (supports args, frontmatter: `allowed-tools`, `model`).[^2]
 - **OpenCode**: `.opencode/commands/*.md` (supports `$ARGUMENTS`, shell interpolation).[^3]
-- **OpenAI Codex**: `~/.codex/prompts/*.md` (deprecated, use skills).[^18]
-- **Antigravity**: `.agent/workflows/*.md` (project), global via UI → `~/.gemini/antigravity/`.[^20]
 
 ### 2.4 Event Hooks / Plugins
 
@@ -146,32 +131,16 @@ export const MyPlugin: Plugin = async ({ project, client, $, directory, worktree
 
 **Custom tools**: Override built-in tools by using same name.
 
-#### OpenAI Codex Hooks [^28]
-
-**Config**: `.codex/hooks.json` (project). Experimental (v0.114+), requires `-c features.codex_hooks=true`.
-
-**Events** (3): `SessionStart`, `Stop`, `UserPromptSubmit`.
-
-**Hook types** (1): `command` — shell script; same exit code semantics (0/2) as Cursor/Claude Code.
-
-**Note**: `UserPromptSubmit` can block or augment prompts before execution.
-
-#### Antigravity
-
-No hook/plugin system documented.[^4]
 
 ### 2.5 Skills (SKILL.md)
 - **Cursor**: `.cursor/skills/<name>/SKILL.md`; also `.claude/skills/`, `.codex/skills/` (compat).[^10]
 - **Claude Code**: `~/.claude/skills/`, `.claude/skills/` (project).[^11]
 - **OpenCode**: `.opencode/skills/` (fallbacks: `.claude/skills/`, `.agents/skills/`).[^12]
-- **OpenAI Codex**: `.agents/skills`, `~/.agents/skills`, `/etc/codex/skills`.[^13]
 
 ### 2.6 MCP Integration
 - **Cursor**: `.cursor/mcp.json` (project/user). Transports: stdio, SSE, Streamable HTTP. OAuth. Config interpolation (`${env:NAME}`, `${workspaceFolder}`). MCP Marketplace (one-click install).[^1]
 - **Claude Code**: `.mcp.json` (project), `~/.claude.json` (user/local), `managed-mcp.json` (org). Transports: HTTP (recommended), SSE (deprecated), stdio. OAuth 2.0. Tool Search (auto >10% context). `claude mcp serve` (self as MCP server). Channels (push messages). Plugins can bundle MCP servers.[^15]
 - **OpenCode**: `opencode.jsonc` (`mcp` field). Types: local (command) and remote (URL). OAuth (RFC 7591). Glob-based tool permissions. CLI: `opencode mcp auth|list|logout|debug`.[^3]
-- **OpenAI Codex**: `~/.codex/config.toml`, `.codex/config.toml`. STDIO + Streamable HTTP. OAuth. CLI: `codex mcp add|login`. Shared config between CLI and IDE extension.[^19]
-- **Antigravity**: `mcp_servers.json`. JSON config with `servers` array. Transport: stdio.[^4]
 
 ### 2.7 Context Ignoring
 
@@ -185,14 +154,12 @@ No hook/plugin system documented.[^4]
 - **OpenCode**: `.gitignore`, `.ignore`, `opencode.json` (`watcher.ignore`).[^3]
 
 **Rely on `.gitignore` only** (no dedicated mechanism documented):
-- Windsurf, Zed, JetBrains AI Assistant, Continue.dev, OpenAI Codex.
+- Windsurf, Zed, JetBrains AI Assistant, Continue.dev.
 
 ### 2.8 Custom Agents (Subagents)
 - **Cursor**: `~/.cursor/agents/*.md`, `.cursor/agents/*.md`.
 - **Claude Code**: `.claude/agents/*.md` (project), `~/.claude/agents/*.md` (user). Built-in: Explore (Haiku, read-only), Plan (inherit, read-only), general-purpose. Frontmatter: `tools`, `disallowedTools`, `model`, `permissionMode`, `maxTurns`, `skills`, `mcpServers`, `hooks`, `memory`, `background`, `effort`, `isolation` (worktree). No subagent nesting.[^23]
 - **OpenCode**: `~/.config/opencode/agents/*.md`, `.opencode/agents/*.md`.[^3]
-- **OpenAI Codex**: `[agents]` in `config.toml`; role-based configuration.[^28]
-- **Antigravity**: Agent Manager UI — spawn/orchestrate multiple agents. Browser subagent (click, scroll, screenshots, DOM). No file-based custom agents.[^4]
 
 ### 2.9 Custom Tools
 - **OpenCode**: `.opencode/tools/*.{ts,js}`.[^3]
@@ -243,15 +210,6 @@ Plugins = packaging format that bundles multiple primitives (skills, agents, hoo
 
 **SDKs**: JS/TS, Go, Python.
 
-#### OpenAI Codex
-
-**No plugin bundle system**. Extensions via Skills + MCP only.
-
-Official skill catalog: github.com/openai/skills (15k+ ★). Three tiers: `.system` (auto-installed), `.curated` (install by name via `$skill-installer`), `.experimental` (folder/URL install).[^13]
-
-#### Antigravity
-
-**No plugin bundle system**. Extensions via Skills + MCP + Workflows. VS Code extension compatibility (inherited from VS Code base).[^4]
 
 ---
 
@@ -410,20 +368,20 @@ Detection order: `CURSOR_AGENT` first (may co-exist with `CLAUDECODE` in nested 
 
 ## 4. Comparative Summary
 
-| Primitive | Cursor | Claude Code | OpenCode | Antigravity | OpenAI Codex |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **Global Rules** | - | `~/.claude/CLAUDE.md` | `~/.config/opencode/AGENTS.md` | `~/.gemini/GEMINI.md` | `~/.codex/AGENTS.md` |
-| **Project Rules** | `AGENTS.md` | `CLAUDE.md` | `AGENTS.md` | `.agent/rules/` | `AGENTS.md` |
-| **Folder Rules** | `subdir/AGENTS.md` | `subdir/CLAUDE.md` | - | - | `subdir/AGENTS.md` |
-| **Hooks** | `hooks.json` (20 events, 2 types) | `settings.json` (22 events, 4 types) | `.opencode/plugins/` (30+ events, code) | — | `hooks.json` (3 events, experimental) |
-| **Skills** | Yes [^10] | Yes [^11] | Yes [^12] | Yes | Yes [^13] |
-| **Subagents** | `Task` | `Task` | `task` | - | - |
-| **Custom Tools** | MCP | MCP | `.opencode/tools/` + MCP | MCP | MCP |
-| **Custom Agents** | `.cursor/agents/` | `.claude/agents/` | `.opencode/agents/` | Agent Manager UI | `[agents]` in config.toml |
-| **Commands/Workflows** | `.cursor/commands/` | `.claude/commands/` | `.opencode/commands/` | `.agent/workflows/` [^20] | skills |
-| **Plugin Bundles** | `.cursor-plugin/` [^26] | `.claude-plugin/` [^27] | npm packages | — | — |
-| **Marketplace** | cursor.com/marketplace | claude.ai (~101 plugins) | npm | — | github.com/openai/skills |
-| **MCP Config** | `.cursor/mcp.json` | `.mcp.json` | `opencode.json` | `mcp_servers.json` | `config.toml` [^19] |
+| Primitive | Cursor | Claude Code | OpenCode |
+| :--- | :--- | :--- | :--- |
+| **Global Rules** | — | `~/.claude/CLAUDE.md` | `~/.config/opencode/AGENTS.md` |
+| **Project Rules** | `AGENTS.md` | `CLAUDE.md` | `AGENTS.md` |
+| **Folder Rules** | `subdir/AGENTS.md` | `subdir/CLAUDE.md` | — |
+| **Hooks** | `hooks.json` (20 events, 2 types) | `settings.json` (22 events, 4 types) | `.opencode/plugins/` (30+ events, code) |
+| **Skills** | Yes [^10] | Yes [^11] | Yes [^12] |
+| **Subagents** | `Task` | `Task` | `task` |
+| **Custom Tools** | MCP | MCP | `.opencode/tools/` + MCP |
+| **Custom Agents** | `.cursor/agents/` | `.claude/agents/` | `.opencode/agents/` |
+| **Commands** | `.cursor/commands/` | `.claude/commands/` | `.opencode/commands/` |
+| **Plugin Bundles** | `.cursor-plugin/` [^26] | `.claude-plugin/` [^27] | npm packages |
+| **Marketplace** | cursor.com/marketplace | claude.ai (~101 plugins) | npm |
+| **MCP Config** | `.cursor/mcp.json` | `.mcp.json` | `opencode.jsonc` |
 
 ---
 
@@ -432,20 +390,13 @@ Detection order: `CURSOR_AGENT` first (may co-exist with `CLAUDECODE` in nested 
 [^1]: https://docs.cursor.com/ — Cursor docs
 [^2]: https://code.claude.com/docs — Claude Code docs
 [^3]: https://opencode.ai/docs/ — OpenCode docs
-[^4]: https://antigravity.im/documentation — Antigravity docs
-[^5]: https://developers.openai.com/codex/local-config — Codex config
 [^8]: https://opencode.ai/docs/tools/ — OpenCode built-in tools
 [^10]: https://cursor.com/docs/context/skills — Cursor skills, tools: `.cursor/skills/`, `.claude/skills/`, `.codex/skills/`
 [^11]: https://code.claude.com/docs/en/skills — Claude Code skills: `~/.claude/skills/`, `.claude/skills/`; Bash: https://platform.claude.com/docs/en/agents-and-tools/tool-use/bash-tool
 [^12]: https://opencode.ai/docs/skills — OpenCode skills: `.opencode/skills/`, `.claude/skills/`, `.agents/skills/`
-[^13]: https://developers.openai.com/codex/skills/create-skill — Codex skills: `.agents/skills`, `~/.agents/skills`, `/etc/codex/skills`
 [^14]: https://cursor.com/docs/agent/hooks — Cursor hooks.json
 [^15]: https://code.claude.com/docs/en/settings — Claude Code settings
 [^16]: https://docs.cursor.com/en/context/ignore-files — Cursor .cursorignore
-[^17]: https://developers.openai.com/codex/guides/agents-md — Codex AGENTS.md, AGENTS.override.md
-[^18]: https://developers.openai.com/codex/custom-prompts — Codex custom prompts (deprecated, use skills)
-[^19]: https://developers.openai.com/codex/mcp — Codex MCP: config.toml
-[^20]: https://antigravity.google/docs/rules-workflows — Antigravity rules (.agent/rules/), workflows (.agent/workflows/)
 [^21]: https://docs.cursor.com/en/context/rules — Cursor rules, AGENTS.md
 [^22]: https://code.claude.com/docs/en/memory — Claude Code memory: CLAUDE.md, `.claude/rules/` with `paths` frontmatter
 [^23]: https://code.claude.com/docs/en/sub-agents — Claude Code subagents: `.claude/agents/*.md`, frontmatter fields
@@ -453,4 +404,3 @@ Detection order: `CURSOR_AGENT` first (may co-exist with `CLAUDECODE` in nested 
 [^25]: https://docs.github.com/en/copilot/how-tos/configure-content-exclusion/exclude-content-from-copilot — GitHub Copilot content exclusion
 [^26]: https://cursor.com/docs/plugins — Cursor plugins: .cursor-plugin/plugin.json manifest, Marketplace (manual security review)
 [^27]: https://code.claude.com/docs/en/plugins — Claude Code plugins: .claude-plugin/plugin.json manifest, Anthropic Marketplace (~101 plugins)
-[^28]: https://developers.openai.com/codex/cli/features — Codex CLI hooks (experimental v0.114+); https://github.com/openai/codex/discussions/2150
