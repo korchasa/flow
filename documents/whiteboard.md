@@ -1,178 +1,460 @@
-# Множественные whiteboards для параллельных сессий
+# Packs: модульная установка framework-ресурсов
 
 ## Goal
 
-Позволить нескольким агентам/сессиям работать параллельно без конфликтов за единый whiteboard.md. Сейчас два параллельных `/flow-plan` перезаписывают один файл, что приводит к потере планов.
+Дать пользователю управляемый выбор, какие группы ресурсов устанавливать. Не захламлять проект ненужными skills/agents/hooks. Подготовить инфраструктуру для pipeline-автоматизации из auto-flow2.
 
 ## Overview
 
 ### Context
 
-- `documents/whiteboard.md` — единственный файл для временных заметок и планов (GODS-формат)
-- Захардкожен в 7 framework-скиллах: flow-plan, flow-answer, flow-review, flow-init, flow-spec, flow-maintenance, flow-review-and-commit
-- Упоминается в: `AGENTS.md`, `documents/CLAUDE.md`, `documents/.gitignore`
-- ~10 benchmark-сценариев проверяют работу с whiteboard.md
-- Файл gitignored — не трекается в git
-- @documents/CLAUDE.md — определяет иерархию документов и формат whiteboard
-- @AGENTS.md:88 — Planning Rules, Plan Persistence
+- flow: 38 skills + 4 agents, ставятся все или фильтруются поштучно (include/exclude)
+- auto-flow2: SDLC pipeline на Claude Code (agents + hooks + scripts + HITL + resume + reflection memory)
+- Решение: **packs**. Source of truth — `pack.yaml`. При установке flowai генерирует IDE-специфичные артефакты
+- Каждый pack = Claude Code plugin (plugin.json генерируется из pack.yaml)
+- Pack `flow` — базовый, ставится всегда. Остальные — opt-in
 
-### Current State
+### Naming и Namespacing
 
-Один файл `documents/whiteboard.md`. Все скиллы пишут в него напрямую по фиксированному пути. При параллельном запуске агентов — race condition и потеря данных.
+Имена skills и agents — **чистые**, без vendor prefix. Namespace = pack name. Разделитель — дело IDE-адаптера.
 
-Затронутые файлы (framework — продуктовые):
-- `framework/skills/flow-plan/SKILL.md` — 6 упоминаний
-- `framework/skills/flow-answer/SKILL.md` — 4 упоминания
-- `framework/skills/flow-review/SKILL.md` — 1 упоминание
-- `framework/skills/flow-init/SKILL.md` — 1 упоминание
-- `framework/skills/flow-spec/SKILL.md` — 1 упоминание
-- `framework/skills/flow-init/assets/AGENTS.template.md` — в шаблоне для новых проектов
-- `framework/skills/flow-init/assets/AGENTS.documents.template.md` — шаблон documents/CLAUDE.md
+**В pack.yaml и SKILL.md:**
+- Pack: `name: flow`, `name: flow-content`
+- Skill: `name: plan`, `name: write-dep`
 
-Затронутые файлы (dev/infra):
-- `AGENTS.md` — Plan Persistence rule
-- `documents/CLAUDE.md` — иерархия, формат
-- `documents/.gitignore` — паттерн игнора
-- `.claude/skills/flow-*/SKILL.md` — локальные копии (генерируются flowai)
-- `framework/skills/flow-plan/benchmarks/*/mod.ts` — 5 сценариев
-- `framework/skills/flow-init/benchmarks/brownfield/mod.ts`
-- `framework/skills/flow-maintenance/benchmarks/basic/mod.ts`
+**IDE-адаптеры подставляют разделитель при генерации:**
+- Claude Code: `/flow:plan`, `/flow-content:write-dep` (двоеточие — native plugin syntax)
+- Cursor: формат зависит от их plugin системы (TBD)
+- OpenCode: формат зависит от их plugin системы (TBD)
+- Fallback (flat раскладка): `/plan`, `/write-dep` — без namespace
+
+Авторы skills не думают о разделителях — это ответственность flowai.
+
+Старые имена → новые:
+- `flow-plan` → `plan` (pack `flow`)
+- `flow-skill-write-dep` → `write-dep` (pack `flow-content`)
+- `flow-skill-deno-deploy` → `deno-deploy` (pack `flow-deno-application`)
+- `flow-skill-engineer-skill` → `engineer-skill` (pack `flow-ide-extend`)
+- `sdlc-pipeline` → `sdlc-pipeline` (pack `flow-pipelines`)
+
+### Claude Code Plugin Structure (target output, генерируется)
+
+```
+<plugin-dir>/
+├── .claude-plugin/
+│   └── plugin.json        # ГЕНЕРИРУЕТСЯ из pack.yaml
+├── skills/
+├── agents/
+├── hooks/
+│   ├── hooks.json         # ГЕНЕРИРУЕТСЯ из pack.yaml hooks секции
+│   └── *.sh
+└── settings.json          # ГЕНЕРИРУЕТСЯ если нужен
+```
+
+### Зависимости между skills (анализ кода)
+
+**flow внутренние** (замкнуты):
+- commit → init, reflect
+- review-and-commit → commit, review, reflect
+- review → maintenance
+- spec → plan
+- update → init
+
+**flow → наружу** (делегация — graceful skip):
+- init → configure-deno-commands, setup-ai-ide-devcontainer (в flow)
+- init → deno-deploy, code-style-ts-deno (в flow-deno-application — skip если не установлен)
+- update → аналогично
+
+**внутри packs** (замкнуты):
+- interactive-teaching-materials → draw-mermaid-diagrams (flow-content)
+- write-prd → conduct-qa-session (flow-content)
+- deno-cli → deno-deploy (flow-deno-application)
+
+**Межпаковых зависимостей нет** (design invariant). write-gods-tasks в flow (базовый формат).
 
 ### Constraints
 
-- Фреймворк должен оставаться IDE-агностичным (Cursor, Claude Code, OpenCode)
-- Скиллы не могут полагаться на IDE-специфичные механизмы получения session ID
-- Формат GODS должен сохраняться
-- Gitignore должен покрывать все whiteboards
-- Benchmark TDD: изменения скиллов требуют обновления/создания benchmark-сценариев
-- Обратная совместимость: существующие проекты с `documents/whiteboard.md` не должны ломаться
+- Обратная совместимость: v1 `.flowai.yaml` без packs = всё ставится
+- Кросс-IDE: Claude Code (plugin generation), Cursor, OpenCode (раскладка)
+- Pack `flow` ставится всегда (implicit)
+- Packs плоские, без зависимостей между собой
+- Межпаковых зависимостей skills нет (design invariant, CI проверка)
+- Source of truth — `pack.yaml`. plugin.json, hooks.json генерируются
+- Clean sync: удаление старых `flow-*` ресурсов при миграции
 
 ## Definition of Done
 
-- [ ] Каждая сессия/агент может создать свой whiteboard-файл без конфликтов
-- [ ] Все framework-скиллы обновлены для поддержки множественных whiteboards
-- [ ] documents/CLAUDE.md обновлён (иерархия, формат, правила)
-- [ ] AGENTS.md Plan Persistence rule обновлён
-- [ ] .gitignore покрывает все whiteboard-файлы
-- [ ] flow-init шаблоны обновлены
-- [ ] Benchmark-сценарии обновлены для новой схемы
-- [ ] Старый `documents/whiteboard.md` не ломает проекты (gitignore чистый)
+- [ ] pack.yaml — единственный source of truth
+- [ ] flowai генерирует plugin.json, hooks.json из pack.yaml
+- [ ] Skills переименованы: убран префикс `flow-` / `flow-skill-`
+- [ ] Все ресурсы в `framework/packs/`
+- [ ] Pack `flow` ставится всегда (implicit)
+- [ ] `.flowai.yaml` v2 с `packs:` (opt-in packs)
+- [ ] flowai: Claude Code → генерация plugin dirs; Cursor/OpenCode → раскладка
+- [ ] Reflection: настраиваемая опция, agent templates
+- [ ] Pipeline infrastructure как pack
+- [ ] flow-init/flow-update: graceful skip
+- [ ] flowai list-packs
+- [ ] Clean sync: миграция старых `flow-*` ресурсов
+- [ ] CI: проверка замкнутости зависимостей
+- [ ] Тесты + benchmarks
 
 ## Solution
 
-**Выбран Variant B:** `documents/whiteboards/<YYYY-MM-DD>-<slug>.md`
+### pack.yaml (source of truth)
 
-### Шаг 1: Обновить документацию формата (documents/CLAUDE.md шаблон)
-
-**Файл:** `framework/skills/flow-init/assets/AGENTS.documents.template.md`
-
-Заменить секцию `## Whiteboard`:
-- Путь: `documents/whiteboard.md` → `documents/whiteboards/<YYYY-MM-DD>-<slug>.md`
-- Добавить правило именования: дата + slug из задачи (kebab-case, ≤40 символов)
-- Добавить: "Один файл = один план/задача. Не переиспользовать чужие whiteboards."
-- Оставить формат GODS без изменений
-- Убрать "Clean up after session" — файлы накапливаются, это нормально (gitignored)
-
-**Файл:** `documents/CLAUDE.md` (dev-копия для этого проекта) — аналогичные изменения.
-
-### Шаг 2: Обновить AGENTS.md шаблон
-
-**Файл:** `framework/skills/flow-init/assets/AGENTS.template.md`
-
-Строка 50 (Plan Persistence):
-```
-- **Plan Persistence**: After variant selection, save the detailed plan to `documents/whiteboards/<date>-<slug>.md` using GODS format. Chat-only plans are lost between sessions.
+```yaml
+name: flow
+version: "2.0.0"
+description: "Everyday development workflow — planning, coding, review, init, debugging"
+author: korchasa
+repository: "https://github.com/korchasa/flowai"
 ```
 
-**Файл:** `AGENTS.md` (dev-копия) — аналогично.
-
-### Шаг 3: Обновить framework-скиллы
-
-#### 3.1 flow-plan/SKILL.md
-
-Заменить все `documents/whiteboard.md` на `documents/whiteboards/<YYYY-MM-DD>-<slug>.md`:
-- Overview: "Create a clear, critiqued plan in `./documents/whiteboards/` using the GODS framework."
-- Rule 1 (Pure Planning): "MUST NOT write into any file except a single whiteboard in `./documents/whiteboards/`. Name: `<YYYY-MM-DD>-<slug>.md` where slug is derived from the task (kebab-case, ≤40 chars). Examples: `2026-03-24-add-dark-mode.md`, `2026-03-24-fix-auth-bug.md`, `2026-03-24-refactor-db-layer.md`. If the directory does not exist, CREATE it."
-- Step 3 (Draft G-O-D): "Create ... in `documents/whiteboards/<date>-<slug>.md`"
-- Step 5, 7: аналогично
-- Verification: "ONLY one file in `./documents/whiteboards/` modified."
-
-#### 3.2 flow-answer/SKILL.md
-
-- Overview: "save detailed analysis to a file in `documents/whiteboards/`"
-- Rule 2: "Keep all repository files unchanged (except files in `documents/whiteboards/`)."
-- Step 5: "save detailed analysis to `documents/whiteboards/<date>-<slug>.md`"
-- Verification: аналогично
-
-#### 3.3 flow-review/SKILL.md
-
-- Строка 30: "The Plan (task management tool or a whiteboard in `documents/whiteboards/`)."
-
-#### 3.4 flow-init/SKILL.md
-
-- Строка 150-152: Убрать явное создание `documents/whiteboard.md`. Не создавать директорию `documents/whiteboards/` — она будет создана автоматически при первом вызове скилла (flow-plan, flow-answer и т.д.).
-- Brownfield: записать "Discovered Context" в `documents/whiteboards/<date>-init-context.md` (это автоматически создаст директорию)
-
-#### 3.5 flow-spec/SKILL.md
-
-- Строка 21: "start with `flow-plan`; if it outgrows a whiteboard, upgrade to `flow-spec`"
-
-#### 3.6 flow-review-and-commit/SKILL.md
-
-- Обновить аналогично flow-review (grep подтвердил наличие упоминания whiteboard)
-
-#### 3.7 flow-maintenance/SKILL.md
-
-- Обновить все упоминания `documents/whiteboard.md` → `documents/whiteboards/<date>-<slug>.md`
-
-### Шаг 4: Обновить .gitignore
-
-**Файл:** `documents/.gitignore`
-
-Заменить:
-```
-whiteboard.md
-```
-На:
-```
-whiteboards/
+```yaml
+name: flow-pipelines
+version: "2.0.0"
+description: "Multi-step SDLC automation with role-specific subagents"
+author: korchasa
+repository: "https://github.com/korchasa/flowai"
+hooks:
+  - name: validate-artifact
+    description: "Validates SDLC pipeline artifact structure"
+    event: PostToolUse
+    matcher: Write
+    script: hooks/validate-artifact.sh
 ```
 
-Это покрывает всю директорию. Старый `whiteboard.md` убрать — он больше не создаётся скиллами. Если у кого-то остался — просто лежит, не мешает.
+flowai генерирует из pack.yaml → plugin.json:
+```json
+{
+  "name": "flow",
+  "version": "2.0.0",
+  "description": "Everyday development workflow — planning, coding, review, init, debugging",
+  "author": { "name": "korchasa", "url": "https://github.com/korchasa" },
+  "repository": "https://github.com/korchasa/flowai",
+  "skills": "./skills/",
+  "agents": "./agents/"
+}
+```
 
-### Шаг 5: Обновить benchmark-сценарии
+flowai генерирует hooks.json (если есть hooks в pack.yaml):
+```json
+{
+  "hooks": {
+    "PostToolUse": [{
+      "matcher": "Write",
+      "hooks": [{
+        "type": "command",
+        "command": "${CLAUDE_PLUGIN_ROOT}/hooks/validate-artifact.sh"
+      }]
+    }]
+  }
+}
+```
 
-Все сценарии, проверяющие `documents/whiteboard.md`, обновить.
-Description — это prompt для LLM-judge (semantic check), не код. Заменить текст описания на `documents/whiteboards/`.
-- Затронутые файлы:
-  - `framework/skills/flow-plan/benchmarks/basic/mod.ts` — id "whiteboard_created"
-  - `framework/skills/flow-plan/benchmarks/variants-complex/mod.ts` — id "whiteboard_created"
-  - `framework/skills/flow-plan/benchmarks/variants-obvious/mod.ts` — id "whiteboard_created"
-  - `framework/skills/flow-plan/benchmarks/interactive/mod.ts` — id "solution_filled"
-  - `framework/skills/flow-plan/benchmarks/context/mod.ts` — id "whiteboard_context"
-  - `framework/skills/flow-plan/benchmarks/refactor/mod.ts` — id "no_implementation"
-  - `framework/skills/flow-init/benchmarks/brownfield/mod.ts` — id "documents_folder_created"
-  - `framework/skills/flow-maintenance/benchmarks/basic/mod.ts` — id "whiteboard_report"
+### Структура packs (в репо)
 
-Description в checklist items обновить: упоминание `'documents/whiteboard.md'` → `'documents/whiteboards/'`.
+```
+framework/
+  packs/
+    flow/                              # базовый pack, ставится всегда
+      pack.yaml
+      skills/
+        plan/SKILL.md
+        commit/SKILL.md
+        review/SKILL.md
+        review-and-commit/SKILL.md
+        init/
+          SKILL.md
+          assets/...
+          scripts/...
+          benchmarks/
+            basic/mod.ts
+            brownfield/mod.ts
+        investigate/SKILL.md
+        answer/SKILL.md
+        spec/SKILL.md
+        reflect/SKILL.md
+        maintenance/SKILL.md
+        update/SKILL.md
+        fix-tests/SKILL.md
+        configure-deno-commands/SKILL.md
+        setup-ai-ide-devcontainer/SKILL.md
+        write-gods-tasks/SKILL.md
+      agents/
+        diff-specialist.md
+        console-expert.md
+        skill-executor.md
+        reflection-protocol.md
 
-### Шаг 6: Обновить .claude/skills/ (dev-копии)
+    flow-deno-application/
+      pack.yaml
+      skills/
+        deno-deploy/SKILL.md
+        code-style-ts-deno/SKILL.md
+        code-style-ts-strict/SKILL.md
 
-Запустить `flowai` (или вручную скопировать) обновлённые framework-скиллы в `.claude/skills/`.
+    flow-content/
+      pack.yaml
+      skills/
+        write-dep/SKILL.md
+        write-prd/SKILL.md
+        write-in-informational-style/SKILL.md
+        draw-mermaid-diagrams/SKILL.md
+        engineer-prompts-for-instant/SKILL.md
+        engineer-prompts-for-reasoning/SKILL.md
+        interactive-teaching-materials/SKILL.md
+        conduct-qa-session/SKILL.md
 
-### Шаг 7: Верификация
+    flow-ide-extend/
+      pack.yaml
+      skills/
+        engineer-skill/SKILL.md
+        engineer-command/SKILL.md
+        engineer-subagent/SKILL.md
+        engineer-rule/SKILL.md
+        engineer-hook/SKILL.md
+        write-agent-benchmarks/SKILL.md
+        cursor-agent-integration/SKILL.md
+        example/SKILL.md
 
-1. `deno fmt && deno lint` — без ошибок
-2. `deno test` — все тесты проходят
-3. Grep по `documents/whiteboard.md` в framework/ — 0 результатов (кроме обратной совместимости)
-4. Запустить benchmarks для flow-plan: `deno task benchmark flow-plan`
-5. Запустить benchmarks для flow-init: `deno task benchmark flow-init`
+    flow-research/
+      pack.yaml
+      skills/
+        deep-research/SKILL.md
+        analyze-context/SKILL.md
+      agents/
+        deep-research-worker.md
 
-### Порядок выполнения
+    flow-browser/
+      pack.yaml
+      skills/
+        browser-automation/SKILL.md
+        playwright-cli/SKILL.md
 
-1. documents/.gitignore (Шаг 4)
-2. documents/CLAUDE.md + AGENTS.md шаблоны (Шаги 1-2)
-3. framework skills по очереди (Шаг 3) — каждый с benchmark RED-GREEN
-4. Benchmarks (Шаг 5) — параллельно с Шагом 3
-5. Dev-копии (Шаг 6)
-6. Финальная верификация (Шаг 7)
+    flow-github/
+      pack.yaml
+      skills/
+        manage-github-tickets/SKILL.md
+        manage-github-tickets-by-mcp/SKILL.md
+
+    flow-pipelines/
+      pack.yaml
+      skills/
+        sdlc-pipeline/SKILL.md
+        engineer-pipeline/SKILL.md
+      agents/
+        shared-rules.md
+        agent-pm.md
+        agent-architect.md
+        agent-tech-lead.md
+        agent-developer.md
+        agent-qa.md
+        agent-tech-lead-review.md
+      hooks/
+        validate-artifact.sh
+      scripts/
+        hitl-ask.sh
+        hitl-check.sh
+```
+
+### .flowai.yaml v2
+
+```yaml
+version: "2.0"
+ides: [claude]
+packs: [flow-content, flow-deno-application]   # pack "flow" implicit
+reflection:
+  enabled: true
+  path: ".flow/memory"
+skills:
+  exclude: [interactive-teaching-materials]     # имена без префикса
+agents:
+  exclude: []
+```
+
+Семантика:
+- Pack `flow` ставится **всегда**, не нужно указывать
+- `packs: [...]` — дополнительные packs
+- `packs` отсутствует + `version: "1.0"` → всё ставится (обратная совместимость)
+- `reflection.enabled` — двуслойная память для agents (default: false)
+- `skills.exclude` — после раскрытия packs, имена без префикса
+
+### Генерация при sync
+
+**Claude Code:**
+```
+flowai sync
+  1. Всегда: генерировать plugin dir для pack "flow"
+  2. Для каждого доп. pack из .flowai.yaml packs:
+     → Создать .flow/plugins/<pack-name>/
+     → Скопировать skills/, agents/
+     → Генерировать .claude-plugin/plugin.json из pack.yaml
+     → Если hooks: скопировать скрипты + генерировать hooks/hooks.json
+     → Если reflection.enabled: подставить templates в agents
+  3. Прописать plugins в .claude/settings.json
+  4. Clean: удалить orphaned plugin dirs + старые flow-* ресурсы в .claude/skills/
+```
+
+Output:
+```
+.flow/
+  plugins/
+    flow/
+      .claude-plugin/plugin.json
+      skills/
+        plan/SKILL.md
+        commit/SKILL.md
+        ...
+      agents/
+        diff-specialist.md
+        ...
+    flow-content/
+      .claude-plugin/plugin.json
+      skills/
+        write-dep/SKILL.md
+        ...
+    flow-pipelines/
+      .claude-plugin/plugin.json
+      skills/...
+      agents/...
+      hooks/
+        hooks.json
+        validate-artifact.sh
+
+.claude/settings.json:
+  { "plugins": [".flow/plugins/flow", ".flow/plugins/flow-content", ".flow/plugins/flow-pipelines"] }
+```
+
+**Cursor/OpenCode:**
+```
+flowai sync
+  1. Для каждого pack (flow + доп.):
+     → Скопировать skills/ → .cursor/skills/ (без namespace — flat)
+     → Скопировать agents/ → .cursor/agents/ (с agent transform)
+     → Hooks: трансформировать в IDE-формат
+     → Если reflection.enabled: подставить templates
+  2. Clean: удалить старые flow-* ресурсы из .cursor/skills/, .cursor/agents/
+```
+
+### Packs (8 штук)
+
+**flow** (15 skills, 4 agents) — базовый, всегда:
+- plan, spec, investigate, answer, commit, review, review-and-commit, init, maintenance, update, reflect, fix-tests
+- configure-deno-commands, setup-ai-ide-devcontainer (setup-делегаты)
+- write-gods-tasks (базовый формат)
+- Agents: diff-specialist, console-expert, skill-executor, reflection-protocol
+
+**flow-deno-application** (3 skills) — Deno/TS проект:
+- deno-deploy, code-style-ts-deno, code-style-ts-strict
+
+**flow-content** (8 skills) — создание контента:
+- write-dep, write-prd, write-in-informational-style, draw-mermaid-diagrams, engineer-prompts-for-instant, engineer-prompts-for-reasoning, interactive-teaching-materials, conduct-qa-session
+
+**flow-ide-extend** (8 skills) — расширение IDE:
+- engineer-skill, engineer-command, engineer-subagent, engineer-rule, engineer-hook, write-agent-benchmarks, cursor-agent-integration, example
+
+**flow-research** (2 skills, 1 agent):
+- deep-research, analyze-context
+- Agent: deep-research-worker
+
+**flow-browser** (2 skills):
+- browser-automation, playwright-cli
+
+**flow-github** (2 skills):
+- manage-github-tickets, manage-github-tickets-by-mcp
+
+**flow-pipelines** (2 skills, 7 agents, 1 hook, 2 scripts):
+- Skills: sdlc-pipeline, engineer-pipeline
+- Agents: shared-rules, agent-pm, agent-architect, agent-tech-lead, agent-developer, agent-qa, agent-tech-lead-review
+- Hooks: validate-artifact
+- Scripts: hitl-ask, hitl-check
+
+### Reflection: опция + agent templates
+
+```yaml
+reflection:
+  enabled: true
+  path: ".flow/memory"
+```
+
+Agent template:
+```markdown
+---
+name: diff-specialist
+description: "Git diff analysis specialist"
+---
+# Role: Diff Specialist
+...
+
+{{reflection_instructions}}
+```
+
+При `reflection.enabled: true`:
+```markdown
+## Reflection Memory
+- Memory: .flow/memory/diff-specialist.md
+- History: .flow/memory/diff-specialist-history.md
+- At session start: read both files
+- At session end: rewrite memory (≤50 lines), append to history (≤20 entries)
+```
+
+Memory: `.flow/memory/` → `.gitignore`. History tracked.
+
+### Проверка замкнутости зависимостей
+
+CI (`deno task check`):
+1. Парсит SKILL.md на ссылки на другие skills
+2. Для каждой: target в том же pack?
+3. Если нет → ошибка
+
+### Pack versioning
+
+v1: version в pack.yaml = flowai version. Используется для plugin.json.
+Будущее: `min_flowai` когда понадобится.
+
+### Этапы реализации
+
+**Phase 1: Структура и миграция**
+1. Создать `framework/packs/` со всеми 8 packs + pack.yaml
+2. Перенести и переименовать skills (убрать flow-/flow-skill- prefix)
+3. Перенести и переименовать agents
+4. Перенести benchmarks
+5. Удалить `framework/skills/`, `framework/agents/`
+6. Обновить benchmark runner
+7. Проверка замкнутости зависимостей в CI
+8. Обновить bundle script
+
+**Phase 2: flowai v2**
+1. PackDefinition тип
+2. Генераторы: pack.yaml → plugin.json, hooks.json
+3. config.ts: `.flowai.yaml` v2 (packs, reflection)
+4. sync.ts: Claude Code — plugin dirs + settings.json; Cursor/OpenCode — раскладка
+5. Pack `flow` implicit (всегда ставится)
+6. Clean sync
+7. Обратная совместимость v1
+8. `flowai list-packs`
+9. Тесты
+
+**Phase 3: Reflection**
+1. Agent template engine
+2. `.flow/memory/` management
+3. Тесты
+
+**Phase 4: Pipelines pack**
+1. Перенести из auto-flow2
+2. Адаптировать sdlc-pipeline
+3. Создать engineer-pipeline
+4. Benchmarks
+
+**Phase 5: Graceful delegation**
+1. init: skip при отсутствии skill из другого pack
+2. update: аналогично
+3. Benchmarks
+
+### Открытые вопросы
+
+1. **Plugin marketplace**: публиковать packs в Claude Code marketplace?
+2. **.flow/ directory**: gitignore целиком? plugins/ — да. memory/ — snapshot gitignore, history tracked
+3. **Cursor/OpenCode naming**: skills раскладываются flat без namespace. Конфликт с пользовательскими skills маловероятен но возможен
