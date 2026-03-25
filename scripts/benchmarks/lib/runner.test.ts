@@ -86,7 +86,7 @@ Deno.test("Runner - Fixture Copying", async () => {
   await Deno.writeTextFile(agentPath, "agent");
 
   const scenario: BenchmarkScenario = {
-    id: "flow-test-fixture",
+    id: "flowai-test-fixture",
     name: "Fixture Test",
     targetAgentPath: agentPath,
     fixturePath: fixtureDir,
@@ -103,7 +103,7 @@ Deno.test("Runner - Fixture Copying", async () => {
     });
   };
 
-  const scenarioWorkDir = join(tempDir, "flow-test-fixture", "run-1");
+  const scenarioWorkDir = join(tempDir, "flowai-test-fixture", "run-1");
   try {
     await runScenario(scenario, {
       agentModel: AGENT_MODEL,

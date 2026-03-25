@@ -92,10 +92,10 @@ export class TraceLogger {
 
   /** Formats scenario name with skill prefix for display. */
   private formatScenarioName(id: string, name: string): string {
-    if (id.startsWith("flow-")) {
+    if (id.startsWith("flowai-")) {
       const parts = id.split("-");
       if (parts.length >= 2) {
-        const skill = `flow-${parts[1]}`;
+        const skill = `flowai-${parts[1]}`;
         return `${skill}: ${name}`;
       }
     }
@@ -518,10 +518,10 @@ export class TraceLogger {
     const groupedBySkill: Record<string, ScenarioGroupStats[]> = {};
     for (const g of groups) {
       let skill = "other";
-      if (g.groupId.startsWith("flow-")) {
+      if (g.groupId.startsWith("flowai-")) {
         const parts = g.groupId.split("-");
         if (parts.length >= 2) {
-          skill = `flow-${parts[1]}`;
+          skill = `flowai-${parts[1]}`;
         }
       }
       if (!groupedBySkill[skill]) {
