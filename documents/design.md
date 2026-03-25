@@ -12,15 +12,15 @@
 - **Overview diagram:**
   ```mermaid
   graph TD
-    Framework[framework/] -->|flowai cli/| Claude[.claude/]
+    Packs[framework/] -->|flowai cli/| Claude[.claude/]
     DevSkills[.claude/skills/ dev] -->|tracked in git| Claude
-    Claude -->|skills, agents| IDE[Claude Code]
+    Claude -->|skills, agents, hooks| IDE[Claude Code]
     IDE -->|Updates| Docs[documents/*.md]
     IDE -->|Executes| Actions[Code/Git/MCP]
-    Framework -->|flowai| Users[End Users]
+    Packs -->|flowai| Users[End Users]
   ```
 - **Main subsystems and their roles:**
-  - **Product Framework (`framework/`):** Source of truth for end-user skills/agents. Distributed via flowai.
+  - **Product Framework (`framework/`):** Source of truth for end-user packs (skills, agents, hooks, scripts). Distributed via flowai.
   - **Dev Resources (`.claude/skills/`, `.claude/agents/`):** Dev-only skills/agents tracked in git. Framework resources installed by flowai from remote.
   - **Skills Subsystem:** Defines procedural workflows and capabilities.
   - **Agents Subsystem:** Defines specialized agent roles and prompts.
@@ -37,23 +37,35 @@
   - `.claude/agents/` — Dev agents (tracked in git) + framework agents (installed by flowai)
 - **Distribution:** flowai (`cli/`) installs framework resources from bundled source into `.claude/`.
 
-### 3.1.1 Product Skills (`framework/skills/`)
+### 3.1.1 Product Packs (`framework/`)
 
-- **Purpose:** Provide specialized capabilities and workflows for end users.
-- **Interfaces:** Directories containing `SKILL.md` files.
-- **Categories:**
-  - `flow-*`: Command-like skills (e.g., `flow-maintenance`, `flow-commit`).
-  - `flow-skill-*`: Practical guides (e.g., `flow-skill-fix-tests`).
-  - `flow-skill-deno-*`: Deno-specific tools (`flow-skill-deno-cli`, `flow-skill-deno-deploy`).
-- **Composition**: Skills can delegate to other skills (e.g., `flow-init` delegates development command configuration to `flow-skill-configure-*-commands`).
-- **Script independence:** Scripts in `framework/skills/*/scripts/` are installed into user projects without a shared `deno.json`. They MUST be runnable standalone:
+- **Purpose:** Modular groups of skills, agents, hooks, and scripts for end users. Each pack is a self-contained directory.
+- **Structure:**
+  ```
+  framework/<pack-name>/
+    pack.yaml              # name, version (semver), description, scaffolds (optional)
+    skills/<name>/SKILL.md # skills (directory names without flowai- prefix)
+    agents/<name>.md       # agents
+    hooks/<name>/          # hook.yaml + run.sh
+    scripts/<name>         # utility scripts
+  ```
+- **Packs:** `core` (base commands), `devtools` (skill/agent authoring), `engineering` (procedural knowledge), `deno` (Deno-specific), `typescript` (TS-specific).
+- **Resource discovery:** Convention over configuration — resources found by scanning subdirectories, not listed in `pack.yaml`.
+- **No inter-pack dependencies:** Each pack is self-contained.
+- **Naming:** Directory names inside packs omit prefix (e.g., `commit/`, `write-dep/`). flowai adds `flowai-*` prefix at install time.
+- **Categories (by installed prefix):**
+  - `flowai-*`: Command-like skills (e.g., `flowai-commit`, `flowai-plan`).
+  - `flowai-skill-*`: Practical guides (e.g., `flowai-skill-fix-tests`).
+  - `flowai-setup-*`: One-time setup skills (e.g., `flowai-setup-code-style-ts-deno`).
+- **Composition**: Skills can delegate to other skills (e.g., `flowai-init` delegates development command configuration to `flowai-skill-configure-*-commands`).
+- **Script independence:** Scripts in pack `scripts/` are installed into user projects without a shared `deno.json`. They MUST be runnable standalone:
   - Use `jsr:` specifiers for Deno std imports (e.g., `jsr:@std/path`), NOT bare specifiers (`@std/path`).
   - Avoid dependencies requiring import maps or `deno.json` resolution.
   - Each script header MUST include a `Run:` section with the exact `deno run` command.
 
 #### 3.1.2 Script Language Policy
 
-All project scripts (both `framework/skills/*/scripts/` and root `scripts/`) use Deno/TypeScript exclusively. Python is not used in the project.
+All project scripts (both `framework/<pack>/skills/*/scripts/` and root `scripts/`) use Deno/TypeScript exclusively. Python is not used in the project.
 
 #### 3.1.3 Skill Tool Hints (`allowed-tools`)
 
@@ -71,22 +83,22 @@ Adoption is optional. IDEs that support `allowed-tools` will auto-approve matchi
 
 #### 3.1.4 Skill Name Collision Resolution
 
-When a dev skill in `.claude/skills/` has the same name as a framework skill in `framework/skills/`, flowai will overwrite the dev version during sync. Dev skills should use unique names to avoid collisions.
+When a dev skill in `.claude/skills/` has the same name as a framework skill in a pack, flowai will overwrite the dev version during sync. Dev skills should use unique names to avoid collisions.
 
-### 3.2 Product Agents (`framework/agents/`)
+### 3.2 Product Agents (in packs)
 
 - **Purpose:** Define specialized AI subagent personas and roles for end users.
-- **Structure:** Flat directory `framework/agents/` with one canonical `.md` file per agent.
+- **Structure:** `.md` files inside `framework/<pack>/agents/`. One canonical file per agent.
   Frontmatter contains universal superset of all IDE fields; body is the shared system prompt.
 - **Canonical Format:** Universal frontmatter — superset of all IDE-specific fields:
   `name`, `description` (required), `tools` (string, Claude), `disallowedTools` (string, Claude),
   `readonly` (bool, Cursor), `mode` (string, OpenCode), `opencode_tools` (map, OpenCode).
   `flowai` extracts IDE-relevant fields at install time via `transformAgent()`.
 - **Key Agents (4 canonical files):**
-  - `deep-research-worker.md`: Research worker for a single direction within a deep research task; spawned by `flow-skill-deep-research` orchestrator.
-  - `flow-console-expert.md`: Specialist in executing complex console tasks without modifying code.
-  - `flow-diff-specialist.md`: Specialist in analyzing git diffs and planning atomic commits.
-  - `flow-skill-executor.md`: Specialist in executing any prompt or task or specific skills.
+  - `engineering/agents/deep-research-worker.md`: Research worker for a single direction within a deep research task; spawned by `flowai-skill-deep-research` orchestrator.
+  - `core/agents/console-expert.md`: Specialist in executing complex console tasks without modifying code.
+  - `core/agents/diff-specialist.md`: Specialist in analyzing git diffs and planning atomic commits.
+  - `core/agents/skill-executor.md`: Specialist in executing any prompt or task or specific skills.
 - **Distribution:** `flowai` transforms canonical agents into IDE-specific format at install time.
 - **Reference: IDE frontmatter formats** (transformation rules owned by flowai):
   - **Claude Code:** `name`, `description` (req), `tools` (list: Read, Grep, etc.), `disallowedTools`, `model` (sonnet/opus/haiku/inherit).
@@ -117,7 +129,7 @@ When a dev skill in `.claude/skills/` has the same name as a framework skill in 
   - **Parallel Execution Protection**: Uses `benchmarks/benchmarks.lock` file containing the PID to prevent concurrent runs. Implements signal listeners (`SIGINT`, `SIGTERM`) and `unload` events for reliable cleanup.
   - **Isolation**: Benchmarks run in isolated sandboxes using `SpawnedAgent` (direct `Deno.Command` based).
   - **Docker**: Optional Docker isolation (`Dockerfile` based on `denoland/deno:alpine`) with `git`, `bash`, `curl`, and `cursor-agent` installed.
-  - **Co-located Scenarios**: Scenarios are co-located with skills as `framework/skills/<skill>/benchmarks/<scenario>/mod.ts`.
+  - **Co-located Scenarios**: Scenarios are co-located with skills as `framework/<pack>/skills/<skill>/benchmarks/<scenario>/mod.ts`.
   - **JSON Configuration**: `benchmarks/config.json` stores unified model presets.
   - **Direct Model Support**: If a preset is not found, the system uses the provided name as the model identifier with default settings (temperature: 0).
   - **Side-Effect Validation**: System checks sandbox state (files, git) using LLM-Judge.
@@ -166,24 +178,32 @@ graph TD
   - `cli/src/adapters/fs.ts` — `FsAdapter` abstraction + `DenoFsAdapter` + `InMemoryFsAdapter`
   - `cli/scripts/bundle-framework.ts` — generates `src/bundled.json` from `../framework/`
 - **Data entities:**
-  - `FlowConfig`: `{ version, ides, skills: {include, exclude}, agents: {include, exclude} }`
-  - `PlanItem`: `{ type: skill|agent, name, action: create|update|ok|conflict, sourcePath, targetPath, content }`
+  - `FlowConfig`: `{ version, ides, packs, skills: {include, exclude}, agents: {include, exclude} }` (v1.1: `packs` field added)
+  - `PackDefinition`: `{ name, version, description, scaffolds?: Record<skill, paths[]> }` (parsed from `pack.yaml`)
+  - `HookDefinition`: `{ event, matcher?, description }` (parsed from `hook.yaml`)
+  - `PlanItem`: `{ type: skill|agent|hook|script, name, action: create|update|ok|conflict, sourcePath, targetPath, content }`
 - **Agent transformation rules** (per IDE):
   - Claude: `name`, `description`, `tools`, `disallowedTools`
   - Cursor: `name`, `description`, `readonly`
   - OpenCode: `description`, `mode`; `opencode_tools` → `tools`
-- **Distribution:** JSR via `deno publish`. `bundled.json` generated at publish time. No build step for TS.
+- **Pack resolution flow:** Load config → expand `packs:` to resource lists (skills, agents, hooks, scripts from `framework/*/`) → apply `skills.include/exclude` filter → compute plan → write. `resolvePackResources()` returns `hookNames` and `scriptNames` alongside skills/agents.
+- **Automigration:** v1 config detected → rewrite as v1.1 with `packs:` listing all available packs (backward-compatible).
+- **Rich sync output:** `flowai sync` produces instruction-oriented output: `>>> ACTIONS REQUIRED` (config migration, updated/created/deleted skills with inline scaffolds, agent updates) or `>>> NO ACTIONS REQUIRED`. `SyncResult` includes `configMigrated`, `skillActions[]`, `agentActions[]` with per-resource action and scaffolds.
+- **Hook installation:** Reads `hook.yaml`, generates IDE-specific config (Claude: `settings.json` hooks, Cursor: `.cursor/hooks/`, OpenCode: plugin config). Script receives `FLOWAI_IDE` env var. Unsupported events skipped with warning.
+- **Script installation:** Copies to `.{ide}/scripts/` (simple file copy).
+- **Naming transform:** Pack directory names → installed names with prefix (`commit/` → `flowai-commit`, `write-dep/` → `flowai-skill-write-dep`).
+- **Distribution:** JSR via `deno publish`. `bundled.json` generated at publish time from `framework/*/`. No build step for TS.
 
 ### 3.6 Conventional Commits `agent:` Type — FR-11
 
 - **Purpose:** Dedicated commit type for AI agent/skill configuration changes.
-- **Integration point:** `flow-commit` SKILL.md — added to recognized types list.
+- **Integration point:** `flowai-commit` SKILL.md — added to recognized types list.
 - **Auto-detection logic:** If all staged files match patterns
-  (`framework/agents/**`, `framework/skills/**`, `.claude/agents/**`, `.claude/skills/**`,
+  (`framework/**`, `.claude/agents/**`, `.claude/skills/**`,
   `AGENTS.md`) -> suggest `agent:` type.
-- **Affected components:** `flow-commit` SKILL.md, `flow-diff-specialist` agent.
+- **Affected components:** `flowai-commit` SKILL.md, `flowai-diff-specialist` agent.
 
-### 3.7 flow-init Multi-File Architecture + Diff-Based Updates — FR-12
+### 3.7 flowai-init Multi-File Architecture + Diff-Based Updates — FR-12
 
 - **Purpose:** Preserve user edits during re-initialization. Eliminate monolithic
   AGENTS.md. Enable agent-driven file generation.
@@ -241,15 +261,16 @@ graph TD
   Dockerfile.
 - **Idempotency:** Detects existing `.devcontainer/`, shows diff, asks per-file
   confirmation.
-- **Integration:** Invoked standalone or delegated from `flow-init` step 11.
+- **Integration:** Invoked standalone or delegated from `flowai-init` step 11.
 - **Deps:** None (pure SKILL.md, agent-driven generation).
 
-### 3.10 Framework Update Skill — `flow-update`
+### 3.10 Framework Update Skill — `flowai-update`
 
 - **Purpose:** Single entry point for updating framework + migrating scaffolded project artifacts.
-- **Location:** `framework/skills/flow-update/` (SKILL.md + `references/scaffolded-artifacts.md`).
-- **Workflow:** 7 steps: sync → detect changes (`git status --porcelain`) → analyze diffs → map to artifacts → propose → confirm → commit.
-- **Scaffolded artifacts:** Files created once by setup skills (flow-init, flow-setup-agent-*, flow-skill-configure-deno-commands), then owned by the project. Registry in `references/scaffolded-artifacts.md`.
+- **Location:** `framework/core/skills/flowai-update/SKILL.md`.
+- **Workflow:** 7 steps: update CLI → sync → parse sync output → migrate scaffolded artifacts → propose → confirm → commit.
+- **Scaffolded artifacts:** Files created once by setup skills, then owned by the project. Mapping declared in `pack.yaml` `scaffolds:` field (skill-name → artifact paths). `flowai sync` includes scaffolds info in its `>>> ACTIONS REQUIRED` output.
+- **Rich sync output:** `flowai sync` produces instruction-oriented output with `>>> ACTIONS REQUIRED` / `>>> NO ACTIONS REQUIRED` sections. Lists updated/created/deleted skills with inline scaffolded artifact paths. flowai-update parses this output instead of manual `git status` discovery.
 - **CLI integration:** `flowai` bare command is no-op inside IDE (env var check: `CURSOR_AGENT`, `CLAUDECODE`, `OPENCODE`). `flowai sync` required explicitly. See `cli/src/ide.ts:isInsideIDE()`.
 - **Deps:** None (pure SKILL.md, agent-driven migration).
 
@@ -285,14 +306,14 @@ graph TD
 
 ## 8. Known Issues
 
-### 8.1 flow-plan Benchmark Failures (pre-existing)
+### 8.1 flowai-plan Benchmark Failures (pre-existing)
 
-3 of 8 flow-plan benchmarks fail consistently. Root cause: agent behavioral issues unrelated to skill text.
+3 of 8 flowai-plan benchmarks fail consistently. Root cause: agent behavioral issues unrelated to skill text.
 
-- **flow-plan-interactive**: Agent skips variant presentation step, jumps to G-O-D draft. SimulatedUser responds before variants are shown. Likely cause: sonnet model doesn't reliably follow multi-step interactive protocol with single-turn timeout.
-- **flow-plan-variants-obvious**: Agent presents 2 variants for trivial task ("create hello.txt") instead of 1. "Variant Analysis" rule says "1 variant OK if path is clear" but agent over-interprets.
-- **flow-plan-variants-complex**: Agent exits with code 130 (timeout at 120s). Complex auth system task exceeds `stepTimeoutMs`. Agent spends time thinking internally but doesn't emit variants to chat before timeout.
+- **flowai-plan-interactive**: Agent skips variant presentation step, jumps to G-O-D draft. SimulatedUser responds before variants are shown. Likely cause: sonnet model doesn't reliably follow multi-step interactive protocol with single-turn timeout.
+- **flowai-plan-variants-obvious**: Agent presents 2 variants for trivial task ("create hello.txt") instead of 1. "Variant Analysis" rule says "1 variant OK if path is clear" but agent over-interprets.
+- **flowai-plan-variants-complex**: Agent exits with code 130 (timeout at 120s). Complex auth system task exceeds `stepTimeoutMs`. Agent spends time thinking internally but doesn't emit variants to chat before timeout.
 
 ## 9. Future Extensions
 
-- Hook format transformation — now tracked as FR-14 in SRS (cross-IDE hook/plugin format transformation).
+- Hook format transformation — tracked as FR-14 (cross-IDE hook/plugin format transformation) and FR-24 (hook resources in packs).
