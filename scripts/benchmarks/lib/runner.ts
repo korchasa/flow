@@ -1,6 +1,6 @@
 import { dirname, fromFileUrl, join } from "@std/path";
 import type { BenchmarkResult, BenchmarkScenario } from "./types.ts";
-import type { chatCompletion, ModelConfig } from "./llm.ts";
+import type { cliChatCompletion, ModelConfig } from "./llm.ts";
 import { evaluateChecklist } from "./judge.ts";
 import { TraceLogger } from "./trace.ts";
 import { copyFrameworkToIdeDir, copyRecursive } from "./utils.ts";
@@ -15,7 +15,7 @@ export interface RunnerOptions {
   adapter: AgentAdapter;
   tracer?: TraceLogger;
   runIndex?: number;
-  llmClient?: typeof chatCompletion;
+  llmClient?: typeof cliChatCompletion;
   judgeClient?: typeof evaluateChecklist;
 }
 
@@ -100,7 +100,7 @@ export async function runScenario(
         "\n",
       )
       : "";
-    await tracer.logTools(toolsDesc);
+    await tracer.logTools(traceId, toolsDesc);
   }
 
   let result: (BenchmarkResult & { evidence: string }) | undefined;
@@ -308,6 +308,7 @@ export async function runScenario(
 
     await tracer.logExecutionSection();
     await tracer.logLLMInteraction(
+      traceId,
       [{ role: "system", content: "Agent Output Log" }],
       logs,
       { step: 1, source: "agent", model: options.agentModel },
@@ -357,7 +358,7 @@ export async function runScenario(
     // Collect generated file contents (non-fixture files for judge inspection)
     const generatedFiles = await collectGeneratedFiles(sandboxPath);
 
-    await tracer.logEvidence(statusStr, logStr);
+    await tracer.logEvidence(traceId, statusStr, logStr);
 
     const evidence = `
 --- AGENT LOGS ---
@@ -406,7 +407,7 @@ ${generatedFiles}
       });
     }
 
-    await tracer.logEvaluation(checklistResults, checklistToJudge, {
+    await tracer.logEvaluation(traceId, checklistResults, checklistToJudge, {
       messages: judgeOutput.messages,
       response: judgeOutput.response,
     });
@@ -451,7 +452,7 @@ ${generatedFiles}
       evidence,
     } as BenchmarkResult & { evidence: string };
 
-    await tracer.logSummary({
+    await tracer.logSummary(traceId, {
       ...result,
       errors: result.errorsCount,
       warnings: result.warningsCount,

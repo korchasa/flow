@@ -1,22 +1,22 @@
-import { chatCompletion, type ModelConfig } from "./llm.ts";
+import { cliChatCompletion, type ModelConfig } from "./llm.ts";
 import type { LLMMessage } from "./types.ts";
 
 export interface UserEmulatorOptions {
   persona: string;
   config: ModelConfig;
-  llmClient?: typeof chatCompletion;
+  llmClient?: typeof cliChatCompletion;
 }
 
 /** Simulates user responses in interactive benchmark scenarios using an LLM with a given persona. */
 export class UserEmulator {
   private persona: string;
   private config: ModelConfig;
-  private llm: typeof chatCompletion;
+  private llm: typeof cliChatCompletion;
 
   constructor(options: UserEmulatorOptions) {
     this.persona = options.persona;
     this.config = options.config;
-    this.llm = options.llmClient || chatCompletion;
+    this.llm = options.llmClient || cliChatCompletion;
   }
 
   /**

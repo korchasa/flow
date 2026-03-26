@@ -92,6 +92,7 @@ Options:
     SUPPORTED_IDES.join(", ")
   }) (default: from config)
   -n, --runs <number>          Number of runs per scenario (default: 1)
+  -p, --parallel <number>      Max concurrent scenarios (default: 1, sequential)
   --help                       Show this help message
   `);
 }
@@ -135,9 +136,16 @@ async function main() {
   const config = await loadConfig();
 
   const args = parse(Deno.args, {
-    string: ["filter", "runs", "model", "ide"],
+    string: ["filter", "runs", "model", "ide", "parallel"],
     boolean: ["help"],
-    alias: { f: "filter", n: "runs", h: "help", m: "model", i: "ide" },
+    alias: {
+      f: "filter",
+      n: "runs",
+      h: "help",
+      m: "model",
+      i: "ide",
+      p: "parallel",
+    },
     unknown: (arg) => {
       if (arg.startsWith("-")) {
         console.error(`Unknown argument: ${arg}`);
@@ -168,6 +176,7 @@ async function main() {
 
   const filter = args.filter;
   const runs = parseInt(args.runs || "1", 10);
+  const parallel = parseInt(args.parallel || "1", 10);
 
   const allScenarios = await discoverScenarios();
   const scenariosToRun = filter
@@ -179,6 +188,9 @@ async function main() {
   console.log(`Using agent model: ${agentModel}`);
   console.log(`Using judge model: ${judgeConfig.model}`);
   console.log(`Runs per scenario: ${runs}`);
+  if (parallel > 1) {
+    console.log(`Parallel concurrency: ${parallel}`);
+  }
 
   const results: BenchmarkResult[] = [];
 
@@ -192,70 +204,117 @@ async function main() {
 
   let totalCostAll = 0;
 
+  // Build flat list of tasks: (scenario, runIndex) pairs
+  const tasks: { scenario: BenchmarkScenario; runIndex: number }[] = [];
   for (const scenario of scenariosToRun) {
     for (let i = 0; i < runs; i++) {
-      const runIndex = i + 1;
-      if (runs > 1) {
-        console.log(`\n--- Run ${runIndex}/${runs} for ${scenario.id} ---`);
-      }
-      const scenarioWorkDir = join(runDir, scenario.id, `run-${runIndex}`);
-      try {
-        const result = await runScenario(scenario, {
-          agentModel,
-          judgeConfig,
-          workDir: scenarioWorkDir,
-          adapter,
-          tracer,
-          runIndex,
-        });
-        results.push(result);
-        totalCostAll += result.totalCost;
+      tasks.push({ scenario, runIndex: i + 1 });
+    }
+  }
 
-        const statusLabel = result.success ? "PASSED" : "FAILED";
-        console.log(
-          `  Result: ${statusLabel} (Errors: ${result.errorsCount}, Warnings: ${result.warningsCount}) Cost: $${
-            result.totalCost.toFixed(6)
-          }`,
-        );
-        console.log("  Checklist:");
-        for (const [id, res] of Object.entries(result.checklistResults)) {
-          const item = scenario.checklist.find((i) => i.id === id);
-          const isCritical = item?.critical ?? true;
+  /** Runs a single scenario+run task, prints results, and pushes to results array. */
+  async function executeTask(
+    task: { scenario: BenchmarkScenario; runIndex: number },
+  ) {
+    const { scenario, runIndex } = task;
+    if (runs > 1) {
+      console.log(`\n--- Run ${runIndex}/${runs} for ${scenario.id} ---`);
+    }
+    const scenarioWorkDir = join(runDir, scenario.id, `run-${runIndex}`);
+    try {
+      const result = await runScenario(scenario, {
+        agentModel,
+        judgeConfig,
+        workDir: scenarioWorkDir,
+        adapter,
+        tracer,
+        runIndex,
+      });
+      results.push(result);
+      totalCostAll += result.totalCost;
 
-          let color = ansi("\x1b[32m"); // Green
-          let mark = "x";
-          let label = "";
+      const statusLabel = result.success ? "PASSED" : "FAILED";
+      console.log(
+        `  Result: ${statusLabel} (Errors: ${result.errorsCount}, Warnings: ${result.warningsCount}) Cost: $${
+          result.totalCost.toFixed(6)
+        }`,
+      );
+      console.log("  Checklist:");
+      for (const [id, res] of Object.entries(result.checklistResults)) {
+        const item = scenario.checklist.find((i) => i.id === id);
+        const isCritical = item?.critical ?? true;
 
-          if (!res.pass) {
-            if (isCritical) {
-              color = ansi("\x1b[31m"); // Red
-              mark = " ";
-              label = " (ERROR)";
-            } else {
-              color = ansi("\x1b[33m"); // Yellow
-              mark = "!";
-              label = " (WARNING)";
-            }
+        let color = ansi("\x1b[32m"); // Green
+        let mark = "x";
+        let label = "";
+
+        if (!res.pass) {
+          if (isCritical) {
+            color = ansi("\x1b[31m"); // Red
+            mark = " ";
+            label = " (ERROR)";
+          } else {
+            color = ansi("\x1b[33m"); // Yellow
+            mark = "!";
+            label = " (WARNING)";
           }
-
-          const dim = ansi("\x1b[2m");
-          const reset = ansi("\x1b[0m");
-          console.log(
-            `    ${color}[${mark}] ${id}${label}:${reset} ${dim}${res.reason}${reset}`,
-          );
         }
 
-        if (!result.success) {
-          const reportPath = join(runDir, "report.html");
-          console.log(
-            `\n  ${
-              ansi("\x1b[31m")
-            }See trace for details: file://${reportPath}${ansi("\x1b[0m")}\n`,
-          );
-        }
-      } catch (e) {
-        console.error(`  Error running scenario ${scenario.id}:`, e);
+        const dim = ansi("\x1b[2m");
+        const reset = ansi("\x1b[0m");
+        console.log(
+          `    ${color}[${mark}] ${id}${label}:${reset} ${dim}${res.reason}${reset}`,
+        );
       }
+
+      if (!result.success) {
+        const reportPath = join(runDir, "report.html");
+        console.log(
+          `\n  ${ansi("\x1b[31m")}See trace for details: file://${reportPath}${
+            ansi("\x1b[0m")
+          }\n`,
+        );
+      }
+    } catch (e) {
+      console.error(`  Error running scenario ${scenario.id}:`, e);
+    }
+  }
+
+  // Execute tasks with concurrency control
+  if (parallel <= 1) {
+    // Sequential mode (default)
+    for (const task of tasks) {
+      await executeTask(task);
+    }
+  } else {
+    // Parallel mode with semaphore
+    let running = 0;
+    let taskIndex = 0;
+    const errors: Error[] = [];
+
+    await new Promise<void>((resolve) => {
+      function scheduleNext() {
+        while (running < parallel && taskIndex < tasks.length) {
+          const task = tasks[taskIndex++];
+          running++;
+          executeTask(task).catch((e) => {
+            errors.push(e instanceof Error ? e : new Error(String(e)));
+          }).finally(() => {
+            running--;
+            if (taskIndex >= tasks.length && running === 0) {
+              resolve();
+            } else {
+              scheduleNext();
+            }
+          });
+        }
+        if (tasks.length === 0) resolve();
+      }
+      scheduleNext();
+    });
+
+    if (errors.length > 0) {
+      console.error(`\n${errors.length} task(s) failed with errors.`);
     }
   }
 

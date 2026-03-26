@@ -60,7 +60,6 @@ export class TraceLogger {
   private tracePath: string;
   private events: TraceEvent[] = [];
   private scenarios: Map<string, ScenarioMetadata> = new Map();
-  private currentScenarioId: string | null = null;
 
   constructor(workDir: string, filename = "trace.html") {
     this.tracePath = join(workDir, filename);
@@ -1062,28 +1061,28 @@ export class TraceLogger {
       scenarioGroup,
       runIndex,
     });
-    this.currentScenarioId = scenarioId;
     await this.save();
   }
 
-  /** Appends a trace event for the current scenario. */
+  /** Appends a trace event for the given scenario. */
   private addEvent(
+    scenarioId: string,
     type: string,
     metadata: Record<string, unknown>,
     content: string,
   ) {
-    if (!this.currentScenarioId) return;
     this.events.push({
       type,
       timestamp: new Date().toISOString(),
       metadata,
       content,
-      scenarioId: this.currentScenarioId,
+      scenarioId,
     });
   }
 
   /** Logs an LLM interaction (messages + response) with trace events. */
   async logLLMInteraction(
+    scenarioId: string,
     messages: { role: string; content: string }[],
     response: string,
     context: { step: number; source: TraceSource; model?: string },
@@ -1097,7 +1096,7 @@ export class TraceLogger {
         escape(msg.content)
       }</code></pre>`;
 
-      this.addEvent("message", {
+      this.addEvent(scenarioId, "message", {
         role: msg.role,
         source: isSystem
           ? "system"
@@ -1110,6 +1109,7 @@ export class TraceLogger {
     }
 
     this.addEvent(
+      scenarioId,
       "interaction",
       {
         source: context.source,
@@ -1130,6 +1130,7 @@ export class TraceLogger {
 
   /** Logs a command execution with output. */
   async logCommand(
+    scenarioId: string,
     command: string,
     exitCode: number,
     stdout: string,
@@ -1151,7 +1152,7 @@ export class TraceLogger {
         `<b>Stderr:</b><pre><code class="language-bash">${stderr.trim()}</code></pre>`;
     }
 
-    this.addEvent("command", {
+    this.addEvent(scenarioId, "command", {
       command,
       exit_code: exitCode,
       step: context?.step,
@@ -1165,13 +1166,13 @@ export class TraceLogger {
   }
 
   /** Logs git evidence (status + log) for the sandbox. */
-  async logEvidence(gitStatus: string, gitLog: string) {
+  async logEvidence(scenarioId: string, gitStatus: string, gitLog: string) {
     let content =
       `<h3>Git Status</h3><pre><code class="language-bash">${gitStatus.trim()}</code></pre>`;
     content +=
       `<h3>Git Log</h3><pre><code class="language-bash">${gitLog.trim()}</code></pre>`;
 
-    this.addEvent("evidence", {
+    this.addEvent(scenarioId, "evidence", {
       source: "system",
       description: "Final state of the sandbox",
     }, content);
@@ -1181,6 +1182,7 @@ export class TraceLogger {
 
   /** Logs the LLM Judge evaluation results (checklist + optional judge interaction). */
   async logEvaluation(
+    scenarioId: string,
     checklistResults: Record<string, { pass: boolean; reason?: string }>,
     checklist: { id: string; description: string; critical: boolean }[],
     judgeInteraction?: {
@@ -1215,6 +1217,7 @@ export class TraceLogger {
       }</code></pre><hr>`;
 
       this.addEvent(
+        scenarioId,
         "interaction",
         {
           source: "judge",
@@ -1250,7 +1253,7 @@ export class TraceLogger {
     }
     content += `</ul>`;
 
-    this.addEvent("evaluation", {
+    this.addEvent(scenarioId, "evaluation", {
       source: "judge",
       description: "Judge's checklist results",
     }, content);
@@ -1260,6 +1263,7 @@ export class TraceLogger {
 
   /** Logs the execution summary for a scenario. */
   async logSummary(
+    scenarioId: string,
     result: {
       success: boolean;
       score: number;
@@ -1270,11 +1274,9 @@ export class TraceLogger {
       warnings: number;
     },
   ) {
-    if (this.currentScenarioId) {
-      const scenario = this.scenarios.get(this.currentScenarioId);
-      if (scenario) {
-        scenario.summary = result;
-      }
+    const scenario = this.scenarios.get(scenarioId);
+    if (scenario) {
+      scenario.summary = result;
     }
 
     const statusColor = result.success
@@ -1309,7 +1311,7 @@ export class TraceLogger {
       </div>
     `;
 
-    this.addEvent("summary", {
+    this.addEvent(scenarioId, "summary", {
       source: "system",
       success: result.success,
       score: result.score,
@@ -1322,8 +1324,9 @@ export class TraceLogger {
   }
 
   /** Logs available tools definition. */
-  async logTools(toolsDescription: string) {
+  async logTools(scenarioId: string, toolsDescription: string) {
     this.addEvent(
+      scenarioId,
       "tools_definition",
       {
         source: "system",
