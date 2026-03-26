@@ -16,12 +16,14 @@ Deno.test("TraceLogger should generate self-contained HTML", async () => {
   );
 
   await tracer.logLLMInteraction(
+    "test-id",
     [{ role: "user", content: "Hi" }],
     "Hello!",
     { step: 1, source: "agent" },
   );
 
   await tracer.logEvaluation(
+    "test-id",
     { "test-id": { pass: true, reason: "All good" } },
     [{ id: "test-id", description: "Test check", critical: true }],
     {
@@ -33,7 +35,7 @@ Deno.test("TraceLogger should generate self-contained HTML", async () => {
     },
   );
 
-  await tracer.logSummary({
+  await tracer.logSummary("test-id", {
     success: true,
     score: 100,
     durationMs: 1000,
