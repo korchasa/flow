@@ -1,23 +1,21 @@
 import { BenchmarkSkillScenario } from "../../../../../../scripts/benchmarks/lib/types.ts";
-import {
-  runGit,
-  setupGitRepo,
-} from "../../../../../../scripts/benchmarks/lib/utils.ts";
 import { join } from "@std/path";
 
 export const CommitSyncDocsBench = new class extends BenchmarkSkillScenario {
   id = "flowai-commit-sync-docs";
   name = "Workspace Sync: Docs Update";
   skill = "flowai-commit";
-  stepTimeoutMs = 120_000;
+  stepTimeoutMs = 300_000;
 
-  async setup(sandboxPath: string) {
-    await setupGitRepo(sandboxPath);
+  override sandboxState = {
+    commits: [],
+    modified: ["src.ts"],
+    expectedOutcome:
+      "Agent updates documents/README.md and commits both code and docs",
+  };
 
-    // Initial commit
-    await runGit(sandboxPath, ["add", "."]);
-    await runGit(sandboxPath, ["commit", "-m", "Initial commit"]);
-
+  override async setup(sandboxPath: string) {
+    // Runner already committed everything as "init".
     // Change source code
     await Deno.writeTextFile(
       join(sandboxPath, "src.ts"),

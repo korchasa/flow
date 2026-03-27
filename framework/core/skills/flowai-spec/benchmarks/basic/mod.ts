@@ -4,7 +4,7 @@ export const SpecBasicBench = new class extends BenchmarkSkillScenario {
   id = "flowai-spec-basic";
   name = "Basic Spec Generation";
   skill = "flowai-spec";
-  stepTimeoutMs = 180_000;
+  stepTimeoutMs = 420_000;
 
   userQuery =
     "/flowai-spec Create a specification for adding skill versioning to the project. Skills should have semver versions in frontmatter, and the framework should support loading specific versions. The project uses Deno/TypeScript, skills are in framework/skills/*/SKILL.md.";

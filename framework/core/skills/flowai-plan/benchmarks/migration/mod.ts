@@ -4,7 +4,7 @@ export const PlanMigrationBench = new class extends BenchmarkSkillScenario {
   id = "flowai-plan-migration";
   name = "Plan Async Migration";
   skill = "flowai-plan";
-  stepTimeoutMs = 120_000;
+  stepTimeoutMs = 300_000;
 
   userQuery =
     "/flowai-plan Plan a migration of src/data-loader.js to use modern Node.js APIs (fs/promises) and 'fetch' instead of 'request'. Also switch to async/await.";

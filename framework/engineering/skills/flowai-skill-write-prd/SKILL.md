@@ -31,6 +31,9 @@ When asked to write a PRD:
    doc (see `flowai-skill-conduct-qa-session`).
 3. **Drafting**: Use the template below.
 4. **Review**: Check against the "Bad vs Good" examples in Section 4.
+5. **Persist**: MUST write the final PRD to a file (e.g., `documents/prd-<slug>.md`
+   or a path specified by the user). Do NOT only output the PRD in chat — always
+   save it to disk using the file write tool (Write, write_to_file, etc.).
 
 ## 3. PRD Template
 

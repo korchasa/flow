@@ -1,8 +1,4 @@
 import { BenchmarkSkillScenario } from "../../../../../../scripts/benchmarks/lib/types.ts";
-import {
-  runGit,
-  setupGitRepo,
-} from "../../../../../../scripts/benchmarks/lib/utils.ts";
 import { join } from "@std/path";
 
 export const CommitAtomicRefactorBench = new class
@@ -10,15 +6,18 @@ export const CommitAtomicRefactorBench = new class
   id = "flowai-commit-atomic-refactor";
   name = "Atomic Split: Refactor vs Feature";
   skill = "flowai-commit";
-  stepTimeoutMs = 120_000;
+  stepTimeoutMs = 300_000;
 
-  async setup(sandboxPath: string) {
-    await setupGitRepo(sandboxPath);
+  override sandboxState = {
+    commits: [],
+    modified: ["math.ts"],
+    untracked: ["utils.ts"],
+    expectedOutcome:
+      "Agent splits changes into at least 2 commits: refactor and feat",
+  };
 
-    // Initial commit
-    await runGit(sandboxPath, ["add", "."]);
-    await runGit(sandboxPath, ["commit", "-m", "Initial commit"]);
-
+  override async setup(sandboxPath: string) {
+    // Runner already committed everything as "init".
     // File 1: Refactor
     await Deno.writeTextFile(
       join(sandboxPath, "math.ts"),

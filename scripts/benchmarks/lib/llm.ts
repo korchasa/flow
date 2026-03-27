@@ -156,6 +156,9 @@ export async function cliChatCompletion(
     "json",
     "--no-session-persistence",
     "--verbose",
+    "--tools",
+    "StructuredOutput",
+    "--strict-mcp-config",
   ];
 
   if (systemMsg) {
@@ -166,21 +169,46 @@ export async function cliChatCompletion(
     args.push("--json-schema", JSON.stringify(config.jsonSchema));
   }
 
-  args.push(userMsg);
-
+  // Pass user message via stdin to avoid E2BIG when trace is large
+  const userMsgBytes = new TextEncoder().encode(userMsg).length;
+  if (userMsgBytes > 100_000) {
+    console.warn(
+      `  [llm] Large stdin payload: ${(userMsgBytes / 1024).toFixed(0)}KB`,
+    );
+  }
   const cmd = new Deno.Command("claude", {
     args,
+    stdin: "piped",
+    stdout: "piped",
+    stderr: "piped",
     env: { ...Deno.env.toObject(), CLAUDECODE: "" },
     signal,
   });
 
-  const output = await cmd.output();
+  const process = cmd.spawn();
+  const writer = process.stdin.getWriter();
+  await writer.write(new TextEncoder().encode(userMsg));
+  await writer.close();
+  const output = await process.output();
   const stdout = new TextDecoder().decode(output.stdout);
 
   if (!output.success) {
     const stderr = new TextDecoder().decode(output.stderr);
+    // Extract result event for better diagnostics
+    let resultInfo = "";
+    try {
+      const events = JSON.parse(stdout) as ClaudeCliEvent[];
+      const resultEvt = events.find((e) => e.type === "result");
+      if (resultEvt) {
+        resultInfo = ` result=${JSON.stringify(resultEvt).slice(0, 500)}`;
+      }
+    } catch (_) {
+      resultInfo = ` stdout_len=${stdout.length}`;
+    }
     throw new Error(
-      `Claude CLI failed (exit ${output.code}): ${stderr}`,
+      `Claude CLI failed (exit ${output.code}): stderr=${
+        stderr || "(empty)"
+      }${resultInfo}`,
     );
   }
 

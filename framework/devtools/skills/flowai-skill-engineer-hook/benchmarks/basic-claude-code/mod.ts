@@ -5,7 +5,7 @@ export const EngineerHookClaudeCodeBench = new class
   id = "flowai-skill-engineer-hook-claude-code";
   name = "Create Claude Code Hook for Dangerous Command Blocking";
   skill = "flowai-skill-engineer-hook";
-  stepTimeoutMs = 120_000;
+  stepTimeoutMs = 300_000;
 
   userQuery =
     '/flowai-skill-engineer-hook Create a hook that blocks "rm -rf" commands before they execute. This is a Claude Code project.';

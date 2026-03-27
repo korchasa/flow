@@ -15,7 +15,35 @@ export interface BenchmarkScenario {
   pack?: string;
 
   /**
+   * Sandbox state when the agent starts.
+   *
+   * Runner lifecycle:
+   *   1. Copy fixture files to sandbox
+   *   2. Copy framework to IDE config dir
+   *   3. `git init` + commit all framework/fixture files as "init"
+   *   4. Call `setup(sandboxPath)` — scenario creates its specific git state
+   *   5. Start agent
+   *
+   * setup() receives a sandbox with an initialized git repo where all
+   * framework and fixture files are already committed. It should create
+   * the desired git state on top (additional commits, modified files,
+   * untracked files, etc.).
+   */
+  sandboxState: {
+    /** Commits created by setup() on top of runner's "init" commit */
+    commits: Array<{ message: string; files: string[] }>;
+    /** Files left modified (tracked but changed) when agent starts */
+    modified?: string[];
+    /** Files left untracked (not in any commit) when agent starts */
+    untracked?: string[];
+    /** Expected outcome after agent finishes */
+    expectedOutcome: string;
+  };
+
+  /**
    * Setup the sandbox environment.
+   * Called AFTER runner initializes git with framework/fixture files committed.
+   * Must NOT call setupGitRepo() — git is already initialized.
    * @param sandboxPath Absolute path to the temporary sandbox directory
    */
   setup: (sandboxPath: string) => Promise<void>;
@@ -93,6 +121,12 @@ export abstract class BenchmarkSkillScenario implements BenchmarkScenario {
   abstract skill: string;
   abstract userQuery: string;
   abstract checklist: BenchmarkChecklistItem[];
+
+  /** Default: no setup changes, clean state. Override in subclass. */
+  sandboxState: BenchmarkScenario["sandboxState"] = {
+    commits: [],
+    expectedOutcome: "Agent completes the task successfully",
+  };
 
   get targetAgentPath(): string {
     // Scan pack structure: framework/<pack>/skills/<skill>/SKILL.md

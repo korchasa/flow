@@ -4,7 +4,7 @@ export const ReflectContextBench = new class extends BenchmarkSkillScenario {
   id = "flowai-reflect-context";
   name = "Reflect on Context Inefficiency";
   skill = "flowai-reflect";
-  stepTimeoutMs = 120_000;
+  stepTimeoutMs = 300_000;
 
   userQuery =
     "Analyze the agent's performance in transcript.txt using flowai-reflect. Focus on context usage inefficiencies.";

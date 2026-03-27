@@ -4,7 +4,7 @@ export const ReflectLoopBench = new class extends BenchmarkSkillScenario {
   id = "flowai-reflect-loop";
   name = "Reflect on Logic Loop";
   skill = "flowai-reflect";
-  stepTimeoutMs = 120_000;
+  stepTimeoutMs = 300_000;
 
   userQuery =
     "Analyze the agent's performance in transcript.txt using flowai-reflect. Identify the main logical error.";

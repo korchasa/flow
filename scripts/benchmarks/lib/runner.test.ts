@@ -36,6 +36,11 @@ Deno.test("Runner - Basic Scenario Execution", async () => {
     id: "test-scenario",
     name: "Test Scenario",
     targetAgentPath: agentPath,
+    sandboxState: {
+      commits: [],
+      modified: ["test.txt"],
+      expectedOutcome: "Agent modifies test.txt content",
+    },
     setup: async (sandbox) => {
       await Deno.writeTextFile(join(sandbox, "test.txt"), "initial");
     },
@@ -90,6 +95,10 @@ Deno.test("Runner - Fixture Copying", async () => {
     name: "Fixture Test",
     targetAgentPath: agentPath,
     fixturePath: fixtureDir,
+    sandboxState: {
+      commits: [],
+      expectedOutcome: "Fixture files are accessible in sandbox",
+    },
     setup: async () => {},
     userQuery: "Say hello",
     checklist: [],
@@ -136,6 +145,10 @@ Deno.test("Runner - AGENTS.md Fallback", async () => {
     id: "test-no-agents-md",
     name: "No AGENTS.md Test",
     targetAgentPath: agentPath,
+    sandboxState: {
+      commits: [],
+      expectedOutcome: "Agent uses minimal default AGENTS.md",
+    },
     setup: async () => {},
     userQuery: "Say hello",
     checklist: [],

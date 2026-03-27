@@ -1,27 +1,26 @@
 import { BenchmarkSkillScenario } from "../../../../../../scripts/benchmarks/lib/types.ts";
-import {
-  runGit,
-  setupGitRepo,
-} from "../../../../../../scripts/benchmarks/lib/utils.ts";
+import { runGit } from "../../../../../../scripts/benchmarks/lib/utils.ts";
 
 export const RejectStopsBench = new class extends BenchmarkSkillScenario {
   id = "flowai-review-and-commit-reject";
   name = "Review Rejects and Stops Without Commit";
   skill = "flowai-review-and-commit";
   maxSteps = 5;
-  stepTimeoutMs = 180_000;
+  stepTimeoutMs = 420_000;
   interactive = true;
 
-  override async setup(sandboxPath: string) {
-    await setupGitRepo(sandboxPath);
+  override sandboxState = {
+    commits: [{ message: "Remove calc.ts from tracking", files: ["calc.ts"] }],
+    untracked: ["calc.ts"],
+    expectedOutcome:
+      "Agent reviews untracked calc.ts, rejects due to missing error handling, does not commit",
+  };
 
-    // Initial commit with README stating division-by-zero error handling is required
-    await runGit(sandboxPath, ["add", "README.md", "AGENTS.md"]);
-    await runGit(sandboxPath, [
-      "commit",
-      "-m",
-      "Initial commit with calculator spec",
-    ]);
+  override async setup(sandboxPath: string) {
+    // Runner already committed all files (including calc.ts) as "init".
+    // Remove calc.ts from index to make it untracked, keeping the working copy.
+    await runGit(sandboxPath, ["rm", "--cached", "calc.ts"]);
+    await runGit(sandboxPath, ["commit", "-m", "Remove calc.ts from tracking"]);
 
     // calc.ts implements divide(a, b) as a / b — no zero check, no error handling.
     // README promises error handling but code lacks it → phantom completion → Request Changes.

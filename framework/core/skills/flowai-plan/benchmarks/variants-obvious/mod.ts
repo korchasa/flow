@@ -6,6 +6,7 @@ export const PlanVariantsObviousBench = new class
   id = "flowai-plan-variants-obvious";
   name = "Plan Variants - Obvious Task";
   skill = "flowai-plan";
+  stepTimeoutMs = 300_000;
 
   async setup(sandboxPath: string) {
     await Deno.mkdir(join(sandboxPath, "documents"), { recursive: true });

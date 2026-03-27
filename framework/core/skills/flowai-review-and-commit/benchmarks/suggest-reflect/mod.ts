@@ -1,30 +1,35 @@
-import { join } from "@std/path";
 import { BenchmarkSkillScenario } from "../../../../../../scripts/benchmarks/lib/types.ts";
-import {
-  runGit,
-  setupGitRepo,
-} from "../../../../../../scripts/benchmarks/lib/utils.ts";
+import { runGit } from "../../../../../../scripts/benchmarks/lib/utils.ts";
 
 export const SuggestReflectBench = new class extends BenchmarkSkillScenario {
   id = "flowai-review-and-commit-suggest-reflect";
   name = "Suggest Reflect After Complex Session";
   skill = "flowai-review-and-commit";
   maxSteps = 25;
-  stepTimeoutMs = 180_000;
+  stepTimeoutMs = 420_000;
   interactive = true;
 
+  override sandboxState = {
+    commits: [{
+      message: "Remove utils.ts from tracking",
+      files: ["utils.ts"],
+    }],
+    untracked: ["utils.ts"],
+    expectedOutcome:
+      "Agent reviews untracked utils.ts, approves, commits, and suggests /flowai-reflect due to complex session",
+  };
+
   override async setup(sandboxPath: string) {
-    await setupGitRepo(sandboxPath);
+    // Runner already committed all files (including utils.ts) as "init".
+    // Remove utils.ts from index to make it untracked, keeping the working copy.
+    await runGit(sandboxPath, ["rm", "--cached", "utils.ts"]);
+    await runGit(sandboxPath, [
+      "commit",
+      "-m",
+      "Remove utils.ts from tracking",
+    ]);
 
-    await Deno.writeTextFile(
-      join(sandboxPath, ".gitignore"),
-      ".claude/\n.cursor/\n",
-    );
-
-    await runGit(sandboxPath, ["add", "README.md", "AGENTS.md", ".gitignore"]);
-    await runGit(sandboxPath, ["commit", "-m", "Initial commit"]);
-
-    // utils.ts is untracked — agent will review and commit it
+    // utils.ts is now untracked — agent will review and commit it
   }
 
   userQuery =

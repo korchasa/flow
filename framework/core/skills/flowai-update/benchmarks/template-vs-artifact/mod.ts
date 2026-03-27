@@ -1,9 +1,6 @@
 import { join } from "@std/path";
 import { BenchmarkSkillScenario } from "../../../../../../scripts/benchmarks/lib/types.ts";
-import {
-  runGit,
-  setupGitRepo,
-} from "../../../../../../scripts/benchmarks/lib/utils.ts";
+import { runGit } from "../../../../../../scripts/benchmarks/lib/utils.ts";
 
 /**
  * Tests that the agent compares templates against actual project artifacts,
@@ -30,6 +27,7 @@ export const FlowUpdateTemplateVsArtifactBench = new class
   name =
     "Compares templates against project artifacts (not just template git diff)";
   skill = "flowai-update";
+  stepTimeoutMs = 300_000;
 
   maxSteps = 25;
 
@@ -58,9 +56,35 @@ export const FlowUpdateTemplateVsArtifactBench = new class
 4. **CHECK**: Run check command. Fix all.
 `;
 
-  override async setup(sandboxPath: string) {
-    await setupGitRepo(sandboxPath);
+  override sandboxState = {
+    commits: [
+      {
+        message: "Initial sync (baseline)",
+        files: [
+          "documents/AGENTS.md",
+          "scripts/AGENTS.md",
+          ".claude/skills/flowai-init/assets/AGENTS.template.md",
+          ".claude/skills/flowai-init/assets/AGENTS.documents.template.md",
+          ".claude/skills/flowai-init/assets/AGENTS.scripts.template.md",
+          ".claude/skills/flowai-reflect/SKILL.md",
+          ".claude/skills/flowai-review/SKILL.md",
+          ".claude/skills/flowai-commit/SKILL.md",
+        ],
+      },
+    ],
+    modified: [
+      ".claude/skills/flowai-init/assets/AGENTS.template.md",
+      ".claude/skills/flowai-init/assets/AGENTS.documents.template.md",
+      ".claude/skills/flowai-init/assets/AGENTS.scripts.template.md",
+      ".claude/skills/flowai-reflect/SKILL.md",
+      ".claude/skills/flowai-review/SKILL.md",
+      ".claude/skills/flowai-commit/SKILL.md",
+    ],
+    expectedOutcome:
+      "Agent compares templates against project artifacts (not just git diff), finds missing Proactive Resolution rule in AGENTS.md, proposes adding it",
+  };
 
+  override async setup(sandboxPath: string) {
     // --- Create project artifacts ---
     // documents/AGENTS.md (matches template — no migration needed)
     const docsDir = join(sandboxPath, "documents");

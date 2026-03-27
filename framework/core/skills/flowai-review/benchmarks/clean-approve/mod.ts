@@ -1,25 +1,35 @@
 import { BenchmarkSkillScenario } from "../../../../../../scripts/benchmarks/lib/types.ts";
-import {
-  runGit,
-  setupGitRepo,
-} from "../../../../../../scripts/benchmarks/lib/utils.ts";
+import { runGit } from "../../../../../../scripts/benchmarks/lib/utils.ts";
 
 export const CleanApproveBench = new class extends BenchmarkSkillScenario {
   id = "flowai-review-clean-approve";
   name = "Review approves clean changes";
   skill = "flowai-review";
   maxSteps = 15;
-  stepTimeoutMs = 180_000;
+  stepTimeoutMs = 420_000;
   interactive = true;
 
+  override sandboxState = {
+    commits: [{
+      message: "Remove strings.ts from tracking",
+      files: ["strings.ts"],
+    }],
+    untracked: ["strings.ts"],
+    expectedOutcome:
+      "Agent reviews untracked strings.ts and approves clean code",
+  };
+
   override async setup(sandboxPath: string) {
-    await setupGitRepo(sandboxPath);
+    // Runner already committed all files (including strings.ts) as "init".
+    // Remove strings.ts from index to make it untracked, keeping the working copy.
+    await runGit(sandboxPath, ["rm", "--cached", "strings.ts"]);
+    await runGit(sandboxPath, [
+      "commit",
+      "-m",
+      "Remove strings.ts from tracking",
+    ]);
 
-    // Initial commit with README and AGENTS.md
-    await runGit(sandboxPath, ["add", "README.md", "AGENTS.md"]);
-    await runGit(sandboxPath, ["commit", "-m", "Initial commit"]);
-
-    // strings.ts is untracked — the agent should review it
+    // strings.ts is now untracked — the agent should review it
   }
 
   userQuery = "/flowai-review Review the added capitalize function";

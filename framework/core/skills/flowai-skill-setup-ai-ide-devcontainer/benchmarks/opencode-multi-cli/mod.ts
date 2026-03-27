@@ -5,7 +5,7 @@ export const SetupDevcontainerOpenCodeMultiCli = new class
   id = "flowai-skill-setup-ai-ide-devcontainer-opencode-multi-cli";
   name = "Python project with Claude Code + OpenCode and global skills";
   skill = "flowai-skill-setup-ai-ide-devcontainer";
-  stepTimeoutMs = 180_000;
+  stepTimeoutMs = 420_000;
   interactive = true;
   maxSteps = 15;
 

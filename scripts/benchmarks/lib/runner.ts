@@ -244,13 +244,7 @@ export async function runScenario(
       await Deno.writeTextFile(join(sandboxPath, "AGENTS.md"), agentsMarkdown);
     }
 
-    await scenario.setup(sandboxPath);
-
-    // 3. Run Agent (High-Level Lifecycle)
-    console.log("  Starting agent interaction...");
-    const start = performance.now();
-
-    // Setup mocks using IDE-specific hooks mechanism
+    // Setup mocks using IDE-specific hooks mechanism (before git init so hooks are committed)
     if (scenario.mocks && Object.keys(scenario.mocks).length > 0) {
       await adapter.setupMocks(sandboxPath, scenario.mocks);
       console.log(
@@ -260,8 +254,8 @@ export async function runScenario(
       );
     }
 
-    // Initialize an isolated git repo with all sandbox content committed,
-    // so the agent cannot escape into the parent project and starts with clean status
+    // Initialize an isolated git repo with all framework/fixture/mock files committed.
+    // This runs BEFORE setup() so scenarios can create specific git state on top.
     for (
       const args of [
         ["init"],
@@ -280,6 +274,13 @@ export async function runScenario(
       await cmd.output();
     }
 
+    // Scenario-specific setup: creates commits, modified/untracked files on top of "init"
+    await scenario.setup(sandboxPath);
+
+    // 3. Run Agent (High-Level Lifecycle)
+    console.log("  Starting agent interaction...");
+    const start = performance.now();
+
     // Prepare Environment
     const fullPrompt = scenario.userQuery;
 
@@ -296,7 +297,7 @@ export async function runScenario(
       model: options.agentModel,
       prompt: fullPrompt,
       maxSteps: scenario.maxSteps || 10,
-      stepTimeout: scenario.stepTimeoutMs || 60000,
+      stepTimeout: scenario.stepTimeoutMs || 300000,
       adapter,
     });
 
@@ -380,13 +381,24 @@ export async function runScenario(
 
     await tracer.logEvidence(traceId, statusStr, logStr);
 
+    // Truncate large sections to stay within judge model context limits.
+    // Keep start + end of logs (results are usually at the end).
+    const maxLogsLen = 150_000;
+    let truncatedLogs = logs;
+    if (logs.length > maxLogsLen) {
+      const half = Math.floor(maxLogsLen / 2);
+      truncatedLogs = logs.slice(0, half) +
+        "\n...[TRUNCATED " +
+        ((logs.length - maxLogsLen) / 1024).toFixed(0) +
+        "KB]...\n" +
+        logs.slice(-half);
+    }
+    const maxFilesLen = 100_000;
+    const truncatedFiles = generatedFiles.length > maxFilesLen
+      ? generatedFiles.slice(0, maxFilesLen) + "\n...[TRUNCATED]..."
+      : generatedFiles;
+
     const evidence = `
---- AGENT LOGS ---
-${logs}
-
---- RAW PTY LOGS ---
-${logs}
-
 --- FINAL GIT STATUS ---
 ${statusStr}
 
@@ -397,15 +409,15 @@ ${logStr}
 ${whiteboardContent}
 
 --- GENERATED FILES ---
-${generatedFiles}
+${truncatedFiles}
     `;
 
     // 6. Judge
     console.log("  Judging results...");
     const judgeOutput = await judge(
       scenario.userQuery,
-      logs, // The conversation log (stdout of agent)
-      evidence, // The file/system state changes
+      truncatedLogs, // The conversation log (truncated to fit judge context)
+      evidence, // The file/system state changes (also contains truncated logs)
       scenario.checklist,
       options.judgeConfig,
     );

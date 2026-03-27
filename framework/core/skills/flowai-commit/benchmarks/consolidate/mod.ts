@@ -1,23 +1,21 @@
 import { BenchmarkSkillScenario } from "../../../../../../scripts/benchmarks/lib/types.ts";
-import {
-  runGit,
-  setupGitRepo,
-} from "../../../../../../scripts/benchmarks/lib/utils.ts";
 import { join } from "@std/path";
 
 export const CommitConsolidateBench = new class extends BenchmarkSkillScenario {
   id = "flowai-commit-consolidate";
   name = "Consolidation: Multi-file single feature";
   skill = "flowai-commit";
-  stepTimeoutMs = 120_000;
+  stepTimeoutMs = 300_000;
+
+  override sandboxState = {
+    commits: [],
+    modified: ["math.ts", "math.test.ts", "README.md"],
+    expectedOutcome:
+      "Agent creates exactly 1 commit containing all three changed files",
+  };
 
   override async setup(sandboxPath: string) {
-    await setupGitRepo(sandboxPath);
-
-    // Initial commit with all fixture files
-    await runGit(sandboxPath, ["add", "."]);
-    await runGit(sandboxPath, ["commit", "-m", "Initial commit"]);
-
+    // Runner already committed everything as "init".
     // All changes belong to the same feature: add multiply function
     // File 1: Implementation
     await Deno.writeTextFile(

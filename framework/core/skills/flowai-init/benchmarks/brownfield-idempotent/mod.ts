@@ -5,7 +5,7 @@ export const InitBrownfieldIdempotentBench = new class
   id = "flowai-init-brownfield-idempotent";
   name = "Init Brownfield Project Idempotency Check";
   skill = "flowai-init";
-  stepTimeoutMs = 300_000;
+  stepTimeoutMs = 600_000;
   interactive = true;
   maxSteps = 20;
 

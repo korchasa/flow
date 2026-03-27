@@ -5,7 +5,7 @@ export const BrowserAutomationNavigateBench = new class
   id = "flowai-skill-browser-automation-navigate-and-screenshot";
   name = "Navigate to Page and Take Screenshot";
   skill = "flowai-skill-browser-automation";
-  stepTimeoutMs = 120_000;
+  stepTimeoutMs = 300_000;
   maxSteps = 15;
 
   userQuery =

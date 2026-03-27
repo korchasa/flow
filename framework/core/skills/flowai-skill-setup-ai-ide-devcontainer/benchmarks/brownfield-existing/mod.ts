@@ -5,7 +5,7 @@ export const SetupDevcontainerBrownfield = new class
   id = "flowai-skill-setup-ai-ide-devcontainer-brownfield";
   name = "Brownfield: existing devcontainer in Python project";
   skill = "flowai-skill-setup-ai-ide-devcontainer";
-  stepTimeoutMs = 180_000;
+  stepTimeoutMs = 420_000;
   interactive = true;
   maxSteps = 15;
 

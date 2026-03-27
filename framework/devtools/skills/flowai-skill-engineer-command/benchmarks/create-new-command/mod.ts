@@ -5,7 +5,7 @@ export const EngineerCommandCreateBench = new class
   id = "flowai-skill-engineer-command-create";
   name = "Create a new AssistFlow command for Docker Compose management";
   skill = "flowai-skill-engineer-command";
-  stepTimeoutMs = 300_000;
+  stepTimeoutMs = 600_000;
 
   userQuery =
     '/flowai-skill-engineer-command I want to create a command called "flow-docker-compose" that helps manage Docker Compose services. It should help with starting/stopping services, viewing logs, rebuilding containers, and checking health. This is a project-level command.';

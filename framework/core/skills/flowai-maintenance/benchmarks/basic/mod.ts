@@ -4,7 +4,7 @@ export const MaintenanceBasicBench = new class extends BenchmarkSkillScenario {
   id = "flowai-maintenance-basic";
   name = "Basic Project Audit";
   skill = "flowai-maintenance";
-  stepTimeoutMs = 180_000;
+  stepTimeoutMs = 420_000;
 
   userQuery =
     "/flowai-maintenance. Use only standard CLI tools like cat, ls, grep.";

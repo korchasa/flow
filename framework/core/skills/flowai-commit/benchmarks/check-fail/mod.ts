@@ -1,26 +1,23 @@
+import { join } from "@std/path";
 import { BenchmarkSkillScenario } from "../../../../../../scripts/benchmarks/lib/types.ts";
-import {
-  runGit,
-  setupGitRepo,
-} from "../../../../../../scripts/benchmarks/lib/utils.ts";
 
 export const CommitCheckFailBench = new class extends BenchmarkSkillScenario {
   id = "flowai-commit-check-fail";
   name = "Pre-flight Check Failure";
   skill = "flowai-commit";
+  stepTimeoutMs = 300_000;
 
-  async setup(sandboxPath: string) {
-    await setupGitRepo(sandboxPath);
+  override sandboxState = {
+    commits: [],
+    modified: ["file.ts"],
+    expectedOutcome:
+      "Agent runs 'deno task check', it fails, and agent aborts the commit",
+  };
 
-    // Initial commit
-    await runGit(sandboxPath, ["add", "."]);
-    await runGit(sandboxPath, ["commit", "-m", "Initial commit"]);
-
-    // Make a change
-    await Deno.writeTextFile(
-      new URL("file.ts", `file://${sandboxPath}/`).pathname,
-      "const x = 2;",
-    );
+  override async setup(sandboxPath: string) {
+    // Runner already committed everything as "init".
+    // Modify file.ts to create a tracked-but-changed state.
+    await Deno.writeTextFile(join(sandboxPath, "file.ts"), "const x = 2;");
   }
 
   userQuery = "/flowai-commit Commit changes.";

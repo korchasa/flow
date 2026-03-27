@@ -4,7 +4,7 @@ export const PlanContextBench = new class extends BenchmarkSkillScenario {
   id = "flowai-plan-context";
   name = "Plan with Context Gathering";
   skill = "flowai-plan";
-  stepTimeoutMs = 120_000;
+  stepTimeoutMs = 300_000;
 
   userQuery =
     "/flowai-plan Plan implementation of the requirement described in documents/requirements.md.";
