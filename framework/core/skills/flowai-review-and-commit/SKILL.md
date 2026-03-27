@@ -78,6 +78,10 @@ the other.
      this diff (distinguish from pre-existing ones).
    - **Dead code**: Commented-out blocks, unused imports/variables/functions
      added in this diff.
+   - **Deleted directories**: If the diff deletes an entire skill, agent, or
+     module directory (not just individual files), flag as
+     `[warning] Entire directory deleted — confirm intentional` and ask the
+     user to verify before proceeding.
 
 5. **Code Review: Design & Architecture**
    - **Responsibility**: Does each changed file/module stay within its stated
