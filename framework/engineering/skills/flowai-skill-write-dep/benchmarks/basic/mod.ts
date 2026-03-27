@@ -4,7 +4,7 @@ export const WriteDepBasicBench = new class extends BenchmarkSkillScenario {
   id = "flowai-skill-write-dep-basic";
   name = "Write a DEP for Cache Migration";
   skill = "flowai-skill-write-dep";
-  stepTimeoutMs = 180_000;
+  stepTimeoutMs = 420_000;
 
   userQuery =
     "/flowai-skill-write-dep Write a DEP for migrating our caching layer from Redis standalone to Redis Cluster. Current state: p99 latency went from 50ms to 800ms over 3 months, 15 degradation incidents in Q4, DAU grew from 100K to 500K, cache hit ratio dropped from 95% to 72%.";

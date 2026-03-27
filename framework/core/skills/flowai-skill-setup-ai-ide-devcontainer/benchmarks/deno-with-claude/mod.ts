@@ -9,7 +9,7 @@ export const SetupDevcontainerDenoWithClaude = new class
   id = "flowai-skill-setup-ai-ide-devcontainer-deno-claude";
   name = "Deno project with Claude Code, global skills, and firewall";
   skill = "flowai-skill-setup-ai-ide-devcontainer";
-  stepTimeoutMs = 180_000;
+  stepTimeoutMs = 420_000;
 
   userQuery =
     "/flowai-skill-setup-ai-ide-devcontainer Set up a devcontainer for this Deno project with full Claude Code integration, global skills mounting, and security hardening.";

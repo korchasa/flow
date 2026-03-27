@@ -1,9 +1,5 @@
 import { join } from "@std/path";
 import { BenchmarkSkillScenario } from "../../../../../../scripts/benchmarks/lib/types.ts";
-import {
-  runGit,
-  setupGitRepo,
-} from "../../../../../../scripts/benchmarks/lib/utils.ts";
 
 export const ReviewAndCommitAutoDocsBench = new class
   extends BenchmarkSkillScenario {
@@ -11,32 +7,18 @@ export const ReviewAndCommitAutoDocsBench = new class
   name = "Autonomous Documentation Update after Review";
   skill = "flowai-review-and-commit";
   maxSteps = 20;
-  stepTimeoutMs = 180_000;
+  stepTimeoutMs = 420_000;
   interactive = true;
 
+  override sandboxState = {
+    commits: [],
+    modified: ["math.ts"],
+    expectedOutcome:
+      "Agent reviews modified math.ts, updates docs to reflect subtract, and commits all",
+  };
+
   override async setup(sandboxPath: string) {
-    await setupGitRepo(sandboxPath);
-
-    await Deno.writeTextFile(
-      join(sandboxPath, ".gitignore"),
-      ".claude/\n.cursor/\n",
-    );
-
-    // Initial commit: math.ts with only `add`, plus documents describing it
-    const initialMath = "export const add = (a: number, b: number) => a + b;\n";
-    await Deno.writeTextFile(join(sandboxPath, "math.ts"), initialMath);
-
-    await runGit(sandboxPath, [
-      "add",
-      "README.md",
-      "AGENTS.md",
-      ".gitignore",
-      "math.ts",
-      "documents/requirements.md",
-      "documents/design.md",
-    ]);
-    await runGit(sandboxPath, ["commit", "-m", "Initial commit"]);
-
+    // Runner already committed all files (including math.ts with only `add`) as "init".
     // Now add `subtract` function — documents are outdated
     const updatedMath =
       "export const add = (a: number, b: number) => a + b;\nexport const subtract = (a: number, b: number) => a - b;\n";

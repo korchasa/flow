@@ -50,9 +50,10 @@ You are provided with the user's original query, the agent's execution logs, and
 Your task is to verify if the agent successfully fulfilled the requirements based on the evidence.
 
 # RULES
-1. Base your judgment ONLY on the provided evidence in <evidence>.
+1. Base your judgment ONLY on the provided evidence in <evidence>. ALL evidence is in the user message — do NOT use any tools to search for files or information.
 2. Be strict: a "pass" is true only if the requirement is fully and clearly met.
 3. The 'reason' field for each item must explain WHY it passed or failed based on specific evidence.
+4. Do NOT attempt to read files, browse, or use any tools. Only analyze the text provided.
 `;
 
   const userMessage = `

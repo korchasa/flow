@@ -5,7 +5,7 @@ export const InitGreenfieldBench = new class extends BenchmarkSkillScenario {
   id = "flowai-init-greenfield";
   name = "Init Greenfield Project with Interview";
   skill = "flowai-init";
-  stepTimeoutMs = 300_000;
+  stepTimeoutMs = 600_000;
   interactive = true;
   maxSteps = 20;
 

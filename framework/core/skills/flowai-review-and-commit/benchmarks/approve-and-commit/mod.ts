@@ -1,32 +1,35 @@
-import { join } from "@std/path";
 import { BenchmarkSkillScenario } from "../../../../../../scripts/benchmarks/lib/types.ts";
-import {
-  runGit,
-  setupGitRepo,
-} from "../../../../../../scripts/benchmarks/lib/utils.ts";
+import { runGit } from "../../../../../../scripts/benchmarks/lib/utils.ts";
 
 export const ApproveAndCommitBench = new class extends BenchmarkSkillScenario {
   id = "flowai-review-and-commit-approve";
   name = "Review Approve then Commit";
   skill = "flowai-review-and-commit";
   maxSteps = 20;
-  stepTimeoutMs = 180_000;
+  stepTimeoutMs = 420_000;
   interactive = true;
 
+  override sandboxState = {
+    commits: [{
+      message: "Remove utils.ts from tracking",
+      files: ["utils.ts"],
+    }],
+    untracked: ["utils.ts"],
+    expectedOutcome:
+      "Agent reviews untracked utils.ts, approves, and commits it",
+  };
+
   override async setup(sandboxPath: string) {
-    await setupGitRepo(sandboxPath);
+    // Runner already committed all files (including utils.ts) as "init".
+    // Remove utils.ts from index to make it untracked, keeping the working copy.
+    await runGit(sandboxPath, ["rm", "--cached", "utils.ts"]);
+    await runGit(sandboxPath, [
+      "commit",
+      "-m",
+      "Remove utils.ts from tracking",
+    ]);
 
-    // Add .gitignore to exclude IDE config dir from git status
-    await Deno.writeTextFile(
-      join(sandboxPath, ".gitignore"),
-      ".claude/\n.cursor/\n",
-    );
-
-    // Initial commit with README, AGENTS.md, and .gitignore
-    await runGit(sandboxPath, ["add", "README.md", "AGENTS.md", ".gitignore"]);
-    await runGit(sandboxPath, ["commit", "-m", "Initial commit"]);
-
-    // utils.ts is in sandbox but NOT in git — untracked file for the agent to review and commit
+    // utils.ts is now untracked — for the agent to review and commit
   }
 
   userQuery =

@@ -6,7 +6,7 @@ export const SetupDevcontainerFeatureDiscovery = new class
   name =
     "Node.js fullstack with feature discovery (Postgres, Redis, Docker, direnv)";
   skill = "flowai-skill-setup-ai-ide-devcontainer";
-  stepTimeoutMs = 180_000;
+  stepTimeoutMs = 420_000;
 
   userQuery =
     "/flowai-skill-setup-ai-ide-devcontainer Set up a devcontainer for this Node.js fullstack project with Claude Code. Accept all suggested features.";

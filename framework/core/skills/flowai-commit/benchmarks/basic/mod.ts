@@ -1,30 +1,28 @@
-import { join } from "@std/path";
 import { BenchmarkSkillScenario } from "../../../../../../scripts/benchmarks/lib/types.ts";
-import {
-  runGit,
-  setupGitRepo,
-} from "../../../../../../scripts/benchmarks/lib/utils.ts";
+import { runGit } from "../../../../../../scripts/benchmarks/lib/utils.ts";
 
 export const CommitBasicBench = new class extends BenchmarkSkillScenario {
   id = "flowai-commit-basic";
   name = "Basic Feature Commit";
   skill = "flowai-commit";
+  stepTimeoutMs = 300_000;
+
+  override sandboxState = {
+    commits: [],
+    untracked: ["utils.ts"],
+    expectedOutcome:
+      "Agent commits utils.ts with a conventional commit message",
+  };
 
   override async setup(sandboxPath: string) {
-    await setupGitRepo(sandboxPath);
-
-    // Exclude IDE config dirs from git
-    await Deno.writeTextFile(
-      join(sandboxPath, ".gitignore"),
-      ".claude/\n.cursor/\n",
-    );
-
-    // Initial commit with README, AGENTS.md and .gitignore
-    await runGit(sandboxPath, ["add", "README.md", "AGENTS.md", ".gitignore"]);
-    await runGit(sandboxPath, ["commit", "-m", "Initial commit"]);
-
-    // utils.ts is already in sandbox but NOT in git yet.
-    // This makes it an untracked file, which is what the scenario expects.
+    // Runner already committed everything (including utils.ts) as "init".
+    // Remove utils.ts from index but keep the working copy — makes it untracked.
+    await runGit(sandboxPath, ["rm", "--cached", "utils.ts"]);
+    await runGit(sandboxPath, [
+      "commit",
+      "-m",
+      "Remove utils.ts from tracking",
+    ]);
   }
 
   userQuery =

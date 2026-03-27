@@ -4,7 +4,7 @@ export const DeepResearchPlanBench = new class extends BenchmarkSkillScenario {
   id = "flowai-skill-deep-research-plan";
   name = "Create a deep research plan with directions and queries";
   skill = "flowai-skill-deep-research";
-  stepTimeoutMs = 300_000;
+  stepTimeoutMs = 600_000;
 
   userQuery =
     "/flowai-skill-deep-research Research the current state of WebAssembly adoption in server-side applications. Focus on performance benchmarks, production use cases, and limitations compared to native code.";

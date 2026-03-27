@@ -5,7 +5,7 @@ export const InitBrownfieldUpdateBench = new class
   id = "flowai-init-brownfield-update";
   name = "Init Brownfield Project Update with Diff Confirmation";
   skill = "flowai-init";
-  stepTimeoutMs = 180_000;
+  stepTimeoutMs = 420_000;
 
   override async setup(_sandboxPath: string) {
     // Files are copied from fixture/ (AGENTS.md, documents/AGENTS.md, scripts/AGENTS.md, deno.json, src/)

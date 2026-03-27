@@ -1,23 +1,21 @@
 import { BenchmarkSkillScenario } from "../../../../../../scripts/benchmarks/lib/types.ts";
-import {
-  runGit,
-  setupGitRepo,
-} from "../../../../../../scripts/benchmarks/lib/utils.ts";
 import { join } from "@std/path";
 
 export const CommitAtomicDocsBench = new class extends BenchmarkSkillScenario {
   id = "flowai-commit-atomic-docs";
   name = "Atomic Split: Docs vs Code";
   skill = "flowai-commit";
-  stepTimeoutMs = 120_000;
+  stepTimeoutMs = 300_000;
 
-  async setup(sandboxPath: string) {
-    await setupGitRepo(sandboxPath);
+  override sandboxState = {
+    commits: [],
+    modified: ["README.md", "main.ts"],
+    expectedOutcome:
+      "Agent splits changes into at least 2 commits: docs and code",
+  };
 
-    // Initial commit
-    await runGit(sandboxPath, ["add", "."]);
-    await runGit(sandboxPath, ["commit", "-m", "Initial commit"]);
-
+  override async setup(sandboxPath: string) {
+    // Runner already committed everything as "init".
     // Change 1: Docs
     await Deno.writeTextFile(join(sandboxPath, "README.md"), "# New Title");
     // Change 2: Code

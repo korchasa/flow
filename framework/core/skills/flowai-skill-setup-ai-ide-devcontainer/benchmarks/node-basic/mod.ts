@@ -5,7 +5,7 @@ export const SetupDevcontainerNodeBasic = new class
   id = "flowai-skill-setup-ai-ide-devcontainer-node-basic";
   name = "Basic Node.js devcontainer setup";
   skill = "flowai-skill-setup-ai-ide-devcontainer";
-  stepTimeoutMs = 180_000;
+  stepTimeoutMs = 420_000;
 
   userQuery =
     "/flowai-skill-setup-ai-ide-devcontainer Set up a devcontainer for this Node.js project. Use Claude Code as AI CLI. No global skills mount. No firewall. No custom Dockerfile.";

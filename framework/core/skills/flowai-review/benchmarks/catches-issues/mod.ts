@@ -1,27 +1,26 @@
 import { BenchmarkSkillScenario } from "../../../../../../scripts/benchmarks/lib/types.ts";
-import {
-  runGit,
-  setupGitRepo,
-} from "../../../../../../scripts/benchmarks/lib/utils.ts";
+import { runGit } from "../../../../../../scripts/benchmarks/lib/utils.ts";
 
 export const CatchesIssuesBench = new class extends BenchmarkSkillScenario {
   id = "flowai-review-catches-issues";
   name = "Review catches code quality issues";
   skill = "flowai-review";
   maxSteps = 15;
-  stepTimeoutMs = 180_000;
+  stepTimeoutMs = 420_000;
   interactive = true;
 
-  override async setup(sandboxPath: string) {
-    await setupGitRepo(sandboxPath);
+  override sandboxState = {
+    commits: [{ message: "Remove auth.ts from tracking", files: ["auth.ts"] }],
+    untracked: ["auth.ts"],
+    expectedOutcome:
+      "Agent reviews untracked auth.ts and requests changes due to issues",
+  };
 
-    // Initial commit with README and AGENTS.md
-    await runGit(sandboxPath, ["add", "README.md", "AGENTS.md"]);
-    await runGit(sandboxPath, [
-      "commit",
-      "-m",
-      "Initial commit with auth spec",
-    ]);
+  override async setup(sandboxPath: string) {
+    // Runner already committed all files (including auth.ts) as "init".
+    // Remove auth.ts from index to make it untracked, keeping the working copy.
+    await runGit(sandboxPath, ["rm", "--cached", "auth.ts"]);
+    await runGit(sandboxPath, ["commit", "-m", "Remove auth.ts from tracking"]);
 
     // auth.ts has multiple issues:
     // - hardcoded secret

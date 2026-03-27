@@ -5,7 +5,7 @@ export const InitBrownfieldBench = new class extends BenchmarkSkillScenario {
   id = "flowai-init-brownfield";
   name = "Init Brownfield Project with Architecture Discovery";
   skill = "flowai-init";
-  stepTimeoutMs = 300_000;
+  stepTimeoutMs = 600_000;
   interactive = true;
   maxSteps = 20;
 

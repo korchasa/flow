@@ -1,9 +1,6 @@
 import { join } from "@std/path";
 import { BenchmarkSkillScenario } from "../../../../../../scripts/benchmarks/lib/types.ts";
-import {
-  runGit,
-  setupGitRepo,
-} from "../../../../../../scripts/benchmarks/lib/utils.ts";
+import { runGit } from "../../../../../../scripts/benchmarks/lib/utils.ts";
 
 /**
  * Tests that flowai-update skill instructs the agent to use `flowai sync`
@@ -21,6 +18,7 @@ export const FlowUpdateSyncCommandBench = new class
   id = "flowai-update-sync-command";
   name = "Uses `flowai sync` subcommand (not bare `flowai`) for syncing";
   skill = "flowai-update";
+  stepTimeoutMs = 300_000;
 
   maxSteps = 15;
 
@@ -37,7 +35,7 @@ export const FlowUpdateSyncCommandBench = new class
 `;
 
   // Mock flowai: bare command prints IDE message, `sync` subcommand succeeds
-  override mocks: Record<string, string> = {
+  mocks: Record<string, string> = {
     flowai: `#!/bin/bash
 if [ "$1" = "sync" ]; then
   echo "Sync plan:"
@@ -59,9 +57,18 @@ fi
 `,
   };
 
-  override async setup(sandboxPath: string) {
-    await setupGitRepo(sandboxPath);
+  override sandboxState = {
+    commits: [
+      {
+        message: "Initial commit",
+        files: [".flowai.yaml", ".claude/skills/"],
+      },
+    ],
+    expectedOutcome:
+      "Agent uses `flowai sync` subcommand (not bare `flowai`) to sync framework",
+  };
 
+  override async setup(sandboxPath: string) {
     // Create .flowai.yaml
     await Deno.writeTextFile(
       join(sandboxPath, ".flowai.yaml"),

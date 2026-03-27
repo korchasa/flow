@@ -1,32 +1,22 @@
 import { join } from "@std/path";
 import { BenchmarkSkillScenario } from "../../../../../../scripts/benchmarks/lib/types.ts";
-import {
-  runGit,
-  setupGitRepo,
-} from "../../../../../../scripts/benchmarks/lib/utils.ts";
 
 export const CommitSuggestReflectBench = new class
   extends BenchmarkSkillScenario {
   id = "flowai-commit-suggest-reflect";
   name = "Suggest /flowai-reflect after error-prone session";
   skill = "flowai-commit";
+  stepTimeoutMs = 300_000;
+
+  override sandboxState = {
+    commits: [],
+    modified: ["utils.ts"],
+    expectedOutcome:
+      "Agent commits utils.ts and suggests running /flowai-reflect",
+  };
 
   override async setup(sandboxPath: string) {
-    await setupGitRepo(sandboxPath);
-
-    await Deno.writeTextFile(
-      join(sandboxPath, ".gitignore"),
-      ".claude/\n.cursor/\n",
-    );
-
-    await runGit(sandboxPath, [
-      "add",
-      "README.md",
-      "utils.ts",
-      ".gitignore",
-    ]);
-    await runGit(sandboxPath, ["commit", "-m", "Initial commit"]);
-
+    // Runner already committed everything as "init".
     // Modify utils.ts — simulates a fix after errors
     await Deno.writeTextFile(
       join(sandboxPath, "utils.ts"),

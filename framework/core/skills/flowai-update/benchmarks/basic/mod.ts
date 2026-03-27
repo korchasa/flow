@@ -1,9 +1,6 @@
 import { join } from "@std/path";
 import { BenchmarkSkillScenario } from "../../../../../../scripts/benchmarks/lib/types.ts";
-import {
-  runGit,
-  setupGitRepo,
-} from "../../../../../../scripts/benchmarks/lib/utils.ts";
+import { runGit } from "../../../../../../scripts/benchmarks/lib/utils.ts";
 
 /**
  * Simulates a framework update where flowai-init's AGENTS.template.md gained a CHECK step.
@@ -22,6 +19,7 @@ export const FlowUpdateBasicBench = new class extends BenchmarkSkillScenario {
   id = "flowai-update-basic";
   name = "Detect framework changes and propose AGENTS.md migration";
   skill = "flowai-update";
+  stepTimeoutMs = 300_000;
 
   maxSteps = 20;
 
@@ -41,9 +39,19 @@ export const FlowUpdateBasicBench = new class extends BenchmarkSkillScenario {
 - Save plans to documents/whiteboards/
 `;
 
-  override async setup(sandboxPath: string) {
-    await setupGitRepo(sandboxPath);
+  override sandboxState = {
+    commits: [
+      {
+        message: "Initial sync (baseline)",
+        files: [".claude/skills/flowai-init/assets/AGENTS.template.md"],
+      },
+    ],
+    modified: [".claude/skills/flowai-init/assets/AGENTS.template.md"],
+    expectedOutcome:
+      "Agent detects template change, maps flowai-init to AGENTS.md, proposes adding CHECK step to TDD Flow section",
+  };
 
+  override async setup(sandboxPath: string) {
     // Runner has already copied framework to .claude/ and written AGENTS.md
     const templatePath = join(
       sandboxPath,

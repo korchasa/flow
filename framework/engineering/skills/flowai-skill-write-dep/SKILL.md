@@ -195,7 +195,12 @@ A brief description: what is proposed, why, and the expected result.
 6. **Success Metrics**
    - Define measurable criteria
    - Specify baseline and target
-   - Describe the measurement method </step_by_step>
+   - Describe the measurement method
+
+7. **Persist**
+   - MUST write the final DEP to a file (e.g., `documents/dep-<slug>.md`
+     or a path specified by the user). Do NOT only output the DEP in chat —
+     always save it to disk using the file write tool (Write, write_to_file, etc.). </step_by_step>
 
 # EXAMPLES
 

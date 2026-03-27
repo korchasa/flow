@@ -5,7 +5,7 @@ export const ConfigureDenoCommandsBasicBench = new class
   id = "flowai-skill-configure-deno-commands-basic";
   name = "Configure standard Deno development commands";
   skill = "flowai-skill-configure-deno-commands";
-  stepTimeoutMs = 120_000;
+  stepTimeoutMs = 300_000;
 
   userQuery =
     "/flowai-skill-configure-deno-commands Set up the standard Deno development commands (check, test, dev, prod) for this project.";

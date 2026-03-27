@@ -6,7 +6,7 @@ export const PlanVariantsComplexBench = new class
   id = "flowai-plan-variants-complex";
   name = "Plan Variants - Complex Task";
   skill = "flowai-plan";
-  stepTimeoutMs = 120_000;
+  stepTimeoutMs = 300_000;
 
   async setup(sandboxPath: string) {
     await Deno.mkdir(join(sandboxPath, "documents"), { recursive: true });

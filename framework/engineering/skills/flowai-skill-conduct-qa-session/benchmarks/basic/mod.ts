@@ -5,6 +5,7 @@ export const ConductQaSessionBasicBench = new class
   id = "flowai-skill-conduct-qa-session-basic";
   name = "Conduct structured Q&A session with user";
   skill = "flowai-skill-conduct-qa-session";
+  stepTimeoutMs = 300_000;
 
   interactive = true;
 

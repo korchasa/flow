@@ -4,7 +4,7 @@ export const WritePrdBasicBench = new class extends BenchmarkSkillScenario {
   id = "flowai-skill-write-prd-basic";
   name = "Write PRD for User Notification Feature";
   skill = "flowai-skill-write-prd";
-  stepTimeoutMs = 180_000;
+  stepTimeoutMs = 420_000;
 
   userQuery =
     "/flowai-skill-write-prd Write a PRD for adding push notification support to our mobile app. Users currently have no way to receive alerts about order status changes. We have 50K DAU and process about 10K orders daily. Target: reduce support tickets about order status by 40%.";

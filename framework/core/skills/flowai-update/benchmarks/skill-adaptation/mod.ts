@@ -1,9 +1,6 @@
 import { join } from "@std/path";
 import { BenchmarkSkillScenario } from "../../../../../../scripts/benchmarks/lib/types.ts";
-import {
-  runGit,
-  setupGitRepo,
-} from "../../../../../../scripts/benchmarks/lib/utils.ts";
+import { runGit } from "../../../../../../scripts/benchmarks/lib/utils.ts";
 
 /**
  * Tests that flowai-update adapts skills to the project after sync.
@@ -24,6 +21,7 @@ export const FlowUpdateSkillAdaptationBench = new class
   id = "flowai-update-skill-adaptation";
   name = "Adapt updated skills to project specifics after sync";
   skill = "flowai-update";
+  stepTimeoutMs = 300_000;
 
   maxSteps = 25;
 
@@ -73,9 +71,22 @@ fi
 `,
   };
 
-  override async setup(sandboxPath: string) {
-    await setupGitRepo(sandboxPath);
+  override sandboxState = {
+    commits: [
+      {
+        message: "Previous sync with adapted skills",
+        files: [
+          ".flowai.yaml",
+          ".claude/skills/flowai-commit/SKILL.md",
+        ],
+      },
+    ],
+    modified: [".claude/skills/flowai-commit/SKILL.md"],
+    expectedOutcome:
+      "Agent detects upstream skill update, merges new rule (sign-off) while preserving Python/pytest adaptations and adapted frontmatter",
+  };
 
+  override async setup(sandboxPath: string) {
     // Create .flowai.yaml
     await Deno.writeTextFile(
       join(sandboxPath, ".flowai.yaml"),
