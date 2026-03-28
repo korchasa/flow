@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.4.1](https://github.com/korchasa/flowai/compare/v0.4.0...v0.4.1) (2026-03-28)
+
+
+### Bug Fixes
+
+* **ci:** stop tracking generated flowai-hooks.json ([b87a625](https://github.com/korchasa/flowai/commit/b87a625318fa788b96aff9542353fb4ef234d64f))
+* **cli:** run sync integration test in temp dir to avoid side effects ([b91ca46](https://github.com/korchasa/flowai/commit/b91ca465017d849fc99a9c8b81819f6efb7a4f66))
+
 ### [0.3.9](https://github.com/korchasa/flowai/compare/v0.3.8...v0.3.9) (2026-03-28)
 
 
