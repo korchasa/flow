@@ -9,6 +9,7 @@ framework/**/flowai-skill-example/
 .env
 __pycache__/
 _research_tmp/
+.claude/flowai-hooks.json
 
 # Generated artifacts (cli)
 cli/src/bundled.json
