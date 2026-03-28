@@ -8,6 +8,7 @@
 3. **Software Design Specification (SDS)** (`documents/design.md`): "How". Implementation details. Depends on SRS.
 4. **Whiteboards** (`documents/whiteboards/<YYYY-MM-DD>-<slug>.md`): Temporary plans/notes. One file per task/session.
 5. **IDE Differences** (`documents/ides-difference.md`): Reference. Cross-IDE capability comparison (primitives, hooks, agents, MCP). Informs FR-14–FR-17.
+6. **`README.md`**: Public-facing overview. Derived from AGENTS.md + SRS + SDS. Installation, usage, pack/skill catalog, project structure. Keep in sync with framework state.
 
 ## Rules
 - **STRICT COMPLIANCE**: AGENTS.md, SRS, SDS.
