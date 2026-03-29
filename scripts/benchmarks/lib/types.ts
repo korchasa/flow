@@ -171,6 +171,48 @@ export abstract class BenchmarkSkillScenario implements BenchmarkScenario {
   }
 }
 
+/**
+ * Base class for scenarios that target a specific agent from the framework.
+ * Automatically builds targetAgentPath from the agent ID.
+ *
+ * Benchmark location: framework/<pack>/agents/<agent-name>/benchmarks/<scenario>/mod.ts
+ * (co-located next to the flat agent .md file)
+ */
+export abstract class BenchmarkAgentScenario implements BenchmarkScenario {
+  abstract id: string;
+  abstract name: string;
+  abstract agent: string;
+  abstract userQuery: string;
+  abstract checklist: BenchmarkChecklistItem[];
+  abstract agentsTemplateVars: BenchmarkScenario["agentsTemplateVars"];
+
+  /** Default: no setup changes, clean state. Override in subclass. */
+  sandboxState: BenchmarkScenario["sandboxState"] = {
+    commits: [],
+    expectedOutcome: "Agent completes the task successfully",
+  };
+
+  get targetAgentPath(): string {
+    // Scan pack structure: framework/<pack>/agents/<agent>.md
+    try {
+      for (const pack of Deno.readDirSync("framework")) {
+        if (!pack.isDirectory) continue;
+        const agentPath = `framework/${pack.name}/agents/${this.agent}.md`;
+        try {
+          Deno.statSync(agentPath);
+          return agentPath;
+        } catch { /* not in this pack */ }
+      }
+    } catch { /* framework dir not found */ }
+    // Fallback for legacy flat structure
+    return `framework/agents/${this.agent}.md`;
+  }
+
+  setup(_sandboxPath: string): Promise<void> {
+    return Promise.resolve();
+  }
+}
+
 export interface BenchmarkResult {
   scenarioId: string;
   success: boolean;

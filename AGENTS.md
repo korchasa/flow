@@ -23,7 +23,7 @@
 ---
 - WHEN `typescript-lsp` PLUGIN IS ENABLED: IT AUTO-REMOVES UNUSED EXPORTS/IMPORTS ON SAVE. WHEN ADDING A NEW EXPORTED FUNCTION, EDIT THE CONSUMER FILE (import) BEFORE OR SIMULTANEOUSLY WITH THE PROVIDER FILE (export). OTHERWISE LSP WILL DELETE THE "UNUSED" EXPORT BETWEEN EDITS. ALTERNATIVE: USE Write TOOL (FULL REWRITE) INSTEAD OF Edit FOR THE PROVIDER FILE.
 - REMEMBER, EVERYTHING IN THE framework/ FOLDER IS THE FRAMEWORK - THE PRODUCT OF THIS PROJECT. FOR USERS, THEY WILL BE INSTALLED BY flowai INTO THEIR IDE'S CONFIG DIR (.claude/). DO NOT CONFUSE FRAMEWORK SKILLS/AGENTS WITH DEV RESOURCES IN .claude/skills/ AND .claude/agents/.
-- ANY CHANGES TO SKILLS MUST FOLLOW BENCHMARK TDD FLOW (see "Benchmark TDD" section below).
+- ANY CHANGES TO SKILLS OR AGENTS MUST FOLLOW BENCHMARK TDD FLOW (see "Benchmark TDD" section below).
 - REMEMBER THAT YOU ARE CREATING A UNIVERSAL FRAMEWORK SUITABLE FOR DIFFERENT IDEs(cursor, claude code, opencode). DO NOT USE TOOL NAMES SPECIFIC TO A SINGLE IDE. IT IS BETTER TO WRITE GENERICALLY AND PROVIDE EXAMPLES FOR VARIOUS IDEs. FOR EXAMPLE, INSTEAD OF `use todo_write`, USE `add to todo list (by todo_write, todowrite, etc.)`
 
 ## Project Information
@@ -112,15 +112,23 @@ All workflows are implemented as **Skills** according to the [agentskills.io](ht
 
 ### Benchmark TDD (Skills/Agents)
 
+**For Skills:**
 1. **RED**: Write benchmark scenario (`framework/<pack>/skills/<skill>/benchmarks/<name>/mod.ts`) for new/changed skill behavior. Run benchmark — it MUST fail (proves the scenario tests something real).
 2. **GREEN**: Update skill (`framework/<pack>/skills/<name>/SKILL.md`) until benchmark passes.
 3. **REFACTOR**: Improve skill text or benchmark clarity. No behavior change. Re-run benchmark.
 4. **CHECK**: Run ALL benchmarks for the affected skill. Fix all failures.
 
+**For Agents (subagents):**
+1. **RED**: Write benchmark scenario (`framework/<pack>/agents/<agent-name>/benchmarks/<name>/mod.ts`) for new/changed agent behavior. Use `BenchmarkAgentScenario` base class (field `agent` instead of `skill`). Run benchmark — it MUST fail.
+2. **GREEN**: Update agent (`framework/<pack>/agents/<agent-name>.md`) until benchmark passes.
+3. **REFACTOR**: Improve agent prompt or benchmark clarity. No behavior change. Re-run benchmark.
+4. **CHECK**: Run ALL benchmarks for the affected agent. Fix all failures.
+
 #### Benchmark Rules
 
-- EVERY skill change MUST have a corresponding benchmark scenario (new or existing) that covers the changed behavior.
-- Write benchmark BEFORE changing the skill (RED phase). If the benchmark already passes before the skill change, the scenario is not testing the right thing — revise it.
+- EVERY skill/agent change MUST have a corresponding benchmark scenario (new or existing) that covers the changed behavior.
+- Write benchmark BEFORE changing the skill/agent (RED phase). If the benchmark already passes before the change, the scenario is not testing the right thing — revise it.
 - Benchmark scenarios test OBSERVABLE BEHAVIOR (checklist items), not internal wording.
 - One scenario per distinct capability or edge case. Do not overload a single scenario.
-- Run ALL benchmarks for the affected skill before finishing, not just the new one.
+- Run ALL benchmarks for the affected skill/agent before finishing, not just the new one.
+- Skills use `BenchmarkSkillScenario` (field: `skill`). Agents use `BenchmarkAgentScenario` (field: `agent`).
