@@ -27,7 +27,58 @@ import {
 } from "./benchmarks/lib/adapters/mod.ts";
 import { TraceLogger } from "./benchmarks/lib/trace.ts";
 
-/** Walks `framework/<pack>/skills/<skill>/benchmarks/` and imports all scenario mod.ts files. */
+/**
+ * Imports benchmark scenario modules from a directory tree.
+ * Looks for mod.ts files inside benchmarks/ subdirectories.
+ */
+async function importScenariosFromDir(
+  dir: string,
+  packName: string,
+  scenarios: BenchmarkScenario[],
+): Promise<void> {
+  if (!existsSync(dir)) return;
+
+  for await (
+    const entry of walk(dir, {
+      maxDepth: 10,
+      includeFiles: true,
+      match: [/mod\.ts$/],
+    })
+  ) {
+    if (
+      !entry.path.includes("/benchmarks/") ||
+      entry.path.includes("/fixture/")
+    ) {
+      continue;
+    }
+    try {
+      const module = await import(`file://${entry.path}`);
+      for (const exportName in module) {
+        const value = module[exportName];
+        if (
+          value && typeof value === "object" && "id" in value &&
+          "userQuery" in value
+        ) {
+          const scenario = value as BenchmarkScenario;
+          if (!scenario.fixturePath) {
+            scenario.fixturePath = join(dirname(entry.path), "fixture");
+          }
+          scenario.pack = packName;
+          scenarios.push(scenario);
+        }
+      }
+    } catch (e) {
+      console.warn(
+        `  Warning: Failed to import scenario from ${entry.path}: ${e}`,
+      );
+    }
+  }
+}
+
+/**
+ * Walks `framework/<pack>/skills/` and `framework/<pack>/agents/`
+ * for benchmark scenario mod.ts files.
+ */
 async function discoverScenarios(): Promise<BenchmarkScenario[]> {
   const scenarios: BenchmarkScenario[] = [];
   const frameworkDir = join(Deno.cwd(), "framework");
@@ -36,47 +87,22 @@ async function discoverScenarios(): Promise<BenchmarkScenario[]> {
     return scenarios;
   }
 
-  // Walk pack-structured framework: framework/<pack>/skills/<skill>/benchmarks/*/mod.ts
   for await (const packEntry of Deno.readDir(frameworkDir)) {
     if (!packEntry.isDirectory) continue;
-    const packSkillsDir = join(frameworkDir, packEntry.name, "skills");
-    if (!existsSync(packSkillsDir)) continue;
 
-    for await (
-      const entry of walk(packSkillsDir, {
-        maxDepth: 10,
-        includeFiles: true,
-        match: [/mod\.ts$/],
-      })
-    ) {
-      if (
-        !entry.path.includes("/benchmarks/") ||
-        entry.path.includes("/fixture/")
-      ) {
-        continue;
-      }
-      try {
-        const module = await import(`file://${entry.path}`);
-        for (const exportName in module) {
-          const value = module[exportName];
-          if (
-            value && typeof value === "object" && "id" in value &&
-            "userQuery" in value
-          ) {
-            const scenario = value as BenchmarkScenario;
-            if (!scenario.fixturePath) {
-              scenario.fixturePath = join(dirname(entry.path), "fixture");
-            }
-            scenario.pack = packEntry.name;
-            scenarios.push(scenario);
-          }
-        }
-      } catch (e) {
-        console.warn(
-          `  Warning: Failed to import scenario from ${entry.path}: ${e}`,
-        );
-      }
-    }
+    // Discover skill benchmarks: framework/<pack>/skills/<skill>/benchmarks/*/mod.ts
+    await importScenariosFromDir(
+      join(frameworkDir, packEntry.name, "skills"),
+      packEntry.name,
+      scenarios,
+    );
+
+    // Discover agent benchmarks: framework/<pack>/agents/<agent>/benchmarks/*/mod.ts
+    await importScenariosFromDir(
+      join(frameworkDir, packEntry.name, "agents"),
+      packEntry.name,
+      scenarios,
+    );
   }
 
   return scenarios;
