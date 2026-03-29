@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.4.3](https://github.com/korchasa/flowai/compare/v0.4.2...v0.4.3) (2026-03-29)
+
+
+### Code Refactoring
+
+* **agent:** restrict flowai-skill-adapter to Bash-only tools ([6f6695b](https://github.com/korchasa/flowai/commit/6f6695b50f63285aaee8714b681eb86f14fb2156))
+
 ### [0.4.2](https://github.com/korchasa/flowai/compare/v0.4.1...v0.4.2) (2026-03-28)
 
 
