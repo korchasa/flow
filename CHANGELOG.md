@@ -2,6 +2,46 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.4.6](https://github.com/korchasa/flowai/compare/v0.4.5...v0.4.6) (2026-03-30)
+
+
+### Code Refactoring
+
+* **pipeline:** rename automation→pipeline pack, inline PM into orchestrator, fix test-fitting in benchmarks ([2ba0c8e](https://github.com/korchasa/flowai/commit/2ba0c8ee59d5a1f14fabcbdd5519909f59ed4ba1))
+
+
+### Documentation
+
+* add benchmark test-fitting and static mocks rules, clarify cross-pack ref checker ([0320ddd](https://github.com/korchasa/flowai/commit/0320ddd20dc75ba486970de7cff041378f99d505))
+
+### [0.4.5](https://github.com/korchasa/flowai/compare/v0.4.4...v0.4.5) (2026-03-30)
+
+
+### Features
+
+* **automation:** add automation pack with SDLC pipeline, role-specific subagents, and benchmarks ([a80340b](https://github.com/korchasa/flowai/commit/a80340b93cb6e625c0f2d5ae68bcdf9e6550efc5))
+* **benchmarks:** add benchmark system for subagents ([8462f44](https://github.com/korchasa/flowai/commit/8462f44b43459d7b45e152836a24dbdcea26cd60))
+
+
+### Bug Fixes
+
+* **hook:** isGitCommit handles quoted strings, -c flags, and subshells ([b42f995](https://github.com/korchasa/flowai/commit/b42f995c176560e70bcf5413f08a92e8c2173b96))
+
+
+### Code Refactoring
+
+* **skills:** make flowai-init/flowai-update stack-agnostic for command configuration ([aedc9ec](https://github.com/korchasa/flowai/commit/aedc9ecd8fdfba8c084d85b22d12e8002d33f612))
+
+
+### Chores
+
+* **framework:** update flowai framework ([75fb4b0](https://github.com/korchasa/flowai/commit/75fb4b0fcaf698f6e90a00b089ad2ef8e6ddd4d4))
+
+
+### Documentation
+
+* **framework:** add automation pack to AGENTS.md packs list ([dd3b493](https://github.com/korchasa/flowai/commit/dd3b49389ea1adfc3398c4ebde6790621ddb3d42))
+
 ### [0.4.4](https://github.com/korchasa/flowai/compare/v0.4.3...v0.4.4) (2026-03-29)
 
 
