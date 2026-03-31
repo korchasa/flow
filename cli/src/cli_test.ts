@@ -112,3 +112,38 @@ Deno.test("renderSyncOutput - shows agent updates", () => {
   assertStringIncludes(output, "AGENTS UPDATED (1)");
   assertStringIncludes(output, "console-expert");
 });
+
+Deno.test("renderSyncOutput - shows created agents", () => {
+  const result = baseSyncResult();
+  result.agentActions = [
+    { name: "new-agent", action: "create", scaffolds: [] },
+    { name: "another-new", action: "create", scaffolds: [] },
+  ];
+
+  const output = captureOutput(() => renderSyncOutput(result));
+  assertStringIncludes(output, "AGENTS CREATED (2)");
+  assertStringIncludes(output, "new-agent");
+  assertStringIncludes(output, "another-new");
+});
+
+Deno.test("renderSyncOutput - shows deleted agents", () => {
+  const result = baseSyncResult();
+  result.agentActions = [
+    { name: "old-agent", action: "delete", scaffolds: [] },
+  ];
+
+  const output = captureOutput(() => renderSyncOutput(result));
+  assertStringIncludes(output, "AGENTS DELETED (1)");
+  assertStringIncludes(output, "old-agent");
+});
+
+Deno.test("renderSyncOutput - shows deleted hooks", () => {
+  const result = baseSyncResult();
+  result.hookActions = [
+    { name: "old-hook", action: "delete", scaffolds: [] },
+  ];
+
+  const output = captureOutput(() => renderSyncOutput(result));
+  assertStringIncludes(output, "HOOKS DELETED (1)");
+  assertStringIncludes(output, "old-hook");
+});

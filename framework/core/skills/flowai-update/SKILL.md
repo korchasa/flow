@@ -65,6 +65,11 @@ flowai generates two types of outputs:
      - **SKILLS CREATED**: Extract skill names (new skills to adapt from scratch).
      - **SKILLS DELETED**: Note for commit message.
      - **AGENTS UPDATED**: Note for commit message.
+     - **AGENTS CREATED**: Note for commit message (new agents installed).
+     - **AGENTS DELETED**: Note for commit message. Check if deleted agents are referenced in project docs.
+     - **HOOKS INSTALLED**: Note for commit message (new hooks auto-configured).
+     - **HOOKS UPDATED**: Note for commit message.
+     - **HOOKS DELETED**: Note for commit message (hooks removed from IDE config).
      - **ERRORS**: Report to user and stop if critical.
 
 5. **Adapt updated skills to project**
@@ -111,9 +116,19 @@ flowai generates two types of outputs:
    - Wait for user approval/rejection of each change.
    - Apply only approved changes.
 
-9. **Commit**
+9. **Validate frontmatter**
+   - Detect all IDE config directories present in the project (`.claude/`, `.cursor/`, `.opencode/`).
+   - Run the validation script, passing all detected config dirs:
+     ```
+     deno run -A <flowai-update-skill-dir>/scripts/validate_frontmatter.ts .claude .cursor
+     ```
+   - The script scans `skills/*/SKILL.md` and `agents/*.md` in each config dir and checks frontmatter (required fields, name format, name match).
+   - If validation fails: show errors to the user. Fix the frontmatter issues before committing (re-adapt or manually correct).
+   - If validation passes: proceed to commit.
+
+10. **Commit**
    - Stage all synced files + adapted skills + migrated artifacts.
    - Commit with message: `chore(framework): update flowai framework`
-   - Include list of adapted skills and migrated artifacts in commit body.
+   - Include list of adapted skills, created/deleted agents, installed/updated/deleted hooks, and migrated artifacts in commit body.
 
 </step_by_step>

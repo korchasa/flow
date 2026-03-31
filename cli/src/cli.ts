@@ -226,6 +226,24 @@ export function renderSyncOutput(result: SyncResult): void {
         `   Check if agent prompts are referenced in project docs.`,
     );
   }
+  if (agentsByAction.create.length > 0) {
+    actionNum++;
+    const lines = agentsByAction.create.map((a) => `   - ${a.name}`);
+    actions.push(
+      `${actionNum}. AGENTS CREATED (${agentsByAction.create.length}):\n` +
+        lines.join("\n") + "\n" +
+        `   New agents installed.`,
+    );
+  }
+  if (agentsByAction.delete.length > 0) {
+    actionNum++;
+    const lines = agentsByAction.delete.map((a) => `   - ${a.name}`);
+    actions.push(
+      `${actionNum}. AGENTS DELETED (${agentsByAction.delete.length}):\n` +
+        lines.join("\n") + "\n" +
+        `   Check if deleted agents are referenced in project docs.`,
+    );
+  }
 
   // Hook actions
   const hooksByAction = groupByAction(result.hookActions);
@@ -244,6 +262,15 @@ export function renderSyncOutput(result: SyncResult): void {
     actions.push(
       `${actionNum}. HOOKS UPDATED (${hooksByAction.update.length}):\n` +
         lines.join("\n"),
+    );
+  }
+  if (hooksByAction.delete.length > 0) {
+    actionNum++;
+    const lines = hooksByAction.delete.map((h) => `   - ${h.name}`);
+    actions.push(
+      `${actionNum}. HOOKS DELETED (${hooksByAction.delete.length}):\n` +
+        lines.join("\n") + "\n" +
+        `   Removed from IDE hook configuration.`,
     );
   }
 
