@@ -29,13 +29,13 @@ export const EngineerRuleConditionalBench = new class
     {
       id: "has_frontmatter",
       description:
-        "Does the rule file have valid YAML frontmatter with description and file pattern fields (globs or paths)?",
+        "Does the rule file have valid YAML frontmatter with the correct fields for the detected IDE? For Claude Code: 'paths' (array of globs, no 'description'/'alwaysApply'). For Cursor: 'description', 'globs', 'alwaysApply'.",
       critical: true,
     },
     {
       id: "conditional_scope",
       description:
-        "Is the rule scoped to TypeScript files (e.g., globs: '**/*.ts' or paths: '**/*.ts'), not always-apply?",
+        "Is the rule scoped to TypeScript files using the correct IDE-specific field? For Claude Code: paths: ['**/*.ts']. For Cursor: globs: '**/*.ts', alwaysApply: false.",
       critical: true,
     },
     {
