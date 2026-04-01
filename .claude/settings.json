@@ -74,6 +74,28 @@
         ],
         "matcher": "Bash"
       }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "test -d .claude/skills/flowai-commit || deno run -A cli/src/main.ts sync --local --yes --skip-update-check",
+            "timeout": 60
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "deno run -A cli/src/main.ts sync --local --yes --skip-update-check",
+            "timeout": 30
+          }
+        ]
+      }
     ]
   }
 }
