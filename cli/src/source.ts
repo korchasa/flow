@@ -76,6 +76,50 @@ export class InMemoryFrameworkSource implements FrameworkSource {
   }
 }
 
+/** Local filesystem source — reads from framework/ directory directly (for dev) */
+export class LocalSource implements FrameworkSource {
+  private frameworkDir: string;
+
+  constructor(frameworkDir: string) {
+    // Normalize: remove trailing slash
+    this.frameworkDir = frameworkDir.replace(/\/+$/, "");
+  }
+
+  async listFiles(prefix: string): Promise<string[]> {
+    const result: string[] = [];
+    const walkDir = async (dir: string): Promise<void> => {
+      for await (const entry of Deno.readDir(dir)) {
+        const fullPath = `${dir}/${entry.name}`;
+        if (entry.isDirectory) {
+          await walkDir(fullPath);
+        } else if (entry.isFile || entry.isSymlink) {
+          const rel = `framework/${
+            fullPath.substring(this.frameworkDir.length + 1)
+          }`;
+          // Skip dev-only files (same as bundle-framework.ts)
+          if (/\/benchmarks\//.test(rel) || /_test\.\w+$/.test(rel)) continue;
+          if (rel.startsWith(prefix)) {
+            result.push(rel);
+          }
+        }
+      }
+    };
+    await walkDir(this.frameworkDir);
+    return result.sort();
+  }
+
+  async readFile(path: string): Promise<string> {
+    // path is "framework/core/skills/..." — strip "framework/" prefix
+    const rel = path.replace(/^framework\//, "");
+    const fullPath = `${this.frameworkDir}/${rel}`;
+    return await Deno.readTextFile(fullPath);
+  }
+
+  dispose(): Promise<void> {
+    return Promise.resolve();
+  }
+}
+
 /** Extract skill names from framework file paths (legacy flat structure) */
 export function extractSkillNames(paths: string[]): string[] {
   const names = new Set<string>();

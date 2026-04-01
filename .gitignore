@@ -11,6 +11,11 @@ __pycache__/
 _research_tmp/
 .claude/flowai-hooks.json
 
+# Synced from framework/ via `flowai sync --local` (dev-only, not tracked)
+.claude/skills/
+.claude/agents/
+.claude/scripts/
+
 # Generated artifacts (cli)
 cli/src/bundled.json
 cli/src/_version.ts

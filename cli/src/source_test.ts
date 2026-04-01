@@ -10,6 +10,7 @@ import {
   extractSkillNames,
   hasPacks,
   InMemoryFrameworkSource,
+  LocalSource,
 } from "./source.ts";
 
 Deno.test("BundledSource - listFiles filters by prefix", async () => {
@@ -237,4 +238,64 @@ Deno.test("extractPackScriptNames - ignores subdirectories", () => {
     "framework/core/scripts/lib/helper.ts",
   ];
   assertEquals(extractPackScriptNames(paths, "core"), ["check.ts"]);
+});
+
+// --- LocalSource tests ---
+
+Deno.test("LocalSource - listFiles returns framework/ files", async () => {
+  // Uses the real framework/ directory in this repo
+  const rootDir = new URL("../../", import.meta.url).pathname;
+  const source = new LocalSource(rootDir + "framework");
+
+  const files = await source.listFiles("framework/");
+  assertEquals(files.length > 0, true);
+
+  // Should contain known files
+  const hasPackYaml = files.some((f) => f === "framework/core/pack.yaml");
+  assertEquals(hasPackYaml, true);
+
+  // Should exclude benchmarks
+  const hasBenchmark = files.some((f) => /\/benchmarks\//.test(f));
+  assertEquals(hasBenchmark, false);
+
+  // Should exclude test files
+  const hasTestFile = files.some((f) => /_test\.\w+$/.test(f));
+  assertEquals(hasTestFile, false);
+
+  await source.dispose();
+});
+
+Deno.test("LocalSource - listFiles filters by prefix", async () => {
+  const rootDir = new URL("../../", import.meta.url).pathname;
+  const source = new LocalSource(rootDir + "framework");
+
+  const coreSkills = await source.listFiles("framework/core/skills/");
+  assertEquals(coreSkills.length > 0, true);
+  for (const f of coreSkills) {
+    assertEquals(f.startsWith("framework/core/skills/"), true);
+  }
+
+  await source.dispose();
+});
+
+Deno.test("LocalSource - readFile returns content", async () => {
+  const rootDir = new URL("../../", import.meta.url).pathname;
+  const source = new LocalSource(rootDir + "framework");
+
+  const content = await source.readFile("framework/core/pack.yaml");
+  assertEquals(content.includes("name: core"), true);
+
+  await source.dispose();
+});
+
+Deno.test("LocalSource - readFile throws on missing", async () => {
+  const rootDir = new URL("../../", import.meta.url).pathname;
+  const source = new LocalSource(rootDir + "framework");
+
+  await assertRejects(
+    () => source.readFile("framework/nonexistent.md"),
+    Error,
+  );
+
+  await source.dispose();
 });

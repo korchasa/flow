@@ -144,19 +144,23 @@ exercised as subagents within skill benchmarks.
 
 ### 3.9 Multi-IDE Dev Resource Distribution (FR-9)
 
-- **Description:** Dev resources (skills, agents) stored directly in `.claude/skills/`
-  and `.claude/agents/` (tracked in git). Framework resources installed by flowai
-  (bundled source, `cli/` monorepo directory).
-- **Use case scenario:** Developer clones project, runs `flowai sync`, and framework
-  skills/agents are installed into `.claude/`. Dev resources already present from git.
+- **Description:** Dev resources (skills, agents, scripts) in `.claude/` are generated
+  by `flowai sync --local` from `framework/` directly. NOT tracked in git. Auto-synced
+  via SessionStart (bootstrap) and SessionEnd (persist changes) hooks.
+- **Use case scenario:** Developer clones project. SessionStart hook detects empty
+  `.claude/skills/` and runs `flowai sync --local --yes` to populate from `framework/`.
+  Changes to `framework/` are re-synced on each SessionEnd.
 - **Acceptance criteria:**
-  - [x] Dev skills in `.claude/skills/`, dev agents in `.claude/agents/` (tracked in git). Evidence:
-        `.claude/skills/`, `.claude/agents/`
+  - [x] `.claude/skills/`, `.claude/agents/`, `.claude/scripts/` gitignored. Evidence:
+        `.gitignore`
+  - [x] SessionStart hook bootstraps `.claude/` if empty. Evidence:
+        `.claude/settings.json` (`SessionStart` hook)
+  - [x] SessionEnd hook re-syncs `.claude/` from `framework/` after each session. Evidence:
+        `.claude/settings.json` (`SessionEnd` hook)
+  - [x] `flowai sync --local` uses `LocalSource` (reads `framework/` on disk). Evidence:
+        `cli/src/source.ts` (`LocalSource`), `cli/src/cli.ts` (`--local` flag)
   - [x] `check-skills.ts` validates `.claude/skills/` (dev skills). Evidence:
         `scripts/check-skills.ts:308-311`
-  - [x] `.cursor/` and `.opencode/` in `.gitignore` (no longer used). Evidence:
-        `.gitignore`
-  - [x] Post-clone setup documented in README. Evidence: `README.md`
 
 ### 3.10 Global Framework Distribution — flowai (FR-10)
 
