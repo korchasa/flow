@@ -82,6 +82,12 @@ jobs:
             NEW_VERSION=$(deno eval "console.log(JSON.parse(Deno.readTextFileSync('deno.json')).version)")
             echo "version=${NEW_VERSION}" >> $GITHUB_OUTPUT
             echo "released=true" >> $GITHUB_OUTPUT
+
+            # Generate release notes from conventional commits
+            NEW_TAG="v${NEW_VERSION}"
+            NOTES_FILE=$(mktemp)
+            deno run -A scripts/generate-release-notes.ts "$LATEST_TAG" "$NEW_TAG" "${{ github.repository }}" > "$NOTES_FILE"
+            echo "notes_file=${NOTES_FILE}" >> $GITHUB_OUTPUT
           else
             echo "Nothing to release"
             echo "released=false" >> $GITHUB_OUTPUT
@@ -98,6 +104,6 @@ jobs:
         uses: softprops/action-gh-release@153bb8e04406b158c6c84fc1615b65b24149a1fe # v2.6.1
         with:
           tag_name: v${{ steps.create-release.outputs.version }}
-          generate_release_notes: true
+          body_path: ${{ steps.create-release.outputs.notes_file }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
