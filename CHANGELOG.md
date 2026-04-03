@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.4.10](https://github.com/korchasa/flowai/compare/v0.4.9...v0.4.10) (2026-04-03)
+
+
+### Features
+
+* **devcontainer:** add gh CLI auth and git credential helper to setup-container.sh ([df88728](https://github.com/korchasa/flowai/commit/df88728e9b9e5f1668fd718bc6184a274988ea15))
+
+
+### Bug Fixes
+
+* **devcontainer:** fix OAuth auth, volume ownership, and error masking in templates ([72866f3](https://github.com/korchasa/flowai/commit/72866f3b360896d113fde9f0093c803d30008460))
+
+
+### Build System
+
+* **ci:** add custom release notes generation from conventional commits ([5b8ff63](https://github.com/korchasa/flowai/commit/5b8ff63c53a468a339678ce7c4d1cf296d9c3e3c))
+
+
+### Code Refactoring
+
+* **pipeline:** rename .flow/ to .flowai/ and move engineer-pipeline skill ([1e41dda](https://github.com/korchasa/flowai/commit/1e41dda79a80b5535b55a16f4358c0dfe5e082e9))
+
 ### [0.4.9](https://github.com/korchasa/flowai/compare/v0.4.8...v0.4.9) (2026-04-01)
 
 
