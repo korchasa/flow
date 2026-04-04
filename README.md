@@ -4,7 +4,7 @@ An Assisted Engineering framework: the developer remains the architect and revie
 
 The developer sets the task, approves the plan, and controls every diff.
 
-> **WARNING:** Do not use these files as-is. Adapt them to your project and working style.
+> **Note:** Multi-agent SDLC pipelines have been moved to a separate project: [flowai-pipelines](https://github.com/korchasa/flowai-pipelines).
 
 ## The Assisted Engineering Paradigm
 

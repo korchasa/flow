@@ -52,7 +52,7 @@
     hooks/<name>/          # hook.yaml + run.sh (optional)
     scripts/<name>         # utility scripts (optional)
   ```
-- **Packs:** `core` (base commands), `devtools` (skill/agent authoring), `engineering` (procedural knowledge), `deno` (Deno-specific), `typescript` (TS-specific), `pipeline` (SDLC pipelines with role-specific subagents, reflection memory, artifact validation. Two variants: full 6-role GitHub-driven `flowai-pipeline-github-sdlc`/`flowai-pipeline-sdlc`, and compact 3-role local `flowai-pipeline-sdlc-compact` — Design + Developer + Review with orchestrator-level checks).
+- **Packs:** `core` (base commands), `devtools` (skill/agent authoring), `engineering` (procedural knowledge), `deno` (Deno-specific), `typescript` (TS-specific).
 - **Resource discovery:** Convention over configuration — resources found by scanning subdirectories, not listed in `pack.yaml`.
 - **No inter-pack dependencies:** Each pack is self-contained. Enforced by `check-pack-refs.ts` (core→non-core and non-core-A→non-core-B references are errors; any→core and intra-pack are OK).
 - **Naming:** Directory names inside packs are the full installed names (e.g., `flowai-commit/`, `flowai-skill-write-dep/`). flowai copies them as-is — no name transformation at install time.
@@ -101,7 +101,6 @@ When a dev skill in `.claude/skills/` has the same name as a framework skill in 
   - `engineering/agents/flowai-deep-research-worker.md`: Research worker for a single direction within a deep research task; spawned by `flowai-skill-deep-research` orchestrator.
   - `core/agents/console-expert.md`: Specialist in executing complex console tasks without modifying code.
   - `core/agents/diff-specialist.md`: Specialist in analyzing git diffs and planning atomic commits.
-  - `core/agents/skill-executor.md`: Specialist in executing any prompt or task or specific skills.
 - **Distribution:** `flowai` transforms canonical agents into IDE-specific format at install time.
 - **Reference: IDE frontmatter formats** (transformation rules owned by flowai):
   - **Claude Code:** `name`, `description` (req), `tools` (list: Read, Grep, etc.), `disallowedTools`, `model` (sonnet/opus/haiku/inherit).
