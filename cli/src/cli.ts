@@ -8,6 +8,7 @@ import {
   generateConfigNonInteractive,
 } from "./config_generator.ts";
 import { isInsideIDE } from "./ide.ts";
+import { type LoopOptions, runLoop } from "./loop.ts";
 import type { PlanItem, ResourceAction } from "./types.ts";
 import { sync, type SyncOptions, type SyncResult } from "./sync.ts";
 import {
@@ -385,7 +386,55 @@ export async function main(args: string[]): Promise<void> {
 
       await runSync(extractSyncOptions(options as Record<string, unknown>));
     })
-    .command("sync", syncSubcommand);
+    .command("sync", syncSubcommand)
+    .command(
+      "loop",
+      new Command()
+        .description(
+          "Run Claude Code non-interactively with a prompt.",
+        )
+        .arguments("<prompt:string>")
+        .option("--agent <name:string>", "Agent name (passed as --agent)")
+        .option("--model <model:string>", "Model override")
+        .option(
+          "--cwd <path:string>",
+          "Working directory for claude",
+          { default: "." },
+        )
+        .option(
+          "--yolo",
+          "Pass --dangerously-skip-permissions to claude",
+          { default: false },
+        )
+        .option(
+          "--timeout <seconds:number>",
+          "Timeout per iteration in seconds (default: no limit)",
+        )
+        .option(
+          "--interval <duration:string>",
+          "Pause between iterations, e.g. 30s, 5m, 1h (default: 0)",
+        )
+        .option(
+          "--max-iterations <n:number>",
+          "Max number of iterations (default: infinite)",
+        )
+        // deno-lint-ignore no-explicit-any
+        .action(async (options: any, prompt: string) => {
+          const cwd = options.cwd === "." ? undefined : options.cwd;
+          const loopOpts: LoopOptions = {
+            agent: options.agent,
+            prompt,
+            model: options.model,
+            cwd,
+            yolo: options.yolo,
+            timeout: options.timeout,
+            interval: options.interval,
+            maxIterations: options.maxIterations,
+          };
+          const exitCode = await runLoop(loopOpts);
+          if (exitCode !== 0) Deno.exit(exitCode);
+        }),
+    );
 
   await command.parse(args);
 }

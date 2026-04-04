@@ -165,6 +165,34 @@ TypeScript-specific setup skills.
 - `flowai-setup-agent-code-style-ts-deno` — Deno/TS code style
 - `flowai-setup-agent-code-style-ts-strict` — strict TypeScript
 
+## CLI Commands
+
+The `flowai` CLI provides commands beyond interactive skill sync:
+
+### `flowai sync`
+
+Sync framework skills/agents into project-local IDE config dirs. Primary command for installation and updates.
+
+### `flowai loop <prompt>`
+
+Run Claude Code non-interactively with real-time stream-json output. Base primitive for automation (CI, cron, scripts).
+
+```sh
+# Simple prompt
+flowai loop "read deno.json and tell me the version"
+
+# Invoke a skill via prompt
+flowai loop "/flowai-skill-analyze-context"
+
+# With agent and auto-approve
+flowai loop --yolo --agent console-expert "list all TODO comments"
+
+# Repeated execution with pause
+flowai loop --yolo --interval 5m --max-iterations 10 "/flowai-maintenance"
+```
+
+Options: `--agent`, `--model`, `--cwd`, `--yolo`, `--timeout`, `--interval`, `--max-iterations`. Run `flowai loop --help` for details.
+
 ## Developer Workflow
 
 ### 1. Project Setup

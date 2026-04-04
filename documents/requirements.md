@@ -668,6 +668,56 @@ exercised as subagents within skill benchmarks.
   - [ ] **FR-28.3 File integrity**: After third-party setup steps (`checkout`, `setup-deno`) and after `deno task check`, verify no unexpected file modifications via `git diff --exit-code` + untracked file check. Fail pipeline if integrity violated.
   - [ ] **FR-28.4 Job separation**: Pipeline split into `check` (read-only) and `release` (write) jobs. `release` depends on `check` success.
 
+### 3.29 Loop Command — Non-Interactive Claude Code Runner (FR-29)
+
+- **Description:** `flowai loop <prompt>` launches Claude Code in non-interactive mode with stream-json output. Base primitive for automation: CI pipelines, cron tasks, scripts, auto-flow integration. Always uses `stream-json` + `--verbose` for real-time ANSI-formatted output with agent nesting visibility. MVP: Claude Code only.
+- **Use case scenario:** Developer runs `flowai loop --yolo "/flowai-commit fix the login bug"` from CI. flowai builds the claude CLI command, spawns claude process, formats NDJSON events to terminal, and propagates exit code.
+
+#### FR-29.1 CLI Parameters
+
+- **Desc:** `flowai loop [OPTIONS] <prompt>` with flags: `--agent`, `--model`, `--cwd`, `--yolo`, `--timeout`, `--interval`, `--max-iterations`. `<prompt>` is required (skills invoked via prompt, e.g. `"/flowai-commit msg"`).
+- **Acceptance:**
+  - [ ] **FR-29.1.1** `<prompt>` required positional arg. `--agent` optional (passed as `--agent` to claude).
+  - [ ] **FR-29.1.2** Always adds `--output-format stream-json --verbose -p` to claude args.
+  - [ ] **FR-29.1.3** Defaults: `--interval` 0 (no pause), `--max-iterations` infinite, `--timeout` no limit, `--cwd` current dir.
+
+#### FR-29.2 Command Building
+
+- **Desc:** Pure function `buildClaudeArgs(options)` constructs claude CLI argument array.
+- **Acceptance:**
+  - [ ] **FR-29.2.1** Prompt mode: `claude -p --output-format stream-json --verbose "<prompt>"`.
+  - [ ] **FR-29.2.2** Agent mode: adds `--agent <name>` before prompt.
+  - [ ] **FR-29.2.3** Tests cover all flag combinations.
+
+#### FR-29.3 Output Handling
+
+- **Desc:** stream-json NDJSON real-time parsing. `StreamFormatter` tracks agent nesting depth — subagent events indented. Text labels: `[init]`, `[call]`, `[text]`, `[result]`, `[ok]`/`[error]`, `[agent:start]`, `[agent:call]`, `[agent:done]`.
+- **Acceptance:**
+  - [ ] **FR-29.3.1** `StreamFormatter.format()` handles system/assistant/user/result events with depth-based indentation.
+  - [ ] **FR-29.3.2** `processNDJSONStream()` handles partial lines, malformed JSON, and missing result events.
+  - [ ] **FR-29.3.3** Tests for StreamFormatter nesting and processNDJSONStream.
+
+#### FR-29.4 Exit Code Propagation
+
+- **Desc:** Exit code priority: resultEvent.is_error → process exit code → 1 (no result).
+- **Acceptance:**
+  - [ ] **FR-29.4.1** Result event `is_error` determines exit code.
+  - [ ] **FR-29.4.2** Fallback to process exit code when no result event.
+
+#### FR-29.5 Loop Mode
+
+- **Desc:** Runs infinitely by default. `--interval` adds pause between iterations. Stops on `--max-iterations`, Ctrl+C, or non-zero exit.
+- **Acceptance:**
+  - [ ] **FR-29.5.1** `parseInterval()` parses `30s`, `5m`, `1h` to milliseconds.
+  - [ ] **FR-29.5.2** `--timeout` kills process via SIGTERM after specified seconds.
+
+#### FR-29.6 Process Spawn
+
+- **Desc:** `Deno.Command("claude", { stdin: "null", env: { CLAUDECODE: "" } })` — stdin null prevents terminal read, CLAUDECODE="" allows running inside IDE session.
+- **Acceptance:**
+  - [ ] **FR-29.6.1** Hang workaround: 30s grace after result event → SIGKILL.
+  - [ ] **FR-29.6.2** `deno task check` passes.
+
 ## 4. Non-functional requirements
 
 

@@ -240,6 +240,25 @@ graph TD
 - **CLI integration:** `flowai` bare command is no-op inside IDE. `flowai sync` required explicitly.
 - **Behavioral requirements:** See benchmarks `flowai-update-*` (4 scenarios).
 
+### 3.11 Loop Command — Non-Interactive Runner — FR-29 (`cli/src/loop.ts`)
+
+- **Purpose:** Launch Claude Code non-interactively with a prompt. Base automation primitive.
+- **CLI:** `flowai loop [OPTIONS] <prompt>`. Flags: `--agent`, `--model`, `--cwd`, `--yolo`, `--timeout`, `--interval`, `--max-iterations`. Skills invoked via prompt (e.g. `"/flowai-commit msg"`).
+- **Components:**
+  - `cli/src/loop.ts` — pure functions + runner:
+    - `parseInterval(str)` — `"30s"`, `"5m"`, `"1h"` → ms
+    - `buildClaudeArgs(options)` — constructs claude CLI args. Always adds `-p --output-format stream-json --verbose`
+    - `StreamFormatter` — stateful ANSI formatter with agent nesting depth tracking. Labels: `[init]`, `[call]`, `[text]`, `[result]`, `[ok]`/`[error]`, `[agent:start]`, `[agent:call]`, `[agent:done]`
+    - `processNDJSONStream(reader, onEvent)` — buffered NDJSON parser → `StreamResult`
+    - `runOnce(options)` — spawn claude, stream-json processing, hang workaround, exit code
+    - `runLoop(options)` — cycle: runOnce + sleep(interval) + iteration check
+  - `cli/src/loop_test.ts` — 28 unit tests for pure functions, formatter nesting, processNDJSONStream
+  - `cli/src/cli.ts` — registers `loop` subcommand
+- **Process spawn:** `Deno.Command("claude", { stdin: "null", stdout: "piped", stderr: "inherit", env: { CLAUDECODE: "" } })`. `stdin: "null"` prevents terminal read; `CLAUDECODE: ""` allows nested launch.
+- **Output:** Always stream-json. NDJSON real-time parsing + ANSI formatting. Subagent events (`task_started`/`task_progress`/`task_notification`) indented by nesting depth. 30s hang workaround after result event.
+- **Exit code:** resultEvent.is_error → process exit code → 1 (fallback).
+- **Defaults:** interval=0 (no pause), max-iterations=infinite, timeout=none.
+
 ## 4. Data and Storage
 
 - **Entities and attributes:**
