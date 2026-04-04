@@ -37,7 +37,7 @@
 
 ### 2.2 Conditional Instructions
 - **Cursor**: `.cursor/rules/` (`globs`, `description`).[^21]
-- **Claude Code**: `.claude/rules/` (`paths`).[^2]
+- **Claude Code**: `.claude/rules/` (`paths`). Triggers on `Read` only (not `Write`/`Edit`). `globs:` field silently ignored. `description:` alone does not scope (becomes always-apply). Subdirectory rules (`.claude/rules/subdir/*.md`) discovered recursively.[^2] [^32]
 - **OpenCode**: `opencode.json` (`instructions` with globs).[^3]
 
 ### 2.3 Custom Commands (`/command`)
@@ -230,9 +230,15 @@ Frontmatter transform:
 | Cursor field | Cursor semantics | Claude Code equivalent |
 | :--- | :--- | :--- |
 | `alwaysApply: true` | Always load | Remove frontmatter (rules without `paths` load unconditionally) |
-| `globs: [...]` | Scope to file patterns | `paths: [...]` |
-| `alwaysApply: false` + `description` only | Agent decides by relevance | No equivalent — becomes always-apply or drop |
+| `globs: [...]` | Scope to file patterns | `paths: [...]` (YAML array, single value, and CSV all work; v2.1.91 verified [^32]) |
+| `alwaysApply: false` + `description` only | Agent decides by relevance | No equivalent — becomes always-apply (Claude Code has no agent-discovery scoping) |
 | No frontmatter (manual) | Triggered via `@rule-name` | No direct equivalent |
+
+**Verified behavior** (v2.1.91, 2026-04-04) [^32]:
+- All `paths:` syntax variants work: YAML array quoted/unquoted, single value quoted/unquoted, CSV.
+- `paths:` triggers on `Read` only. `Write`/`Edit` to matching path does NOT load the rule (#23478, confirmed by-design).
+- Cursor `globs:` field silently ignored in Claude Code (unknown frontmatter → no `paths:` → always-apply).
+- Nested rules (`.claude/rules/subdir/*.md`) discovered and scoped correctly.
 
 ### 3.3 Custom Commands
 
@@ -451,3 +457,4 @@ Detection order: `CURSOR_AGENT` first (may co-exist with `CLAUDECODE` in nested 
 [^29]: https://github.com/specstoryai/docs/blob/main/faqs.mdx — SpecStory FAQ: cross-IDE storage path comparison
 [^30]: https://kentgigger.com/posts/claude-code-conversation-history — Claude Code conversation history: JSONL format, per-project paths
 [^31]: https://deepwiki.com/sst/opencode/2.1-session-management — OpenCode session management: SQLite with Drizzle ORM
+[^32]: Empirical verification of Claude Code `paths:` behavior (v2.1.91, macOS, 2026-04-04). 12 test cases: all `paths:` syntax variants (YAML array quoted/unquoted, single value, CSV) work correctly; scoping triggers on Read only (not Write/Edit); `globs:` field silently ignored; nested `.claude/rules/subdir/` discovered. See `documents/whiteboards/2026-04-04-claude-code-glob-rules.md`.

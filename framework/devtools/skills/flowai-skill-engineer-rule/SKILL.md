@@ -42,7 +42,7 @@ Rules work across multiple IDEs but use different file formats and locations. Be
 | IDE | Always-Apply Rules | Conditional Rules | Format |
 |-----|-------------------|-------------------|--------|
 | **Cursor** | `.cursor/rules/*/RULE.md` with `alwaysApply: true` | `.cursor/rules/*/RULE.md` with `globs:` | YAML frontmatter + Markdown |
-| **Claude Code** | `CLAUDE.md`, `.claude/rules/*.md` (no `paths:` frontmatter) | `.claude/rules/*.md` with `paths:` (array of globs, no `description`/`alwaysApply`) | YAML frontmatter (`paths` only) + Markdown |
+| **Claude Code** | `CLAUDE.md`, `.claude/rules/*.md` (no `paths:` frontmatter) | `.claude/rules/*.md` with `paths:` (array of globs). `description` accepted but does not scope. `globs:`/`alwaysApply` ignored. Triggers on Read only, not Write/Edit. Subdirs discovered recursively. | YAML frontmatter (`paths`, optional `description`) + Markdown |
 | **OpenCode** | `AGENTS.md`, `opencode.json` `instructions` | `opencode.json` `instructions` (globs) | `AGENTS.md`: Plain Markdown; `opencode.json`: JSON array of paths/globs/URLs |
 
 ### Detection Strategy
@@ -102,9 +102,9 @@ Rule content here...
 
 ### Claude Code
 
-Rules in `.claude/rules/*.md` with frontmatter. The only supported frontmatter field is `paths` (array of glob strings). There is **no** `description` or `alwaysApply` field — these are Cursor-specific.
+Rules in `.claude/rules/*.md` (subdirectories discovered recursively). Frontmatter fields: `paths` (array of glob strings), `description` (optional, informational only — does NOT scope the rule). Cursor-specific fields (`globs`, `alwaysApply`) are silently ignored (rule becomes always-apply).
 
-**Conditional rule** (applies when matching files are in context):
+**Conditional rule** (loads when Claude reads a matching file):
 
 ```markdown
 ---
@@ -129,6 +129,8 @@ paths:
 ```
 
 **Always-apply rule:** omit `paths` frontmatter entirely, or use `CLAUDE.md` (project root / subdirectory).
+
+**Limitations:** `paths:` triggers on `Read` only — `Write`/`Edit` to a matching path without prior Read does NOT load the rule.
 
 ### OpenCode
 
@@ -203,7 +205,7 @@ deno run -A scripts/validate_rule.ts <path/to/rule-file-or-directory>
 
 Checklist:
 - [ ] Correct file format for target IDE
-- [ ] Frontmatter configured correctly for target IDE (Cursor: `description`, `globs`, `alwaysApply`; Claude Code: `paths` only)
+- [ ] Frontmatter configured correctly for target IDE (Cursor: `description`, `globs`, `alwaysApply`; Claude Code: `paths` required, `description` optional)
 - [ ] Content under 500 lines (prefer under 50)
 - [ ] Includes concrete examples
 - [ ] One concern per rule
@@ -222,7 +224,7 @@ Checklist:
 
 ## Example Rules
 
-### Error Handling (TypeScript)
+### Error Handling (TypeScript) — Cursor
 
 ```markdown
 ---
@@ -251,7 +253,35 @@ try {
 \`\`\`
 ```
 
-### React Patterns
+### Error Handling (TypeScript) — Claude Code
+
+```markdown
+---
+paths:
+  - "**/*.ts"
+---
+
+# Error Handling
+
+Always use typed errors with context:
+
+\`\`\`typescript
+// BAD
+try {
+  await fetchData();
+} catch (e) {}
+
+// GOOD
+try {
+  await fetchData();
+} catch (e) {
+  logger.error('Failed to fetch', { error: e });
+  throw new DataFetchError('Unable to retrieve data', { cause: e });
+}
+\`\`\`
+```
+
+### React Patterns — Cursor
 
 ```markdown
 ---
@@ -268,7 +298,24 @@ alwaysApply: false
 - Props interface named `{ComponentName}Props`
 ```
 
-### Project Architecture (Always Apply)
+### React Patterns — Claude Code
+
+```markdown
+---
+paths:
+  - "**/*.tsx"
+  - "**/*.jsx"
+---
+
+# React Patterns
+
+- Use functional components
+- Extract custom hooks for reusable logic
+- Colocate styles with components
+- Props interface named `{ComponentName}Props`
+```
+
+### Project Architecture (Always Apply) — Cursor
 
 ```markdown
 ---
@@ -276,6 +323,16 @@ description: Core architecture rules
 alwaysApply: true
 ---
 
+# Architecture
+
+- Domain logic in `src/domain/` — no framework imports
+- API handlers in `src/api/` — thin, delegate to domain
+- Shared types in `src/types/` — no runtime code
+```
+
+### Project Architecture (Always Apply) — Claude Code
+
+```markdown
 # Architecture
 
 - Domain logic in `src/domain/` — no framework imports

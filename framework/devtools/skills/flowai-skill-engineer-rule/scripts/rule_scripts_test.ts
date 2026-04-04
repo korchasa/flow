@@ -192,6 +192,38 @@ Content.
   }
 });
 
+Deno.test("validate: Claude rule with Cursor-specific fields returns error with IDE hint", () => {
+  const tmpDir = Deno.makeTempDirSync();
+  try {
+    const rulesDir = join(tmpDir, ".claude", "rules");
+    Deno.mkdirSync(rulesDir, { recursive: true });
+    const ruleFile = join(rulesDir, "cursor-style.md");
+    Deno.writeTextFileSync(
+      ruleFile,
+      `---
+globs: "**/*.ts"
+alwaysApply: false
+---
+
+# Rule
+
+Content.
+`,
+    );
+
+    const [valid, msg] = validateRule(ruleFile);
+    assertEquals(valid, false);
+    assertEquals(msg.includes("Unexpected frontmatter key"), true, msg);
+    assertEquals(
+      msg.includes("Allowed for Claude Code"),
+      true,
+      `Should mention Claude Code, got: ${msg}`,
+    );
+  } finally {
+    Deno.removeSync(tmpDir, { recursive: true });
+  }
+});
+
 Deno.test("validate: OpenCode AGENTS.md empty file returns error", () => {
   const tmpDir = Deno.makeTempDirSync();
   try {
@@ -388,9 +420,14 @@ Deno.test("init: Claude creates .md file (conditional)", () => {
     const content = Deno.readTextFileSync(expected);
     assertEquals(content.includes("paths:"), true, "Should contain paths");
     assertEquals(
-      content.includes("src/**/*.ts"),
+      content.includes('- "src/**/*.ts"'),
       true,
-      "Should contain glob pattern",
+      "Should contain glob pattern as YAML array item",
+    );
+    assertEquals(
+      content.includes("description"),
+      false,
+      "Claude conditional template should not include description",
     );
     assertEquals(
       content.includes("# Ts Standards"),
