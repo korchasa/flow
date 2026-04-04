@@ -29,7 +29,7 @@ export const EngineerRuleConditionalBench = new class
     {
       id: "has_frontmatter",
       description:
-        "Does the rule file have valid YAML frontmatter with the correct fields for the detected IDE? For Claude Code: 'paths' (array of globs, no 'description'/'alwaysApply'). For Cursor: 'description', 'globs', 'alwaysApply'.",
+        "Does the rule file have valid YAML frontmatter with the correct fields for the detected IDE? For Claude Code: 'paths' (array of globs, optional 'description'; 'globs'/'alwaysApply' are Cursor-specific and must NOT be used). For Cursor: 'description', 'globs', 'alwaysApply'.",
       critical: true,
     },
     {
