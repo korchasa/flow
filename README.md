@@ -173,6 +173,23 @@ The `flowai` CLI provides commands beyond interactive skill sync:
 
 Sync framework skills/agents into project-local IDE config dirs. Primary command for installation and updates.
 
+Supports installing from a git branch or local path via `.flowai.yaml`:
+
+```yaml
+# Install from a branch (uses official repo by default)
+source:
+  ref: feat/new-skill
+
+# Install from a fork
+source:
+  git: https://github.com/someone/flowai-fork.git
+  ref: main
+
+# Install from local directory
+source:
+  path: /path/to/flowai/framework
+```
+
 ### `flowai loop <prompt>`
 
 Run Claude Code non-interactively with real-time stream-json output. Base primitive for automation (CI, cron, scripts).

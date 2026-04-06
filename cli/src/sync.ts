@@ -13,7 +13,9 @@ import {
   extractPackSkillNames,
   extractSkillNames,
   type FrameworkSource,
+  GitSource,
   hasPacks,
+  LocalSource,
 } from "./source.ts";
 import { syncClaudeSymlinks } from "./symlinks.ts";
 import {
@@ -52,6 +54,19 @@ function mergeModelMap(
   const defaults = DEFAULT_MODEL_MAPS[ideName] ?? {};
   const overrides = config.models?.[ideName] ?? {};
   return { ...defaults, ...overrides };
+}
+
+/** Resolve framework source based on config */
+export async function resolveSource(
+  config: FlowConfig,
+): Promise<FrameworkSource> {
+  if (config.source?.ref) {
+    return await GitSource.clone(config.source.ref, config.source.git);
+  }
+  if (config.source?.path) {
+    return new LocalSource(config.source.path);
+  }
+  return await BundledSource.load();
 }
 
 /** Sync options */
@@ -186,9 +201,9 @@ export async function sync(
 
   log(`Target IDEs: ${ides.map((i) => i.name).join(", ")}`);
 
-  // 2. Load framework files from bundle
+  // 2. Load framework files from source (git, local path, or bundled)
   log("Loading framework files...");
-  const source = options.source ?? await BundledSource.load();
+  const source = options.source ?? await resolveSource(config);
 
   try {
     const allPaths = await source.listFiles("framework/");

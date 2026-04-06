@@ -9,7 +9,11 @@ import {
 } from "./config_generator.ts";
 import { isInsideIDE } from "./ide.ts";
 import { type LoopOptions, runLoop } from "./loop.ts";
-import type { PlanItem, ResourceAction } from "./types.ts";
+import {
+  DEFAULT_GIT_URL,
+  type PlanItem,
+  type ResourceAction,
+} from "./types.ts";
 import { sync, type SyncOptions, type SyncResult } from "./sync.ts";
 import {
   buildUpdateCommand,
@@ -94,6 +98,17 @@ async function runSync(options: {
 
   // 2. Show sync plan
   console.log("Sync plan:");
+
+  // Log source type
+  if (config.source?.ref) {
+    const url = config.source.git ?? DEFAULT_GIT_URL;
+    console.log(`  Source: git (${url}@${config.source.ref})`);
+  } else if (config.source?.path) {
+    console.log(`  Source: local (${config.source.path})`);
+  } else {
+    console.log("  Source: bundled");
+  }
+
   console.log(`  IDEs: ${config.ides.join(", ") || "(auto-detect)"}`);
 
   if (config.skills.include.length > 0) {

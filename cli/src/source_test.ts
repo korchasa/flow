@@ -8,6 +8,7 @@ import {
   extractPackScriptNames,
   extractPackSkillNames,
   extractSkillNames,
+  GitSource,
   hasPacks,
   InMemoryFrameworkSource,
   LocalSource,
@@ -298,4 +299,54 @@ Deno.test("LocalSource - readFile throws on missing", async () => {
   );
 
   await source.dispose();
+});
+
+// --- GitSource tests ---
+
+Deno.test("GitSource - clone from real repo (main branch)", async () => {
+  const source = await GitSource.clone("main");
+
+  const files = await source.listFiles("framework/");
+  assertEquals(files.length > 0, true);
+
+  const hasPackYaml = files.some((f) => f === "framework/core/pack.yaml");
+  assertEquals(hasPackYaml, true);
+
+  const content = await source.readFile("framework/core/pack.yaml");
+  assertEquals(content.includes("name: core"), true);
+
+  await source.dispose();
+});
+
+Deno.test("GitSource - clone with custom git URL", async () => {
+  // Use the same official repo URL as explicit override
+  const source = await GitSource.clone(
+    "main",
+    "https://github.com/korchasa/flowai.git",
+  );
+
+  const files = await source.listFiles("framework/");
+  assertEquals(files.length > 0, true);
+
+  await source.dispose();
+});
+
+Deno.test("GitSource - clone fails on nonexistent ref", async () => {
+  await assertRejects(
+    () => GitSource.clone("nonexistent-branch-xyz-12345"),
+    Error,
+    "Failed to clone",
+  );
+});
+
+Deno.test("GitSource - clone fails on invalid URL", async () => {
+  await assertRejects(
+    () =>
+      GitSource.clone(
+        "main",
+        "https://github.com/nonexistent-user-xyz/nonexistent-repo-xyz.git",
+      ),
+    Error,
+    "Failed to clone",
+  );
 });

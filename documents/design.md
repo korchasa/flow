@@ -158,7 +158,7 @@ When a dev skill in `.claude/skills/` has the same name as a framework skill in 
 
 - **Purpose:** Install/update flowai framework skills/agents into project-local IDE config dirs.
 - **Location:** `cli/` monorepo directory. Published to JSR as `@korchasa/flowai`.
-- **Pattern:** Single-command CLI. Adapter pattern for FS isolation. Bundled source (no network at runtime).
+- **Pattern:** Single-command CLI. Adapter pattern for FS isolation. Bundled source (default), git clone, or local path.
 - **Diagram:**
 ```mermaid
 graph TD
@@ -167,7 +167,8 @@ graph TD
     ConfigLoader -->|has .flowai.yaml| SyncEngine
     ConfigGenerator --> SyncEngine
     SyncEngine -->|default| BundledSrc[BundledSource: bundled.json]
-    SyncEngine -->|bundled only| LocalSrc[LocalSource: used by deno task sync-local]
+    SyncEngine -->|source.ref| GitSrc[GitSource: git clone → LocalSource]
+    SyncEngine -->|source.path| LocalSrc[LocalSource: local framework/ dir]
     SyncEngine --> IdeDetector[IDE Detector]
     SyncEngine --> PlanEngine[Plan Engine]
     SyncEngine --> FileWriter[File Writer]
@@ -180,8 +181,8 @@ graph TD
   - `cli/src/cli.ts` — CLI entry, `sync` subcommand, IDE context guard (`isInsideIDE`), @cliffy/command
   - `cli/src/config.ts` — `.flowai.yaml` parser/writer, validation (include/exclude mutual exclusivity)
   - `cli/src/config_generator.ts` — config creation: interactive (prompts via @cliffy/prompt) and non-interactive (auto-detect IDEs, all packs)
-  - `cli/src/source.ts` — `FrameworkSource` interface, `BundledSource` (reads `bundled.json`), `LocalSource` (reads `framework/` dir, follows symlinks, excludes benchmarks/_test), `InMemoryFrameworkSource` (tests)
-  - `cli/src/sync.ts` — orchestrates: load bundle → filter skills/agents → compute plan → write files → symlinks
+  - `cli/src/source.ts` — `FrameworkSource` interface, `BundledSource` (reads `bundled.json`), `GitSource` (clones repo to tmpdir, delegates to `LocalSource`), `LocalSource` (reads `framework/` dir, follows symlinks, excludes benchmarks/_test), `InMemoryFrameworkSource` (tests)
+  - `cli/src/sync.ts` — orchestrates: `resolveSource()` (git/local/bundled) → filter skills/agents → compute plan → write files → symlinks
   - `cli/src/plan.ts` — compares upstream vs local (create/ok/conflict classification)
   - `cli/src/writer.ts` — writes plan items to IDE config dirs
   - `cli/src/transform.ts` — transforms universal agent frontmatter into IDE-specific format
@@ -191,7 +192,8 @@ graph TD
   - `cli/src/adapters/fs.ts` — `FsAdapter` abstraction + `DenoFsAdapter` + `InMemoryFsAdapter`
   - `cli/scripts/bundle-framework.ts` — generates `src/bundled.json` from `../framework/`
 - **Data entities:**
-  - `FlowConfig`: `{ version, ides, packs, skills: {include, exclude}, agents: {include, exclude}, sessionDocs? }` (v1.1: `packs` field added; `sessionDocs`: project docs injected at session start)
+  - `FlowConfig`: `{ version, ides, packs, skills: {include, exclude}, agents: {include, exclude}, source?, sessionDocs? }` (v1.1: `packs` field added; `source`: git branch/local path override; `sessionDocs`: project docs injected at session start)
+  - `SourceConfig`: `{ git?, ref?, path? }` — `ref` = branch/tag (default URL: `DEFAULT_GIT_URL`); `git` = custom repo URL (requires `ref`); `path` = local dir (mutually exclusive with `ref`)
   - `PackDefinition`: `{ name, version, description, scaffolds?: Record<skill, paths[]> }` (parsed from `pack.yaml`)
   - `HookDefinition`: `{ event, matcher?, description, timeout? }` (parsed from `hook.yaml`; timeout default: 30 PostToolUse, 600 PreToolUse)
   - `PlanItem`: `{ type: skill|agent|hook|script, name, action: create|update|ok|conflict, sourcePath, targetPath, content }`

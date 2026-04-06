@@ -33,6 +33,8 @@ export interface FlowConfig {
   };
   /** Cross-IDE user resource propagation (default: false) */
   userSync?: boolean;
+  /** Framework source override: git branch/tag or local path */
+  source?: SourceConfig;
   /** Model tier overrides per IDE: { claude: { smart: "opus" }, cursor: { smart: "slow" } } */
   models?: Record<string, Record<string, string>>;
   /** Project docs injected at session start by flowai-session-init-docs hook.
@@ -92,6 +94,19 @@ export const KNOWN_IDES: Record<string, IDE> = {
   claude: { name: "claude", configDir: ".claude" },
   opencode: { name: "opencode", configDir: ".opencode" },
 };
+
+/** Default git URL for source.ref (official flowai repo) */
+export const DEFAULT_GIT_URL = "https://github.com/korchasa/flowai.git";
+
+/** Source configuration for .flowai.yaml */
+export interface SourceConfig {
+  /** Git repo URL (default: DEFAULT_GIT_URL) */
+  git?: string;
+  /** Branch or tag name */
+  ref?: string;
+  /** Local framework/ directory path */
+  path?: string;
+}
 
 /** Default config values */
 export const DEFAULT_VERSION = "1.0";

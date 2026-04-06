@@ -310,6 +310,25 @@ exercised as subagents within skill benchmarks.
   - [x] Framework resources excluded from user sync. Evidence: `cli/src/user_sync.ts:77-78`, `cli/src/sync.ts:148-150`
   - [ ] Command sync across IDEs (pending open question resolution)
 
+#### FR-10.10 Source Override (git branch / local path)
+
+- **Desc:** `.flowai.yaml` `source` field overrides default BundledSource. Supports git branch/tag clone and local filesystem path. Default git URL: official repo (`https://github.com/korchasa/flowai.git`).
+- **Config:**
+  - `source.ref` — branch or tag (clones via `git clone --depth 1 --branch`). Default URL if `source.git` absent.
+  - `source.git` — custom repo URL (requires `source.ref`). For forks.
+  - `source.path` — local `framework/` dir path. Mutually exclusive with `source.ref`.
+  - No `source` field → bundled (backward compatible).
+- **Acceptance:**
+  - [x] `source.ref` alone → clone default repo. Evidence: `cli/src/source.ts:95-96`, `cli/src/source_test.ts:306-319`
+  - [x] `source.git` + `source.ref` → clone custom repo. Evidence: `cli/src/source.ts:95`, `cli/src/source_test.ts:321-332`
+  - [x] `source.path` → LocalSource. Evidence: `cli/src/sync.ts:64-65`
+  - [x] `source.git` without `ref` → validation error. Evidence: `cli/src/config.ts:97-100`, `cli/src/config_test.ts:424-434`
+  - [x] `source.ref` + `source.path` → validation error. Evidence: `cli/src/config.ts:101-104`, `cli/src/config_test.ts:436-446`
+  - [x] No `source` → BundledSource (backward compatible). Evidence: `cli/src/sync.ts:66-68`, `cli/src/config_test.ts:419-421`
+  - [x] CLI logs source type. Evidence: `cli/src/cli.ts:101-110`
+  - [x] Cleanup on failure (tmpdir removed). Evidence: `cli/src/source.ts:115-116`
+  - [x] `deno task check` passes with all new tests. Evidence: 255 tests pass.
+
 ### 3.11 Conventional Commits — `agent` Type (FR-11)
 
 - **Description:** Add `agent:` as a new commit type in Conventional Commits convention

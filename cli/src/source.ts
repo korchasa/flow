@@ -1,3 +1,5 @@
+import { DEFAULT_GIT_URL } from "./types.ts";
+
 /** Framework source abstraction — provides file listing and content reading */
 export interface FrameworkSource {
   /** List all file paths under given prefix (relative to repo root) */
@@ -73,6 +75,77 @@ export class InMemoryFrameworkSource implements FrameworkSource {
 
   dispose(): Promise<void> {
     return Promise.resolve();
+  }
+}
+
+/** Git source — clones a repo to temp dir and delegates to LocalSource */
+export class GitSource implements FrameworkSource {
+  private tmpDir: string;
+  private localSource: LocalSource;
+
+  private constructor(tmpDir: string) {
+    this.tmpDir = tmpDir;
+    this.localSource = new LocalSource(`${tmpDir}/framework`);
+  }
+
+  /** Clone a git repo at the given branch/tag and return a GitSource */
+  static async clone(ref: string, gitUrl?: string): Promise<GitSource> {
+    const url = gitUrl ?? DEFAULT_GIT_URL;
+
+    // Check git is available
+    const gitCheck = new Deno.Command("git", {
+      args: ["--version"],
+      stdout: "null",
+      stderr: "null",
+    });
+    const gitCheckResult = await gitCheck.output();
+    if (!gitCheckResult.success) {
+      throw new Error(
+        "git is required for source.ref. Install git or remove source from .flowai.yaml",
+      );
+    }
+
+    // Clone to temp dir
+    const tmpDir = await Deno.makeTempDir({ prefix: "flowai-" });
+    const cloneCmd = new Deno.Command("git", {
+      args: ["clone", "--depth", "1", "--branch", ref, url, tmpDir],
+      stdout: "null",
+      stderr: "piped",
+    });
+    const cloneResult = await cloneCmd.output();
+    if (!cloneResult.success) {
+      const stderr = new TextDecoder().decode(cloneResult.stderr);
+      // Cleanup on failure
+      await Deno.remove(tmpDir, { recursive: true }).catch(() => {});
+      throw new Error(`Failed to clone ${url}@${ref}: ${stderr.trim()}`);
+    }
+
+    // Verify framework/ dir exists
+    try {
+      const stat = await Deno.stat(`${tmpDir}/framework`);
+      if (!stat.isDirectory) {
+        throw new Error("not a directory");
+      }
+    } catch {
+      await Deno.remove(tmpDir, { recursive: true }).catch(() => {});
+      throw new Error(
+        `No framework/ directory found in cloned repo (${url}@${ref})`,
+      );
+    }
+
+    return new GitSource(tmpDir);
+  }
+
+  listFiles(prefix: string): Promise<string[]> {
+    return this.localSource.listFiles(prefix);
+  }
+
+  readFile(path: string): Promise<string> {
+    return this.localSource.readFile(path);
+  }
+
+  async dispose(): Promise<void> {
+    await Deno.remove(this.tmpDir, { recursive: true });
   }
 }
 
