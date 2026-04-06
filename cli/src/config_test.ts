@@ -43,8 +43,7 @@ Deno.test("loadConfig - ignores unknown fields (backward compat)", async () => {
   await fs.writeFile(
     "/project/.flowai.yaml",
     `version: "1.0"
-source: korchasa/flow
-ref: main
+unknownField: some-value
 ides:
   - claude
 skills:
@@ -385,6 +384,120 @@ Deno.test("saveConfig - writes sessionDocs", async () => {
   const content = await fs.readFile("/project/.flowai.yaml");
   assertEquals(content.includes("sessionDocs:"), true);
   assertEquals(content.includes("documents/requirements.md"), true);
+});
+
+// --- source field tests ---
+
+Deno.test("parseConfigData - parses source with ref only", () => {
+  const config = parseConfigData({
+    version: "1.1",
+    source: { ref: "feat/new-skill" },
+  });
+  assertEquals(config.source, { ref: "feat/new-skill" });
+});
+
+Deno.test("parseConfigData - parses source with git + ref", () => {
+  const config = parseConfigData({
+    version: "1.1",
+    source: { git: "https://github.com/someone/fork.git", ref: "main" },
+  });
+  assertEquals(config.source, {
+    git: "https://github.com/someone/fork.git",
+    ref: "main",
+  });
+});
+
+Deno.test("parseConfigData - parses source with path", () => {
+  const config = parseConfigData({
+    version: "1.1",
+    source: { path: "/home/user/flowai/framework" },
+  });
+  assertEquals(config.source, { path: "/home/user/flowai/framework" });
+});
+
+Deno.test("parseConfigData - source undefined when absent", () => {
+  const config = parseConfigData({ version: "1.0" });
+  assertEquals(config.source, undefined);
+});
+
+Deno.test("parseConfigData - throws on source.git without ref", () => {
+  try {
+    parseConfigData({
+      source: { git: "https://github.com/someone/fork.git" },
+    });
+    throw new Error("Should have thrown");
+  } catch (e) {
+    assertEquals(
+      (e as Error).message,
+      "Invalid .flowai.yaml: source.git requires source.ref",
+    );
+  }
+});
+
+Deno.test("parseConfigData - throws on source.ref + source.path", () => {
+  try {
+    parseConfigData({
+      source: { ref: "main", path: "/some/path" },
+    });
+    throw new Error("Should have thrown");
+  } catch (e) {
+    assertEquals(
+      (e as Error).message,
+      "Invalid .flowai.yaml: source.ref and source.path are mutually exclusive",
+    );
+  }
+});
+
+Deno.test("saveConfig - writes source with ref", async () => {
+  const fs = new InMemoryFsAdapter();
+  await saveConfig("/project", {
+    version: "1.1",
+    ides: ["claude"],
+    skills: { include: [], exclude: [] },
+    agents: { include: [], exclude: [] },
+    commands: { include: [], exclude: [] },
+    source: { ref: "feat/test" },
+  }, fs);
+
+  const content = await fs.readFile("/project/.flowai.yaml");
+  assertEquals(content.includes("source:"), true);
+  assertEquals(content.includes("ref: feat/test"), true);
+});
+
+Deno.test("saveConfig - omits source when absent", async () => {
+  const fs = new InMemoryFsAdapter();
+  await saveConfig("/project", {
+    version: "1.1",
+    ides: ["claude"],
+    skills: { include: [], exclude: [] },
+    agents: { include: [], exclude: [] },
+    commands: { include: [], exclude: [] },
+  }, fs);
+
+  const content = await fs.readFile("/project/.flowai.yaml");
+  assertEquals(content.includes("source:"), false);
+});
+
+Deno.test("loadConfig - parses source with ref from YAML", async () => {
+  const fs = new InMemoryFsAdapter();
+  await fs.writeFile(
+    "/project/.flowai.yaml",
+    `version: "1.1"
+ides:
+  - claude
+source:
+  ref: feat/branch
+skills:
+  include: []
+  exclude: []
+agents:
+  include: []
+  exclude: []
+`,
+  );
+
+  const config = await loadConfig("/project", fs);
+  assertEquals(config!.source, { ref: "feat/branch" });
 });
 
 Deno.test("saveConfig - omits sessionDocs when empty", async () => {

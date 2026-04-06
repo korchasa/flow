@@ -1,6 +1,11 @@
 import { parse, stringify } from "@std/yaml";
 import { type FsAdapter, join } from "./adapters/fs.ts";
-import { DEFAULT_VERSION, type FlowConfig, PACKS_VERSION } from "./types.ts";
+import {
+  DEFAULT_VERSION,
+  type FlowConfig,
+  PACKS_VERSION,
+  type SourceConfig,
+} from "./types.ts";
 
 const CONFIG_FILENAME = ".flowai.yaml";
 
@@ -78,6 +83,36 @@ export function parseConfigData(data: Record<string, unknown>): FlowConfig {
     );
   }
 
+  // Parse source (optional)
+  let source: SourceConfig | undefined;
+  if (
+    data.source && typeof data.source === "object" &&
+    !Array.isArray(data.source)
+  ) {
+    const srcRaw = data.source as Record<string, unknown>;
+    const git = srcRaw.git ? String(srcRaw.git) : undefined;
+    const ref = srcRaw.ref ? String(srcRaw.ref) : undefined;
+    const path = srcRaw.path ? String(srcRaw.path) : undefined;
+
+    if (git && !ref) {
+      throw new Error(
+        "Invalid .flowai.yaml: source.git requires source.ref",
+      );
+    }
+    if (ref && path) {
+      throw new Error(
+        "Invalid .flowai.yaml: source.ref and source.path are mutually exclusive",
+      );
+    }
+
+    if (ref || path) {
+      source = {};
+      if (git) source.git = git;
+      if (ref) source.ref = ref;
+      if (path) source.path = path;
+    }
+  }
+
   const userSync = data.user_sync === true;
 
   // Parse packs (v1.1+). undefined = legacy mode (all resources).
@@ -120,6 +155,7 @@ export function parseConfigData(data: Record<string, unknown>): FlowConfig {
     skills,
     agents,
     commands,
+    source,
     userSync,
     models,
     sessionDocs,
@@ -152,6 +188,9 @@ export async function saveConfig(
   };
   if (config.packs !== undefined) {
     data.packs = config.packs;
+  }
+  if (config.source) {
+    data.source = config.source;
   }
   data.skills = config.skills;
   data.agents = config.agents;
