@@ -64,7 +64,13 @@ export interface HookDefinition {
 }
 
 /** Plan item type */
-export type PlanItemType = "skill" | "agent" | "command" | "hook" | "script";
+export type PlanItemType =
+  | "skill"
+  | "agent"
+  | "command"
+  | "hook"
+  | "script"
+  | "asset";
 
 /** Plan item for sync */
 export interface PlanItem {

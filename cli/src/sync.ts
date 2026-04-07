@@ -12,6 +12,7 @@ import {
   BundledSource,
   extractAgentNames,
   extractPackAgentNames,
+  extractPackAssetPaths,
   extractPackHookNames,
   extractPackNames,
   extractPackScriptNames,
@@ -447,6 +448,29 @@ export async function sync(
         await processPlan(scriptPlan, fs, options, result, log);
       }
 
+      // Core assets (copy to .{ide}/assets/)
+      // FR-DIST.SYNC — only core pack has shared assets (AGENTS.md templates)
+      if (usePacks) {
+        const assetFiles = await readPackAssetFiles(
+          allPaths,
+          source,
+          ["core"],
+        );
+        if (assetFiles.length > 0) {
+          const assetTargetDir = join(cwd, ide.configDir);
+          const assetPlan = await computePlan(
+            assetFiles,
+            assetTargetDir,
+            "asset",
+            fs,
+          );
+          if (isFirstIde && assetPlan.some((i) => i.action !== "ok")) {
+            log(`  Assets: ${assetFiles.length} file(s)`);
+          }
+          await processPlan(assetPlan, fs, options, result, log);
+        }
+      }
+
       isFirstIde = false;
     }
 
@@ -695,6 +719,30 @@ async function readPackScriptFiles(
       files.push({ path: match[1], content });
     }
   }
+  return files;
+}
+
+/** Read asset files from pack structure framework/<pack>/assets/.
+ * Currently only core pack has shared assets (AGENTS.md templates). */
+// FR-DIST.SYNC
+export async function readPackAssetFiles(
+  allPaths: string[],
+  source: FrameworkSource,
+  selectedPacks: string[],
+): Promise<UpstreamFile[]> {
+  const files: UpstreamFile[] = [];
+
+  for (const pack of selectedPacks) {
+    const assetPaths = extractPackAssetPaths(allPaths, pack);
+    for (const path of assetPaths) {
+      const content = await source.readFile(path);
+      // Strip framework/<pack>/assets/ → assets/<filename>
+      const prefix = `framework/${pack}/assets/`;
+      const relativePath = "assets/" + path.substring(prefix.length);
+      files.push({ path: relativePath, content });
+    }
+  }
+
   return files;
 }
 
