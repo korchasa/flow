@@ -143,11 +143,6 @@ export function parseConfigData(data: Record<string, unknown>): FlowConfig {
     }
   }
 
-  // Parse sessionDocs (optional string array)
-  const sessionDocs = Array.isArray(data.sessionDocs)
-    ? data.sessionDocs.filter((d): d is string => typeof d === "string")
-    : undefined;
-
   return {
     version,
     ides,
@@ -158,7 +153,6 @@ export function parseConfigData(data: Record<string, unknown>): FlowConfig {
     source,
     userSync,
     models,
-    sessionDocs,
   };
 }
 
@@ -200,9 +194,6 @@ export async function saveConfig(
   }
   if (config.models && Object.keys(config.models).length > 0) {
     data.models = config.models;
-  }
-  if (config.sessionDocs && config.sessionDocs.length > 0) {
-    data.sessionDocs = config.sessionDocs;
   }
   const yaml = stringify(data);
   await fs.writeFile(configPath, yaml);
