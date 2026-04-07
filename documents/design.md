@@ -192,7 +192,7 @@ graph TD
   - `SourceConfig`: `{ git?, ref?, path? }` — `ref` = branch/tag (default URL: `DEFAULT_GIT_URL`); `git` = custom repo URL (requires `ref`); `path` = local dir (mutually exclusive with `ref`)
   - `PackDefinition`: `{ name, version, description, scaffolds?: Record<skill, paths[]> }` (parsed from `pack.yaml`)
   - `HookDefinition`: `{ event, matcher?, description, timeout? }` (parsed from `hook.yaml`; timeout default: 30 PostToolUse, 600 PreToolUse)
-  - `PlanItem`: `{ type: skill|agent|hook|script, name, action: create|update|ok|conflict, sourcePath, targetPath, content }`
+  - `PlanItem`: `{ type: skill|agent|hook|script|asset, name, action: create|update|ok|conflict, sourcePath, targetPath, content }`
 - **Agent transformation rules** (per IDE): See 3.2 IDE frontmatter formats.
 - **Pack resolution flow:** Load config → expand `packs:` to resource lists (skills, agents, hooks, scripts from `framework/*/`) → apply `skills.include/exclude` filter → compute plan → write. `resolvePackResources()` returns `hookNames` and `scriptNames` alongside skills/agents.
 - **Rich sync output:** `flowai sync` produces instruction-oriented output: `>>> ACTIONS REQUIRED` (config migration, updated/created/deleted skills with inline scaffolds, created/updated/deleted agents, installed/updated/deleted hooks) or `>>> NO ACTIONS REQUIRED`. `SyncResult` includes `configMigrated`, `skillActions[]`, `agentActions[]`, `hookActions[]` with per-resource action and scaffolds. Post-sync frontmatter validation via `flowai-update/scripts/validate_frontmatter.ts` (scans IDE config dirs for skills + agents).

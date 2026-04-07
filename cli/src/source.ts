@@ -309,6 +309,23 @@ export function extractPackScriptNames(
   return names.sort();
 }
 
+/** Extract asset file paths within a specific pack.
+ * Currently only core pack has shared assets (AGENTS.md templates). */
+// FR-DIST.SYNC
+export function extractPackAssetPaths(
+  paths: string[],
+  packName: string,
+): string[] {
+  const result: string[] = [];
+  const prefix = `framework/${packName}/assets/`;
+  for (const p of paths) {
+    if (p.startsWith(prefix)) {
+      result.push(p);
+    }
+  }
+  return result.sort();
+}
+
 /** Check if bundle uses pack structure (has pack.yaml files) */
 export function hasPacks(paths: string[]): boolean {
   return paths.some((p) => /^framework\/[^/]+\/pack\.yaml$/.test(p));

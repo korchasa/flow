@@ -16,6 +16,7 @@ _research_tmp/
 .claude/skills/
 .claude/agents/
 .claude/scripts/
+.claude/assets/
 
 # Generated artifacts (cli)
 cli/src/bundled.json

@@ -145,6 +145,7 @@ All 38 skills have at least one benchmark scenario. Coverage is the source of tr
   - [x] Idempotent: safe on repeated runs.
   - [x] `--yes` / `-y` flag for non-interactive mode.
   - [x] `-y` without config → non-interactive config generation (auto-detect IDEs, all packs).
+  - [x] Core-level assets (`framework/<pack>/assets/`) synced to `{ide_dir}/assets/`.
 
 #### FR-DIST.CONFIG Config Generation
 - **Desc:** Interactive `.flowai.yaml` creation when config missing.
