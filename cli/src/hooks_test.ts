@@ -105,12 +105,12 @@ Deno.test("transformHookForCursor: transforms event and matcher", () => {
 Deno.test("transformHookForCursor: maps SessionStart event", () => {
   const hook: HookDefinition = {
     event: "SessionStart",
-    description: "Inject docs",
+    description: "Lint on write",
     timeout: 10,
   };
   const result = transformHookForCursor(
     hook,
-    ".cursor/scripts/flowai-session-init-docs/run.ts",
+    ".cursor/scripts/flowai-lint-on-write/run.ts",
   );
   assertEquals(result.event, "sessionStart");
   assertEquals(result.matcher, undefined);
