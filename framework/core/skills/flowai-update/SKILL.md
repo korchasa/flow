@@ -44,10 +44,10 @@ flowai generates three types of outputs:
 <step_by_step>
 
 1. **Update CLI**
-   - Run `flowai --version`. It prints the current version and checks JSR for updates.
+   - Run `flowai update`. It checks JSR for a newer version and installs it automatically.
    - If not installed, inform the user: `deno install -gArf jsr:@korchasa/flowai` and stop.
-   - If the output contains "Update available", run the update command shown in the output (e.g., `deno install -g -A -f jsr:@korchasa/flowai@X.Y.Z`).
-   - After updating, run `flowai --version` again to verify.
+   - If the output contains "Updated to X.Y.Z. Please re-run flowai." — the binary was replaced. Re-run `/flowai-update` from the beginning.
+   - If the output contains "Already up to date" — proceed to the next step.
 
 2. **Sync framework**
    - Run `flowai sync -y --skip-update-check` via shell. Capture the full stdout output.
@@ -150,7 +150,7 @@ flowai generates three types of outputs:
 ## Verification
 
 <verification>
-[ ] CLI version checked and updated if needed.
+[ ] CLI updated via `flowai update` (or confirmed already up to date).
 [ ] `flowai sync -y --skip-update-check` executed successfully.
 [ ] Self-bootstrap: re-read own SKILL.md if flowai-update was in SKILLS UPDATED.
 [ ] Sync output parsed: all action types extracted (skills, agents, assets, hooks, errors).

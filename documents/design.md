@@ -186,6 +186,7 @@ graph TD
   - `cli/src/ide.ts` — IDE detection by config dir presence + `isInsideIDE()` env var check (`CURSOR_AGENT`, `CLAUDECODE`, `OPENCODE`)
   - `cli/src/symlinks.ts` — `CLAUDE.md -> AGENTS.md` symlinks (FR-DIST.SYMLINKS)
   - `cli/src/version.ts` — self-update check against JSR registry (fail-open)
+  - `cli/src/update.ts` — `runSelfUpdate(options?)`: shared update logic for `flowai update` subcommand and `flowai sync` pre-flight; checks JSR via `checkForUpdate()`, installs via `runUpdate()`; graceful on network error; `yes` mode prints command instead of prompting (FR-DIST.UPDATE-CMD)
   - `cli/src/adapters/fs.ts` — `FsAdapter` abstraction + `DenoFsAdapter` + `InMemoryFsAdapter`
   - `cli/scripts/bundle-framework.ts` — generates `src/bundled.json` from `../framework/`
 - **Data entities:**
