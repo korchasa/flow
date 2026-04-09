@@ -179,6 +179,16 @@ All 38 skills have at least one benchmark scenario. Coverage is the source of tr
   - [x] `--skip-update-check` flag.
   - [x] 5s timeout, fail-open.
 
+#### FR-DIST.UPDATE-CMD Self-Update Subcommand
+- **Desc:** `flowai update` subcommand checks JSR for a newer version and installs it automatically. Shared update logic used by both `flowai update` and `flowai sync` pre-flight check.
+- **Acceptance:**
+  - [x] `flowai update` subcommand registered in CLI.
+  - [x] Prints "Already up to date" when current version is latest.
+  - [x] Prints "Updated to X.Y.Z" and returns on successful install.
+  - [x] Graceful message on network error, exits 0.
+  - [x] `yes` mode: prints update command instead of prompting.
+  - [x] `runSelfUpdate()` shared by `flowai update` and `flowai sync`.
+
 #### FR-DIST.BUNDLE Bundled Source
 - **Desc:** Framework files bundled into `cli/src/bundled.json` at publish time. No network dependency during sync.
 - **Acceptance:**

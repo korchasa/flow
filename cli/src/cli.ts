@@ -1,5 +1,5 @@
 // FR-DIST.SYNC — CLI entry point for flowai sync
-// FR-DIST.UPDATE — self-update check
+// FR-DIST.UPDATE-CMD — self-update subcommand
 // FR-DIST.MIGRATE — migrate subcommand
 import { Command } from "@cliffy/command";
 import { Confirm } from "@cliffy/prompt";
@@ -19,12 +19,8 @@ import {
   type ResourceAction,
 } from "./types.ts";
 import { sync, type SyncOptions, type SyncResult } from "./sync.ts";
-import {
-  buildUpdateCommand,
-  checkForUpdate,
-  runUpdate,
-  VERSION,
-} from "./version.ts";
+import { runSelfUpdate } from "./update.ts";
+import { checkForUpdate, VERSION } from "./version.ts";
 
 /** Add shared sync options to a command (avoids duplication between root and sync subcommand) */
 // deno-lint-ignore no-explicit-any
@@ -60,35 +56,7 @@ async function runSync(options: {
   const { yes, skipUpdateCheck } = options;
 
   // 0. Check for updates (before sync, fail-open)
-  if (!skipUpdateCheck) {
-    const update = await checkForUpdate(VERSION);
-    if (update?.updateAvailable) {
-      console.log(
-        `\nUpdate available: ${update.currentVersion} → ${update.latestVersion}`,
-      );
-
-      if (yes) {
-        console.log(
-          `Run: ${buildUpdateCommand(update.latestVersion)}\n`,
-        );
-      } else {
-        const doUpdate = await Confirm.prompt({
-          message: "Update now?",
-          default: true,
-        });
-
-        if (doUpdate) {
-          const success = await runUpdate(update.latestVersion);
-          if (success) {
-            console.log(
-              `\nUpdated to ${update.latestVersion}. Please re-run flowai.\n`,
-            );
-            return;
-          }
-        }
-      }
-    }
-  }
+  if (await runSelfUpdate({ yes, skip: skipUpdateCheck })) return;
 
   // 1. Load or generate config
   let config = await loadConfig(cwd, fs);
@@ -527,6 +495,15 @@ export async function main(args: string[]): Promise<void> {
             migrateOpts,
             console.log,
           );
+        }),
+    )
+    .command(
+      "update",
+      new Command()
+        .description("Check for a newer flowai version and self-update.")
+        // deno-lint-ignore no-explicit-any
+        .action(async (_options: any) => {
+          await runSelfUpdate();
         }),
     );
 
