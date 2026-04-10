@@ -15,7 +15,7 @@
 
 - `.flowai/runs/` is gitignored -- must use `git add -f` for artifacts.
 - Memory files also need `git add -f` if under `.flowai/`.
-- Benchmark files under `framework/*/skills/*/benchmarks/` are excluded from lint (deno.json lint.exclude).
+- Benchmark files under `framework/*/skills/*/benchmarks/` and `framework/*/commands/*/benchmarks/` are excluded from lint (deno.json lint.exclude).
 
 ## Baseline metrics
 

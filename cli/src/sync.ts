@@ -11,8 +11,10 @@ import { computePlan, planSummary } from "./plan.ts";
 import {
   BundledSource,
   extractAgentNames,
+  extractCommandNames,
   extractPackAgentNames,
   extractPackAssetPaths,
+  extractPackCommandNames,
   extractPackHookNames,
   extractPackNames,
   extractPackScriptNames,
@@ -106,13 +108,17 @@ export interface SyncResult {
   assetActions: ResourceAction[];
 }
 
-/** Resolve which skills, agents, hooks, and scripts to sync based on packs and filters */
+/** Resolve which skills, commands, agents, hooks, and scripts to sync based on
+ * packs and filters. Commands are a sibling primitive to skills — user-only,
+ * sourced from `framework/<pack>/commands/`, filtered by `config.commands`. */
 export function resolvePackResources(
   allPaths: string[],
   config: FlowConfig,
 ): {
   allSkillNames: string[];
   skillNames: string[];
+  allCommandNames: string[];
+  commandNames: string[];
   allAgentNames: string[];
   agentNames: string[];
   hookNames: string[];
@@ -121,34 +127,39 @@ export function resolvePackResources(
   const usePacks = hasPacks(allPaths);
 
   let allSkillNames: string[];
+  let allCommandNames: string[];
   let allAgentNames: string[];
   let hookNames: string[] = [];
   let scriptNames: string[] = [];
 
   if (usePacks) {
-    // Pack-based: resolve packs → skill/agent/hook/script names
+    // Pack-based: resolve packs → skill/command/agent/hook/script names
     const allPackNames = extractPackNames(allPaths);
     const selectedPacks = config.packs !== undefined
       ? (config.packs.length > 0 ? config.packs : ["core"]) // [] = core only
       : allPackNames; // v1 legacy: all packs
 
     allSkillNames = [];
+    allCommandNames = [];
     allAgentNames = [];
     for (const pack of selectedPacks) {
       if (!allPackNames.includes(pack)) continue; // unknown pack, skip
       allSkillNames.push(...extractPackSkillNames(allPaths, pack));
+      allCommandNames.push(...extractPackCommandNames(allPaths, pack));
       allAgentNames.push(...extractPackAgentNames(allPaths, pack));
       hookNames.push(...extractPackHookNames(allPaths, pack));
       scriptNames.push(...extractPackScriptNames(allPaths, pack));
     }
     // Deduplicate and sort
     allSkillNames = [...new Set(allSkillNames)].sort();
+    allCommandNames = [...new Set(allCommandNames)].sort();
     allAgentNames = [...new Set(allAgentNames)].sort();
     hookNames = [...new Set(hookNames)].sort();
     scriptNames = [...new Set(scriptNames)].sort();
   } else {
     // Legacy flat structure
     allSkillNames = extractSkillNames(allPaths);
+    allCommandNames = extractCommandNames(allPaths);
     allAgentNames = extractAgentNames(allPaths);
   }
 
@@ -157,6 +168,12 @@ export function resolvePackResources(
     allSkillNames,
     config.skills.include,
     config.skills.exclude,
+  );
+
+  const commandNames = filterNames(
+    allCommandNames,
+    config.commands.include,
+    config.commands.exclude,
   );
 
   const agentNames = filterNames(
@@ -168,6 +185,8 @@ export function resolvePackResources(
   return {
     allSkillNames,
     skillNames,
+    allCommandNames,
+    commandNames,
     allAgentNames,
     agentNames,
     hookNames,
@@ -243,11 +262,28 @@ export async function sync(
     const {
       allSkillNames,
       skillNames,
+      allCommandNames,
+      commandNames,
       allAgentNames,
       agentNames,
       hookNames,
       scriptNames,
     } = resolvePackResources(allPaths, config);
+
+    // Collision guard: skills and commands land in the same target dir
+    // (.{ide}/skills/), so their names MUST be disjoint. Disjointness is
+    // enforced upstream by the naming prefix convention (flowai-skill-* vs
+    // flowai-*), but we verify here to catch accidental duplication before
+    // it clobbers files on disk.
+    const skillNameSet = new Set(skillNames);
+    const collisions = commandNames.filter((n) => skillNameSet.has(n));
+    if (collisions.length > 0) {
+      throw new Error(
+        `Name collision between skills and commands: ${
+          collisions.join(", ")
+        }. A primitive must be either a skill or a command, not both.`,
+      );
+    }
 
     if (usePacks && config.packs !== undefined) {
       log(`Packs: ${config.packs.join(", ")}`);
@@ -256,6 +292,12 @@ export async function sync(
     log(
       `Skills to sync: ${
         skillNames.length > 0 ? skillNames.join(", ") : "(none)"
+      }`,
+    );
+
+    log(
+      `Commands to sync: ${
+        commandNames.length > 0 ? commandNames.join(", ") : "(none)"
       }`,
     );
 
@@ -328,6 +370,68 @@ export async function sync(
           }
         }
         await processPlan(skillDeletePlan, fs, options, result, log);
+      }
+
+      // Commands — user-only primitives sourced from framework/<pack>/commands/,
+      // installed into the same .{ide}/skills/ target dir as skills, with
+      // `disable-model-invocation: true` injected by readPackCommandFiles.
+      if (commandNames.length > 0) {
+        const commandFiles = usePacks
+          ? await readPackCommandFiles(
+            commandNames,
+            allPaths,
+            source,
+            ide.name,
+            modelMap,
+          )
+          : await readCommandFiles(
+            commandNames,
+            allPaths,
+            source,
+            ide.name,
+            modelMap,
+          );
+        const commandPlan = await computePlan(
+          commandFiles,
+          skillTargetDir,
+          "skill",
+          fs,
+        );
+
+        if (isFirstIde) {
+          // Commands contribute to skillActions because they install into
+          // the same .{ide}/skills/ dir; downstream UI treats them uniformly.
+          result.skillActions.push(
+            ...extractResourceActions(
+              commandPlan,
+              commandNames,
+              scaffoldsIndex,
+            ),
+          );
+        }
+
+        await processPlan(commandPlan, fs, options, result, log);
+      }
+
+      // Delete excluded commands from the shared .{ide}/skills/ target dir.
+      const commandDeletePlan = await computeDeletePlan(
+        allCommandNames,
+        commandNames,
+        skillTargetDir,
+        "skill",
+        fs,
+      );
+      if (commandDeletePlan.length > 0) {
+        if (isFirstIde) {
+          for (const item of commandDeletePlan) {
+            result.skillActions.push({
+              name: item.name,
+              action: "delete",
+              scaffolds: scaffoldsIndex.get(item.name) ?? [],
+            });
+          }
+        }
+        await processPlan(commandDeletePlan, fs, options, result, log);
       }
 
       // Agents (transform per IDE)
@@ -642,6 +746,112 @@ export async function readPackSkillFiles(
       const skillName = match[1];
       const prefixEnd = path.indexOf(`/skills/${skillName}/`) +
         "/skills/".length;
+      const relativePath = path.substring(prefixEnd);
+      files.push({ path: relativePath, content });
+    }
+  }
+  return files;
+}
+
+/**
+ * Inject `disable-model-invocation: true` as the last key of the SKILL.md
+ * frontmatter block. Directory placement under `commands/` is the single
+ * source of truth for the user-only nature of a framework command; the flag
+ * is added here so the installed file still carries the IDE signal without
+ * authors needing to remember it.
+ *
+ * Idempotent — if the key is already present (any value), the content is
+ * returned unchanged. Preserves CRLF line endings if the input uses them.
+ *
+ * Throws if the content has no leading frontmatter block — commands MUST
+ * have a SKILL.md frontmatter; missing frontmatter is a validator failure
+ * and should be surfaced at read time, not silently tolerated.
+ */
+export function injectDisableModelInvocation(content: string): string {
+  // Detect line ending from the frontmatter region (first ~200 chars).
+  const head = content.slice(0, 200);
+  const crlf = /\r\n/.test(head);
+  const eol = crlf ? "\r\n" : "\n";
+
+  // Match opening `---` and closing `---` of the frontmatter block.
+  // [\s\S] to cross lines; non-greedy to stop at the first closing marker.
+  const fmRe = /^---\r?\n([\s\S]*?)\r?\n---/;
+  const match = content.match(fmRe);
+  if (!match) {
+    throw new Error(
+      "injectDisableModelInvocation: content has no frontmatter block",
+    );
+  }
+
+  const fmBody = match[1];
+  // Idempotent: if key already present (in any form), return unchanged.
+  if (/^\s*disable-model-invocation\s*:/m.test(fmBody)) {
+    return content;
+  }
+
+  const newFmBody = fmBody + eol + "disable-model-invocation: true";
+  const newFrontmatter = `---${eol}${newFmBody}${eol}---`;
+  return content.replace(fmRe, newFrontmatter);
+}
+
+/** Read command files from legacy flat framework/commands/. Symmetric with
+ * `readSkillFiles` but injects `disable-model-invocation: true` into SKILL.md. */
+export async function readCommandFiles(
+  commandNames: string[],
+  allPaths: string[],
+  source: FrameworkSource,
+  ideName?: string,
+  modelMap?: Record<string, string>,
+): Promise<UpstreamFile[]> {
+  const files: UpstreamFile[] = [];
+  for (const name of commandNames) {
+    const prefix = `framework/commands/${name}/`;
+    const paths = allPaths.filter((p) =>
+      p.startsWith(prefix) && !isDevOnlyPath(p)
+    );
+    for (const path of paths) {
+      let content = await source.readFile(path);
+      if (path.endsWith("/SKILL.md")) {
+        if (ideName) {
+          content = transformSkillModel(content, ideName, modelMap);
+        }
+        content = injectDisableModelInvocation(content);
+      }
+      const relativePath = path.substring("framework/commands/".length);
+      files.push({ path: relativePath, content });
+    }
+  }
+  return files;
+}
+
+/** Read command files from pack structure framework/<pack>/commands/.
+ * Commands install into `.{ide}/skills/` alongside skills; the directory
+ * `commands/` is the framework-level classifier, and the writer injects
+ * `disable-model-invocation: true` into each command's SKILL.md at sync time. */
+export async function readPackCommandFiles(
+  commandNames: string[],
+  allPaths: string[],
+  source: FrameworkSource,
+  ideName?: string,
+  modelMap?: Record<string, string>,
+): Promise<UpstreamFile[]> {
+  const files: UpstreamFile[] = [];
+  const nameSet = new Set(commandNames);
+
+  const packCommandRegex = /^framework\/[^/]+\/commands\/([^/]+)\//;
+  for (const path of allPaths) {
+    const match = path.match(packCommandRegex);
+    if (match && nameSet.has(match[1]) && !isDevOnlyPath(path)) {
+      let content = await source.readFile(path);
+      if (path.endsWith("/SKILL.md")) {
+        if (ideName) {
+          content = transformSkillModel(content, ideName, modelMap);
+        }
+        content = injectDisableModelInvocation(content);
+      }
+      const commandName = match[1];
+      const prefixEnd = path.indexOf(`/commands/${commandName}/`) +
+        "/commands/".length;
       const relativePath = path.substring(prefixEnd);
       files.push({ path: relativePath, content });
     }

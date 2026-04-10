@@ -7,17 +7,23 @@
  * content stays in sync with the source skills.
  */
 
-/** Find skill directory by scanning pack structure */
+/** Find primitive directory by scanning pack structure. Accepts both
+ * `framework/<pack>/skills/<name>/` and `framework/<pack>/commands/<name>/`
+ * since flowai-review-and-commit inlines primitives from the commands tree. */
 async function findSkillDir(skillName: string): Promise<string> {
   for await (const pack of Deno.readDir("framework")) {
     if (!pack.isDirectory) continue;
-    const skillPath = `framework/${pack.name}/skills/${skillName}`;
-    try {
-      const stat = await Deno.stat(skillPath);
-      if (stat.isDirectory) return skillPath;
-    } catch { /* not in this pack */ }
+    for (const kind of ["commands", "skills"]) {
+      const path = `framework/${pack.name}/${kind}/${skillName}`;
+      try {
+        const stat = await Deno.stat(path);
+        if (stat.isDirectory) return path;
+      } catch { /* not in this location */ }
+    }
   }
-  throw new Error(`Skill '${skillName}' not found in any pack`);
+  throw new Error(
+    `Primitive '${skillName}' not found in any pack (checked commands/ and skills/)`,
+  );
 }
 
 const SOURCES = [

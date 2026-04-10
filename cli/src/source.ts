@@ -207,6 +207,22 @@ export function extractSkillNames(paths: string[]): string[] {
   return [...names].sort();
 }
 
+/** Extract command names from framework file paths (legacy flat structure).
+ * Commands are user-only primitives; they live under `framework/commands/` in
+ * legacy layouts. Never actually populated in practice today — kept for
+ * symmetry with `extractSkillNames` so both primitive types share the
+ * legacy/pack-aware extractor pair. */
+export function extractCommandNames(paths: string[]): string[] {
+  const names = new Set<string>();
+  for (const p of paths) {
+    const match = p.match(/^framework\/commands\/([^/]+)\//);
+    if (match) {
+      names.add(match[1]);
+    }
+  }
+  return [...names].sort();
+}
+
 /** Extract agent names from flat framework/agents/ directory (legacy) */
 export function extractAgentNames(paths: string[]): string[] {
   const names: string[] = [];
@@ -240,6 +256,29 @@ export function extractPackSkillNames(
 ): string[] {
   const names = new Set<string>();
   const prefix = `framework/${packName}/skills/`;
+  for (const p of paths) {
+    if (p.startsWith(prefix)) {
+      const rest = p.substring(prefix.length);
+      const slashIdx = rest.indexOf("/");
+      if (slashIdx > 0) {
+        names.add(rest.substring(0, slashIdx));
+      }
+    }
+  }
+  return [...names].sort();
+}
+
+/** Extract command names within a specific pack.
+ * Commands are user-only primitives that live under `framework/<pack>/commands/`
+ * as sibling to `framework/<pack>/skills/`. Classification-by-directory is the
+ * sole source of truth; the `disable-model-invocation: true` flag is injected
+ * by the writer at sync time (see `readPackCommandFiles` in sync.ts). */
+export function extractPackCommandNames(
+  paths: string[],
+  packName: string,
+): string[] {
+  const names = new Set<string>();
+  const prefix = `framework/${packName}/commands/`;
   for (const p of paths) {
     if (p.startsWith(prefix)) {
       const rest = p.substring(prefix.length);

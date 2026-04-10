@@ -1,7 +1,10 @@
 import { assertEquals } from "@std/assert";
 import {
   filterNames,
+  injectDisableModelInvocation,
+  readCommandFiles,
   readPackAssetFiles,
+  readPackCommandFiles,
   readPackSkillFiles,
   readSkillFiles,
   resolvePackResources,
@@ -28,10 +31,12 @@ Deno.test("filterNames - include takes precedence (exclude ignored if include se
 
 // --- resolvePackResources tests ---
 
+// Mixed pack structure: commands under commands/, skills under skills/.
+// Mirrors the canonical framework layout after the commands/skills split.
 const PACK_PATHS = [
   "framework/core/pack.yaml",
-  "framework/core/skills/flowai-commit/SKILL.md",
-  "framework/core/skills/flowai-plan/SKILL.md",
+  "framework/core/commands/flowai-commit/SKILL.md",
+  "framework/core/commands/flowai-plan/SKILL.md",
   "framework/core/agents/flowai-console-expert.md",
   "framework/deno/pack.yaml",
   "framework/deno/skills/flowai-skill-deno-cli/SKILL.md",
@@ -51,54 +56,58 @@ function makeConfig(overrides: Partial<FlowConfig> = {}): FlowConfig {
 Deno.test("resolvePackResources - selects resources from specified packs", () => {
   const config = makeConfig({ packs: ["core"] });
   const result = resolvePackResources(PACK_PATHS, config);
-  assertEquals(result.skillNames, ["flowai-commit", "flowai-plan"]);
+  assertEquals(result.skillNames, []);
+  assertEquals(result.commandNames, ["flowai-commit", "flowai-plan"]);
   assertEquals(result.agentNames, ["flowai-console-expert"]);
 });
 
 Deno.test("resolvePackResources - packs: [] defaults to core only", () => {
   const config = makeConfig({ packs: [] });
   const result = resolvePackResources(PACK_PATHS, config);
-  assertEquals(result.skillNames, ["flowai-commit", "flowai-plan"]);
+  assertEquals(result.commandNames, ["flowai-commit", "flowai-plan"]);
+  assertEquals(result.skillNames, []);
   assertEquals(result.agentNames, ["flowai-console-expert"]);
 });
 
 Deno.test("resolvePackResources - packs: undefined (v1 legacy) selects all", () => {
   const config = makeConfig({ packs: undefined });
   const result = resolvePackResources(PACK_PATHS, config);
-  assertEquals(result.skillNames, [
-    "flowai-commit",
-    "flowai-plan",
-    "flowai-skill-deno-cli",
-  ]);
+  assertEquals(result.commandNames, ["flowai-commit", "flowai-plan"]);
+  assertEquals(result.skillNames, ["flowai-skill-deno-cli"]);
   assertEquals(result.agentNames, ["flowai-console-expert"]);
 });
 
-Deno.test("resolvePackResources - applies skills.exclude after pack expansion", () => {
+Deno.test("resolvePackResources - applies commands.exclude after pack expansion", () => {
   const config = makeConfig({
     packs: ["core"],
-    skills: { include: [], exclude: ["flowai-plan"] },
+    commands: { include: [], exclude: ["flowai-plan"] },
   });
   const result = resolvePackResources(PACK_PATHS, config);
-  assertEquals(result.skillNames, ["flowai-commit"]);
+  assertEquals(result.commandNames, ["flowai-commit"]);
 });
 
 Deno.test("resolvePackResources - applies skills.include after pack expansion", () => {
   const config = makeConfig({
     packs: ["core", "deno"],
     skills: {
-      include: ["flowai-commit", "flowai-skill-deno-cli"],
+      include: ["flowai-skill-deno-cli"],
+      exclude: [],
+    },
+    commands: {
+      include: ["flowai-commit"],
       exclude: [],
     },
   });
   const result = resolvePackResources(PACK_PATHS, config);
-  assertEquals(result.skillNames, ["flowai-commit", "flowai-skill-deno-cli"]);
+  assertEquals(result.commandNames, ["flowai-commit"]);
+  assertEquals(result.skillNames, ["flowai-skill-deno-cli"]);
 });
 
 // --- Hook and Script resolution tests ---
 
 const PACK_PATHS_WITH_HOOKS_SCRIPTS = [
   "framework/core/pack.yaml",
-  "framework/core/skills/flowai-commit/SKILL.md",
+  "framework/core/commands/flowai-commit/SKILL.md",
   "framework/core/hooks/lint-on-edit/hook.yaml",
   "framework/core/hooks/lint-on-edit/run.ts",
   "framework/core/scripts/check.ts",
@@ -129,68 +138,252 @@ Deno.test("resolvePackResources - packs: [core] only includes core scripts", () 
 Deno.test("readPackSkillFiles - excludes benchmarks and test files", async () => {
   const source = new InMemoryFrameworkSource(
     new Map([
-      ["framework/core/skills/flowai-commit/SKILL.md", "# Commit"],
-      ["framework/core/skills/flowai-commit/prompt.md", "prompt"],
-      ["framework/core/skills/flowai-commit/scripts/helper.ts", "code"],
+      ["framework/core/skills/flowai-skill-demo/SKILL.md", "# Demo"],
+      ["framework/core/skills/flowai-skill-demo/prompt.md", "prompt"],
+      ["framework/core/skills/flowai-skill-demo/scripts/helper.ts", "code"],
       [
-        "framework/core/skills/flowai-commit/scripts/helper_test.ts",
+        "framework/core/skills/flowai-skill-demo/scripts/helper_test.ts",
         "test code",
       ],
       [
-        "framework/core/skills/flowai-commit/benchmarks/basic/mod.ts",
+        "framework/core/skills/flowai-skill-demo/benchmarks/basic/mod.ts",
         "bench code",
       ],
       [
-        "framework/core/skills/flowai-commit/benchmarks/basic/fixture/file.md",
+        "framework/core/skills/flowai-skill-demo/benchmarks/basic/fixture/file.md",
         "fixture",
       ],
     ]),
   );
   const allPaths = [
-    "framework/core/skills/flowai-commit/SKILL.md",
-    "framework/core/skills/flowai-commit/prompt.md",
-    "framework/core/skills/flowai-commit/scripts/helper.ts",
-    "framework/core/skills/flowai-commit/scripts/helper_test.ts",
-    "framework/core/skills/flowai-commit/benchmarks/basic/mod.ts",
-    "framework/core/skills/flowai-commit/benchmarks/basic/fixture/file.md",
+    "framework/core/skills/flowai-skill-demo/SKILL.md",
+    "framework/core/skills/flowai-skill-demo/prompt.md",
+    "framework/core/skills/flowai-skill-demo/scripts/helper.ts",
+    "framework/core/skills/flowai-skill-demo/scripts/helper_test.ts",
+    "framework/core/skills/flowai-skill-demo/benchmarks/basic/mod.ts",
+    "framework/core/skills/flowai-skill-demo/benchmarks/basic/fixture/file.md",
   ];
 
-  const files = await readPackSkillFiles(["flowai-commit"], allPaths, source);
+  const files = await readPackSkillFiles(
+    ["flowai-skill-demo"],
+    allPaths,
+    source,
+  );
   const paths = files.map((f) => f.path);
 
   assertEquals(paths, [
-    "flowai-commit/SKILL.md",
-    "flowai-commit/prompt.md",
-    "flowai-commit/scripts/helper.ts",
+    "flowai-skill-demo/SKILL.md",
+    "flowai-skill-demo/prompt.md",
+    "flowai-skill-demo/scripts/helper.ts",
   ]);
 });
 
 Deno.test("readSkillFiles - excludes benchmarks and test files", async () => {
   const source = new InMemoryFrameworkSource(
     new Map([
-      ["framework/skills/flowai-commit/SKILL.md", "# Commit"],
-      ["framework/skills/flowai-commit/scripts/run.ts", "code"],
-      ["framework/skills/flowai-commit/scripts/run_test.ts", "test"],
+      ["framework/skills/flowai-skill-demo/SKILL.md", "# Demo"],
+      ["framework/skills/flowai-skill-demo/scripts/run.ts", "code"],
+      ["framework/skills/flowai-skill-demo/scripts/run_test.ts", "test"],
       [
-        "framework/skills/flowai-commit/benchmarks/basic/mod.ts",
+        "framework/skills/flowai-skill-demo/benchmarks/basic/mod.ts",
         "bench code",
       ],
     ]),
   );
   const allPaths = [
-    "framework/skills/flowai-commit/SKILL.md",
-    "framework/skills/flowai-commit/scripts/run.ts",
-    "framework/skills/flowai-commit/scripts/run_test.ts",
-    "framework/skills/flowai-commit/benchmarks/basic/mod.ts",
+    "framework/skills/flowai-skill-demo/SKILL.md",
+    "framework/skills/flowai-skill-demo/scripts/run.ts",
+    "framework/skills/flowai-skill-demo/scripts/run_test.ts",
+    "framework/skills/flowai-skill-demo/benchmarks/basic/mod.ts",
   ];
 
-  const files = await readSkillFiles(["flowai-commit"], allPaths, source);
+  const files = await readSkillFiles(["flowai-skill-demo"], allPaths, source);
   const paths = files.map((f) => f.path);
 
   assertEquals(paths, [
-    "flowai-commit/SKILL.md",
-    "flowai-commit/scripts/run.ts",
+    "flowai-skill-demo/SKILL.md",
+    "flowai-skill-demo/scripts/run.ts",
   ]);
+});
+
+// --- Command reader tests (commands/ subtree + auto-injection) ---
+
+Deno.test("readPackCommandFiles - reads commands from framework/<pack>/commands/", async () => {
+  const source = new InMemoryFrameworkSource(
+    new Map([
+      [
+        "framework/core/commands/flowai-commit/SKILL.md",
+        "---\nname: flowai-commit\ndescription: Commit workflow\n---\n\n# Body\n",
+      ],
+      [
+        "framework/core/commands/flowai-commit/scripts/helper.ts",
+        "code",
+      ],
+      [
+        "framework/core/commands/flowai-commit/scripts/helper_test.ts",
+        "test",
+      ],
+      [
+        "framework/core/commands/flowai-commit/benchmarks/basic/mod.ts",
+        "bench",
+      ],
+    ]),
+  );
+  const allPaths = [
+    "framework/core/commands/flowai-commit/SKILL.md",
+    "framework/core/commands/flowai-commit/scripts/helper.ts",
+    "framework/core/commands/flowai-commit/scripts/helper_test.ts",
+    "framework/core/commands/flowai-commit/benchmarks/basic/mod.ts",
+  ];
+
+  const files = await readPackCommandFiles(
+    ["flowai-commit"],
+    allPaths,
+    source,
+  );
+  const paths = files.map((f) => f.path);
+  assertEquals(paths, [
+    "flowai-commit/SKILL.md",
+    "flowai-commit/scripts/helper.ts",
+  ]);
+});
+
+Deno.test("readPackCommandFiles - injects disable-model-invocation into SKILL.md", async () => {
+  const source = new InMemoryFrameworkSource(
+    new Map([
+      [
+        "framework/core/commands/flowai-commit/SKILL.md",
+        "---\nname: flowai-commit\ndescription: Commit workflow\n---\n\n# Body\n",
+      ],
+    ]),
+  );
+  const allPaths = ["framework/core/commands/flowai-commit/SKILL.md"];
+  const files = await readPackCommandFiles(
+    ["flowai-commit"],
+    allPaths,
+    source,
+  );
+  const skillMd = files.find((f) => f.path === "flowai-commit/SKILL.md");
+  assertEquals(skillMd !== undefined, true);
+  assertEquals(
+    /^disable-model-invocation:\s*true$/m.test(skillMd!.content),
+    true,
+  );
+});
+
+Deno.test("readPackCommandFiles - does NOT inject flag into non-SKILL.md files", async () => {
+  const source = new InMemoryFrameworkSource(
+    new Map([
+      [
+        "framework/core/commands/flowai-commit/SKILL.md",
+        "---\nname: flowai-commit\ndescription: x\n---\n",
+      ],
+      [
+        "framework/core/commands/flowai-commit/scripts/run.ts",
+        "// scripts should stay untouched\n",
+      ],
+    ]),
+  );
+  const allPaths = [
+    "framework/core/commands/flowai-commit/SKILL.md",
+    "framework/core/commands/flowai-commit/scripts/run.ts",
+  ];
+  const files = await readPackCommandFiles(
+    ["flowai-commit"],
+    allPaths,
+    source,
+  );
+  const script = files.find((f) => f.path.endsWith("run.ts"));
+  assertEquals(script!.content, "// scripts should stay untouched\n");
+});
+
+Deno.test("readCommandFiles - legacy flat framework/commands/", async () => {
+  const source = new InMemoryFrameworkSource(
+    new Map([
+      [
+        "framework/commands/flowai-commit/SKILL.md",
+        "---\nname: flowai-commit\ndescription: x\n---\n",
+      ],
+      [
+        "framework/commands/flowai-commit/benchmarks/basic/mod.ts",
+        "bench",
+      ],
+    ]),
+  );
+  const allPaths = [
+    "framework/commands/flowai-commit/SKILL.md",
+    "framework/commands/flowai-commit/benchmarks/basic/mod.ts",
+  ];
+  const files = await readCommandFiles(["flowai-commit"], allPaths, source);
+  assertEquals(files.length, 1);
+  assertEquals(
+    /^disable-model-invocation:\s*true$/m.test(files[0].content),
+    true,
+  );
+});
+
+Deno.test("injectDisableModelInvocation - adds key to frontmatter", () => {
+  const input = "---\nname: flowai-commit\ndescription: x\n---\n\nBody\n";
+  const output = injectDisableModelInvocation(input);
+  assertEquals(
+    output,
+    "---\nname: flowai-commit\ndescription: x\ndisable-model-invocation: true\n---\n\nBody\n",
+  );
+});
+
+Deno.test("injectDisableModelInvocation - idempotent if flag present", () => {
+  const input =
+    "---\nname: flowai-commit\ndescription: x\ndisable-model-invocation: true\n---\n\nBody\n";
+  const output = injectDisableModelInvocation(input);
+  assertEquals(output, input);
+});
+
+Deno.test("injectDisableModelInvocation - handles CRLF line endings", () => {
+  const input = "---\r\nname: x\r\ndescription: y\r\n---\r\n\r\nBody\r\n";
+  const output = injectDisableModelInvocation(input);
+  assertEquals(output.includes("disable-model-invocation: true"), true);
+  // Frontmatter block preserved (starts and ends with ---)
+  const fmMatch = output.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+  assertEquals(fmMatch !== null, true);
+});
+
+Deno.test("injectDisableModelInvocation - throws on missing frontmatter", () => {
+  let threw = false;
+  try {
+    injectDisableModelInvocation("# No frontmatter\n");
+  } catch {
+    threw = true;
+  }
+  assertEquals(threw, true);
+});
+
+Deno.test("resolvePackResources - returns commandNames alongside skillNames", () => {
+  const paths = [
+    "framework/core/pack.yaml",
+    "framework/core/commands/flowai-commit/SKILL.md",
+    "framework/core/commands/flowai-plan/SKILL.md",
+    "framework/core/skills/flowai-skill-foo/SKILL.md",
+  ];
+  const config = makeConfig({ packs: ["core"] });
+  const result = resolvePackResources(paths, config);
+  assertEquals(result.skillNames, ["flowai-skill-foo"]);
+  assertEquals(result.commandNames, ["flowai-commit", "flowai-plan"]);
+  assertEquals(result.allCommandNames, ["flowai-commit", "flowai-plan"]);
+});
+
+Deno.test("resolvePackResources - applies commands.exclude after pack expansion", () => {
+  const paths = [
+    "framework/core/pack.yaml",
+    "framework/core/commands/flowai-commit/SKILL.md",
+    "framework/core/commands/flowai-plan/SKILL.md",
+  ];
+  const config = makeConfig({
+    packs: ["core"],
+    commands: { include: [], exclude: ["flowai-plan"] },
+  });
+  const result = resolvePackResources(paths, config);
+  assertEquals(result.commandNames, ["flowai-commit"]);
+  assertEquals(result.allCommandNames, ["flowai-commit", "flowai-plan"]);
 });
 
 // --- Pack asset sync tests ---
@@ -207,14 +400,14 @@ Deno.test("readPackAssetFiles - reads assets from selected packs", async () => {
         "# Documents",
       ],
       ["framework/engineering/assets/report.md", "# Report Template"],
-      ["framework/core/skills/flowai-init/SKILL.md", "# Init"],
+      ["framework/core/commands/flowai-init/SKILL.md", "# Init"],
     ]),
   );
   const allPaths = [
     "framework/core/pack.yaml",
     "framework/core/assets/AGENTS.template.md",
     "framework/core/assets/AGENTS.documents.template.md",
-    "framework/core/skills/flowai-init/SKILL.md",
+    "framework/core/commands/flowai-init/SKILL.md",
     "framework/engineering/pack.yaml",
     "framework/engineering/assets/report.md",
   ];

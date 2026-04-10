@@ -83,7 +83,7 @@ Note: FR-DIST.MAPPING defines cross-IDE resource mapping; open questions need us
 
 - **Description:** Evidence-based benchmarking system to evaluate agent skill execution quality. `deno task bench`.
 - **Key capabilities:** Isolated sandbox execution (`SpawnedAgent`), LLM-based Judge, evidence collection, interactive flows (`UserEmulator`), cost/token tracking, HTML tracing, parallel execution protection.
-- **Architecture:** Co-located scenarios (`framework/<pack>/skills/<skill>/benchmarks/`), pack-level scenarios (`framework/<pack>/benchmarks/`), pack-scoped sandbox, Claude CLI judge (`cliChatCompletion`), mandatory `agentsTemplateVars` (compile-time enforced).
+- **Architecture:** Co-located scenarios (`framework/<pack>/skills/<skill>/benchmarks/` and `framework/<pack>/commands/<command>/benchmarks/`), pack-level scenarios (`framework/<pack>/benchmarks/`), pack-scoped sandbox, Claude CLI judge (`cliChatCompletion`), mandatory `agentsTemplateVars` (compile-time enforced).
 - **Implementation:** `scripts/benchmarks/lib/` (runner, judge, spawned_agent, user_emulator, trace, types, utils).
 
 ### FR-BENCH.RULES: AGENTS.md Rules Benchmarks
@@ -372,9 +372,9 @@ All 41 skills have at least one benchmark scenario. Coverage is the source of tr
 - **Acceptance criteria:**
   - [x] **Non-interactive**: Scripts MUST NOT use interactive prompts (stdin confirmation, interactive menus). All input via CLI flags, env vars, or stdin piping. Agents run in non-interactive shells. All 17 scripts use CLI args/env/stdin piping; none use interactive prompts.
   - [x] **Structured output**: Scripts MUST output structured data (JSON preferred) to stdout. Diagnostics/progress to stderr. This enables reliable parsing by any agent implementation. All framework scripts output `{ "ok": bool, "result": {...} }` JSON to stdout. Diagnostics go to stderr via `console.error()`.
-  - [x] **Self-contained dependencies**: Scripts MUST declare dependencies inline (PEP 723 for Python, `npm:`/`jsr:` imports for Deno/TS). No implicit global installs required. All framework scripts use `jsr:` specifiers. No bare `@std/` imports remain in `framework/skills/`.
+  - [x] **Self-contained dependencies**: Scripts MUST declare dependencies inline (PEP 723 for Python, `npm:`/`jsr:` imports for Deno/TS). No implicit global installs required. All framework scripts use `jsr:` specifiers. No bare `@std/` imports remain in `framework/<pack>/{skills,commands}/*/scripts/`.
   - [N/A] **Help output**: Scripts SHOULD implement `--help` flag as the primary way agents learn the script interface. Dropped: agents read SKILL.md for script interface; `--help` duplicates SKILL.md and adds maintenance burden.
-  - [x] **Meaningful exit codes**: Exit 0 on success, non-zero on failure. Scripts SHOULD use distinct codes for different error types. All 17 scripts exit 0/non-zero correctly. Verified across `scripts/` and `framework/skills/*/scripts/`.
+  - [x] **Meaningful exit codes**: Exit 0 on success, non-zero on failure. Scripts SHOULD use distinct codes for different error types. All 17 scripts exit 0/non-zero correctly. Verified across `scripts/`, `framework/<pack>/skills/*/scripts/`, and `framework/<pack>/commands/*/scripts/`.
   - [x] **Read-only by default**: Analysis/validation scripts MUST NOT create, write, or modify project files. File creation is the agent's responsibility unless the script's explicit purpose is generation. Analysis scripts (`generate_agents.ts`, `check-skills.ts`, `check-agents.ts`) are read-only.
   - [x] **Idempotent**: Scripts MUST be safe to run multiple times with the same input producing the same output. Validation/check scripts are inherently idempotent (read-only). Init scripts support `--skip-existing` flag for idempotent mode; default is fail-fast on conflict.
   - [x] **Error messages**: Scripts MUST provide clear, actionable error messages to stderr. Include what failed, why, and how to fix. All 17 scripts write diagnostics to stderr via `console.error()`.
@@ -383,8 +383,8 @@ All 41 skills have at least one benchmark scenario. Coverage is the source of tr
 **Script Language Policy**
 
 - **Acceptance criteria:**
-  - [x] **Framework scripts in Deno/TS**: All framework product scripts (`framework/skills/*/scripts/`) MUST be written in Deno/TypeScript. Zero `.py` files in `framework/skills/`.
-  - [x] **General-purpose utilities in Python**: Utility scripts outside the framework product directory MAY use Python. Scripts inside `framework/skills/*/scripts/` MUST be Deno/TS per FR-UNIVERSAL.LANG. Policy documented in SDS (section 3.1.2 "Script Language Policy"). Project uses Deno/TS exclusively — no Python.
+  - [x] **Framework scripts in Deno/TS**: All framework product scripts (`framework/<pack>/{skills,commands}/*/scripts/`) MUST be written in Deno/TypeScript. Zero `.py` files in these subtrees.
+  - [x] **General-purpose utilities in Python**: Utility scripts outside the framework product directory MAY use Python. Scripts inside `framework/<pack>/{skills,commands}/*/scripts/` MUST be Deno/TS per FR-UNIVERSAL.LANG. Policy documented in SDS (section 3.1.2 "Script Language Policy"). Project uses Deno/TS exclusively — no Python.
   - [x] **User-facing skills are language-agnostic**: The agentskills.io standard allows any language. Framework documentation (e.g., `flowai-skill-engineer-skill`) MUST NOT restrict users to a single language. Common options: Python, Bash, JavaScript/TypeScript. `flowai-skill-engineer-skill` does not restrict script language; examples mention multiple options.
 
 #### FR-UNIVERSAL.EXEC Script Execution Model
@@ -397,7 +397,7 @@ All 41 skills have at least one benchmark scenario. Coverage is the source of tr
 #### FR-UNIVERSAL.DISCOVERY Skill Discovery Paths
 
 - **Acceptance criteria:**
-  - [x] **Framework distribution**: Framework skills distributed from `framework/skills/` to IDE directories via flowai. See FR-DIST.
+  - [x] **Framework distribution**: Framework primitives distributed from `framework/<pack>/skills/` and `framework/<pack>/commands/` to IDE directories via flowai. Both subtrees install into `.{ide}/skills/`; commands get `disable-model-invocation: true` injected by the writer at sync time. See FR-DIST, FR-PACKS.STRUCT.
   - [x] **Cross-IDE discovery**: Skills discoverable by IDEs via IDE-specific config dirs (e.g., `.claude/skills/`). flowai handles placement per IDE.
   - [x] **Name collision**: Project-level skills override user-level skills when names collide (per agentskills.io client implementation guide). flowai overwrites on sync. Documented in SDS (section 3.1.4).
 
@@ -448,19 +448,35 @@ All 41 skills have at least one benchmark scenario. Coverage is the source of tr
 
 ### FR-PACKS: Pack System — Modular Resource Installation
 
-- **Description:** Reorganize framework resources into self-contained packs. Each pack is an autonomous directory containing skills, agents, hooks, and scripts. Users select packs in `.flowai.yaml` instead of listing individual resource names. Replaces flat `framework/skills/` and `framework/agents/` structure.
+- **Description:** Reorganize framework resources into self-contained packs. Each pack is an autonomous directory containing commands, skills, agents, hooks, and scripts. Users select packs in `.flowai.yaml` instead of listing individual resource names. Replaces flat `framework/skills/` and `framework/agents/` structure.
 - **Use case scenario:** Developer runs `flowai sync` with `.flowai.yaml` containing `packs: [core, deno]`. Only resources from those packs are installed. Another developer with `packs: []` gets only core pack.
 - **Priority:** High (enables scalable resource management, unblocks hooks/scripts).
+- **Terminology:** "Command" has two meanings — (a) a user-only framework primitive under `framework/<pack>/commands/`, distributed into `.{ide}/skills/` with `disable-model-invocation: true` injected by the writer; (b) an IDE-native slash-command file under `.{ide}/commands/` owned by the user and managed by `flowai user-sync`. The CLI's `PlanItemType = "command"` refers only to (b).
 
 #### FR-PACKS.STRUCT Pack Structure
 
-- **Desc:** Each pack is a directory under `framework/<name>/` containing `pack.yaml` manifest and resource subdirectories (`skills/`, `agents/`, `hooks/`, `scripts/`). Resources discovered by convention (directory scan), not listed in manifest.
+- **Desc:** Each pack is a directory under `framework/<name>/` containing `pack.yaml` manifest and resource subdirectories (`commands/`, `skills/`, `agents/`, `hooks/`, `scripts/`). `commands/` holds user-only primitives (names `flowai-*`, `flowai-setup-*`); `skills/` holds agent-invocable primitives (names `flowai-skill-*`). Resources discovered by convention (directory scan), not listed in manifest.
 - **Acceptance:**
   - [x] `pack.yaml` format: `name` (string), `version` (semver), `description` (string).
   - [x] Skills stored as `framework/<pack>/skills/<name>/SKILL.md`.
-  - [x] Agents stored as `framework/<pack>/agents/<name>.md`.
+  - [x] Commands stored as `framework/<pack>/commands/<name>/SKILL.md`.
+  - [x] Agents stored as `framework/<pack>/agents/<name>/SUBAGENT.md`.
   - [x] No dependencies between packs — each pack is self-contained.
   - [x] `framework/skills/` and `framework/agents/` removed. All resources live in packs.
+
+#### FR-PACKS.CMD-INVARIANT Command source MUST NOT carry `disable-model-invocation`
+
+- **Desc:** SKILL.md files under `framework/<pack>/commands/` are the source of truth for user-only primitives. They MUST NOT declare `disable-model-invocation` in their frontmatter. The CLI writer (`injectDisableModelInvocation` in `cli/src/sync.ts`) injects `disable-model-invocation: true` at sync time based on directory placement. Directory is the single source of truth for the user-only classification.
+- **Acceptance:**
+  - [x] `scripts/check-skills.ts` rejects any `framework/<pack>/commands/*/SKILL.md` that carries `disable-model-invocation` in source. Verified by `check-skills_test.ts::validateKindInvariants: command WITH flag fails`.
+  - [x] CLI reader `readPackCommandFiles` injects the flag into the in-memory copy returned to the writer. Verified by `sync_test.ts::readPackCommandFiles - injects disable-model-invocation into SKILL.md`.
+  - [x] End-to-end sync test `main_test.ts::sync - pack commands install into .{ide}/skills/ with injected flag` asserts the installed SKILL.md contains the flag.
+
+#### FR-PACKS.SKILL-INVARIANT Skill source MUST NOT carry `disable-model-invocation`
+
+- **Desc:** SKILL.md files under `framework/<pack>/skills/` are agent-invocable by definition. They MUST NOT declare `disable-model-invocation` at all. A primitive that is user-only belongs under `commands/`, not `skills/`.
+- **Acceptance:**
+  - [x] `scripts/check-skills.ts` rejects any `framework/<pack>/skills/*/SKILL.md` that carries `disable-model-invocation` in source. Verified by `check-skills_test.ts::validateKindInvariants: skill WITH flag fails`.
 
 #### FR-PACKS.CONFIG Config v1.1
 
@@ -480,10 +496,11 @@ All 41 skills have at least one benchmark scenario. Coverage is the source of tr
 
 #### FR-PACKS.BUNDLE Bundle Update
 
-- **Desc:** `scripts/bundle-framework.ts` updated to scan `framework/*/` instead of `framework/skills/` + `framework/agents/`.
+- **Desc:** `cli/scripts/bundle-framework.ts` scans the full `framework/*/` tree (pack-aware, path-agnostic walk). Bundles commands, skills, agents, hooks, scripts, and assets from every pack.
 - **Acceptance:**
   - [x] Bundle includes pack definitions and all pack resources.
   - [x] Existing tests updated for new bundle structure.
+  - [x] Bundle walks `framework/<pack>/commands/` and `framework/<pack>/skills/` without hardcoded subtree enumeration.
 
 #### FR-PACKS.DEFAULTS Default Packs
 

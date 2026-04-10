@@ -1,3 +1,5 @@
+// FR-PACKS.CMD-INVARIANT — commands/ SKILL.md MUST NOT declare `disable-model-invocation`
+// FR-PACKS.SKILL-INVARIANT — skills/ SKILL.md MUST NOT declare `disable-model-invocation`
 /**
  * Validates all skill directories against FR-UNIVERSAL.AGENTSKILLS and FR-UNIVERSAL.XIDE-PATHS (agentskills.io compliance).
  *
@@ -8,6 +10,8 @@
  * - FR-UNIVERSAL.REFS: File references (no nested subdirs in allowed dirs)
  * - FR-UNIVERSAL.PLACEHOLDERS: No custom path placeholders (<this-skill-dir>)
  * - FR-UNIVERSAL.IDE-VARS: No IDE-specific path variables (${...SKILL_DIR})
+ * - FR-PACKS.CMD-INVARIANT: Command source MUST NOT carry `disable-model-invocation`
+ * - FR-PACKS.SKILL-INVARIANT: Skill source MUST NOT carry `disable-model-invocation`
  *
  * Exits with code 1 if any violation is found.
  */
@@ -41,6 +45,65 @@ export const ALLOWED_SUBDIRS = new Set([
   "evals",
   "benchmarks",
 ]);
+
+/** Source directory kind, inferred from the parent directory name.
+ * `commands` = user-only primitives (disable-model-invocation injected by writer).
+ * `skills` = agent-invocable primitives (no flag allowed). */
+export type SkillKind = "skill" | "command";
+
+/** Infer kind from the skills directory path. Any path segment named
+ * `commands` beats `skills` in the same path (they are mutually exclusive
+ * in practice since the layout is `framework/<pack>/{skills|commands}/`). */
+export function inferKind(skillsDir: string): SkillKind {
+  // Normalize separators and look for a trailing segment.
+  const segments = skillsDir.replace(/\\/g, "/").split("/");
+  if (segments.includes("commands")) return "command";
+  return "skill";
+}
+
+/**
+ * Enforces per-kind invariants that the framework split relies on:
+ *
+ * - Under `commands/`: the source SKILL.md must NOT carry
+ *   `disable-model-invocation`. The writer injects the flag at sync time
+ *   (see `injectDisableModelInvocation` in cli/src/sync.ts); having it in
+ *   source means either a stale migration artifact or an author trying to
+ *   hand-maintain the flag despite directory-based classification.
+ *
+ * - Under `skills/`: the source SKILL.md must NOT carry
+ *   `disable-model-invocation` at all. Skills are agent-invocable by
+ *   definition; a skill with the flag is a command in the wrong directory.
+ *
+ * - Name prefixes are enforced by `check-naming-prefix.ts`, not here.
+ */
+export function validateKindInvariants(
+  dirName: string,
+  kind: SkillKind,
+  fmData: Record<string, unknown>,
+): SkillError[] {
+  const errors: SkillError[] = [];
+  const hasFlag = "disable-model-invocation" in fmData;
+  if (kind === "command" && hasFlag) {
+    errors.push({
+      skill: dirName,
+      criterion: "FR-PACKS.CMD-INVARIANT",
+      message:
+        "Command SKILL.md must NOT declare `disable-model-invocation` in " +
+        "source; the writer injects it at sync time based on the commands/ " +
+        "directory placement.",
+    });
+  }
+  if (kind === "skill" && hasFlag) {
+    errors.push({
+      skill: dirName,
+      criterion: "FR-PACKS.SKILL-INVARIANT",
+      message:
+        "Skill SKILL.md must NOT declare `disable-model-invocation`. A " +
+        "primitive that is user-only belongs under commands/, not skills/.",
+    });
+  }
+  return errors;
+}
 
 const SKILL_MAX_LINES = 500;
 /** Token budget approximation: chars/4. Documented as adequate guardrail. */
@@ -263,6 +326,20 @@ export async function validateSkill(
   // FR-UNIVERSAL.FRONTMATTER: Frontmatter (Zod schema)
   errors.push(...validateSkillFrontmatter(dirName, fm.data));
 
+  // FR-PACKS.{CMD,SKILL}-INVARIANT: commands/ vs skills/ directory invariants.
+  // Only applies to framework source tree; installed copies under .{ide}/skills/
+  // legitimately carry `disable-model-invocation: true` on commands because
+  // the writer injects it at sync time.
+  if (skillsDir.replace(/\\/g, "/").includes("/framework/")) {
+    errors.push(
+      ...validateKindInvariants(
+        dirName,
+        inferKind(skillsDir),
+        fm.data as Record<string, unknown>,
+      ),
+    );
+  }
+
   // FR-UNIVERSAL.DISCLOSURE: Progressive disclosure
   errors.push(...validateProgressiveDisclosure(dirName, content, fm.data));
 
@@ -305,7 +382,9 @@ export async function validateAllSkills(
   return allErrors;
 }
 
-/** Discover all skills directories from pack structure */
+/** Discover all skill-bearing directories from pack structure.
+ * Both `<pack>/skills/` (agent-invocable) and `<pack>/commands/` (user-only)
+ * contain `SKILL.md` primitives and must be validated identically. */
 async function discoverSkillsDirs(
   frameworkDir: string,
 ): Promise<string[]> {
@@ -313,11 +392,13 @@ async function discoverSkillsDirs(
   try {
     for await (const pack of Deno.readDir(frameworkDir)) {
       if (!pack.isDirectory) continue;
-      const skillsDir = join(frameworkDir, pack.name, "skills");
-      try {
-        const stat = await Deno.stat(skillsDir);
-        if (stat.isDirectory) dirs.push(skillsDir);
-      } catch { /* no skills/ in this pack */ }
+      for (const subdir of ["skills", "commands"]) {
+        const path = join(frameworkDir, pack.name, subdir);
+        try {
+          const stat = await Deno.stat(path);
+          if (stat.isDirectory) dirs.push(path);
+        } catch { /* subdir not present in this pack */ }
+      }
     }
   } catch { /* framework dir not found */ }
   return dirs;

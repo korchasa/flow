@@ -42,7 +42,7 @@ constraint.
 ### Always (agent autonomy)
 
 - Read any file in `framework/`, `cli/src/`, `cli/src/**/*_test.ts`.
-- Write `framework/*/skills/*/SKILL.md` to add/update `version:` frontmatter field.
+- Write `framework/*/{skills,commands}/*/SKILL.md` to add/update `version:` frontmatter field.
 - Write `cli/src/frontmatter.ts`, `cli/src/types.ts`, `cli/src/config.ts`,
   `cli/src/plan.ts`, `cli/src/sync.ts`, `cli/src/cli.ts`, test files.
 - Run `deno task check` to verify.
@@ -86,7 +86,7 @@ depend on.
 
 ### Scope
 
-- All 38 `framework/*/skills/*/SKILL.md` files
+- All 38 `framework/*/{skills,commands}/*/SKILL.md` files
 - `documents/design.md` (version convention documentation)
 
 ### Tasks
@@ -100,11 +100,11 @@ depend on.
    - PATCH (`1.0.x`): typos, clarifications, wording improvements — no behaviour change.
    - MINOR (`1.x.0`): new capabilities, new optional steps — backwards-compatible.
    - MAJOR (`x.0.0`): breaking workflow changes, removed steps, changed outputs.
-4. Verify all SKILL.md files have valid frontmatter by grep: `grep -L "^version:" framework/*/skills/*/SKILL.md` must return empty.
+4. Verify all SKILL.md files have valid frontmatter by grep: `grep -L "^version:" framework/*/{skills,commands}/*/SKILL.md` must return empty.
 
 ### Verification
 
-- [ ] `grep -rL "^version:" framework/*/skills/*/SKILL.md` returns no files.
+- [ ] `grep -rL "^version:" framework/*/{skills,commands}/*/SKILL.md` returns no files.
 - [ ] Every `version:` value matches semver pattern `^\d+\.\d+\.\d+$`.
 
 ### Notes

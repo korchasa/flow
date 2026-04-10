@@ -69,11 +69,14 @@ Run `/flowai-update` in your AI IDE. It handles the full update cycle:
 
 ## How It Works
 
-flowai is a set of **Skills** and **Agents** — markdown instruction files that AI coding assistants (Cursor, Claude Code, OpenCode, etc.) load into context to follow structured workflows.
+flowai is a set of **Commands**, **Skills**, and **Agents** — markdown instruction files that AI coding assistants (Cursor, Claude Code, OpenCode, etc.) load into context to follow structured workflows.
 
-- **Skills** (`SKILL.md`) — step-by-step workflows for specific tasks
-- **Agents** (`.md`) — role definitions with specialized capabilities
-- **Documentation** (`documents/`) — persistent project memory across sessions
+- **Commands** (`framework/<pack>/commands/<name>/SKILL.md`) — user-invoked workflows (e.g. `/flowai-commit`, `/flowai-plan`). The agent does not auto-discover them.
+- **Skills** (`framework/<pack>/skills/<name>/SKILL.md`) — agent-invocable capabilities. The agent picks them up automatically when relevant.
+- **Agents** (`framework/<pack>/agents/<name>/SUBAGENT.md`) — role definitions with specialized capabilities.
+- **Documentation** (`documents/`) — persistent project memory across sessions.
+
+Both commands and skills install into `.{ide}/skills/`. The only IDE-visible difference is a `disable-model-invocation: true` flag on commands, added automatically by the CLI writer based on the source directory.
 
 AI models lose context between sessions. flowai compensates by storing all decisions, requirements, and architecture in structured docs that the agent reads at the start of every session.
 
@@ -257,7 +260,7 @@ cli/                    # Distribution tool — published to JSR as @korchasa/fl
   scripts/              #   Bundle script (generates bundled.json + _version.ts)
 documents/              # Project documentation (SRS, SDS, tasks)
 scripts/                # Deno task scripts + benchmark infrastructure
-benchmarks/             # Benchmark runs, config, lock (scenarios in framework/skills/)
+benchmarks/             # Benchmark runs, config, lock (scenarios in framework/<pack>/{commands,skills}/*/benchmarks/)
 deno.json               # Single config: JSR metadata, imports, tasks
 AGENTS.md               # Project vision, rules, agent instructions
 

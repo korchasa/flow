@@ -1,6 +1,8 @@
 import { assertEquals } from "@std/assert";
 import {
   ALLOWED_SUBDIRS,
+  inferKind,
+  validateKindInvariants,
   validatePathResolution,
   validateProgressiveDisclosure,
   validateSkillFrontmatter,
@@ -269,4 +271,54 @@ Deno.test("ALLOWED_SUBDIRS contains expected entries", () => {
   assertEquals(ALLOWED_SUBDIRS.has("evals"), true);
   assertEquals(ALLOWED_SUBDIRS.has("examples"), false);
   assertEquals(ALLOWED_SUBDIRS.has("reference"), false);
+});
+
+// --- inferKind ---
+
+Deno.test("inferKind: commands/ directory → command", () => {
+  assertEquals(inferKind("framework/core/commands"), "command");
+  assertEquals(inferKind("/abs/framework/core/commands"), "command");
+});
+
+Deno.test("inferKind: skills/ directory → skill", () => {
+  assertEquals(inferKind("framework/core/skills"), "skill");
+  assertEquals(inferKind("/abs/framework/engineering/skills"), "skill");
+});
+
+// --- validateKindInvariants (FR-PACKS.{CMD,SKILL}-INVARIANT) ---
+
+Deno.test("validateKindInvariants: command without flag passes", () => {
+  const errors = validateKindInvariants("flowai-commit", "command", {
+    name: "flowai-commit",
+    description: "x",
+  });
+  assertEquals(errors, []);
+});
+
+Deno.test("validateKindInvariants: command WITH flag fails", () => {
+  const errors = validateKindInvariants("flowai-commit", "command", {
+    name: "flowai-commit",
+    description: "x",
+    "disable-model-invocation": true,
+  });
+  assertEquals(errors.length, 1);
+  assertEquals(errors[0].criterion, "FR-PACKS.CMD-INVARIANT");
+});
+
+Deno.test("validateKindInvariants: skill without flag passes", () => {
+  const errors = validateKindInvariants("flowai-skill-foo", "skill", {
+    name: "flowai-skill-foo",
+    description: "y",
+  });
+  assertEquals(errors, []);
+});
+
+Deno.test("validateKindInvariants: skill WITH flag fails", () => {
+  const errors = validateKindInvariants("flowai-skill-bar", "skill", {
+    name: "flowai-skill-bar",
+    description: "y",
+    "disable-model-invocation": true,
+  });
+  assertEquals(errors.length, 1);
+  assertEquals(errors[0].criterion, "FR-PACKS.SKILL-INVARIANT");
 });

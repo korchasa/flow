@@ -51,8 +51,8 @@ Assumes users will follow the defined workflows and keep documentation up-to-dat
 - Python (benchmark fixtures only; no production scripts)
 
 ## Architecture
-- `framework/<pack>/`: Source of truth for product packs (skills, agents, hooks, scripts). Each pack has `pack.yaml` + `skills/` subdir; `agents/`, `hooks/`, `scripts/` are optional.
-- `.claude/skills/`, `.claude/agents/`: Dev-only resources (not distributed). Framework skills/agents installed here by flowai.
+- `framework/<pack>/`: Source of truth for product packs. Each pack has `pack.yaml` + two primitive dirs: `commands/` (user-only workflows) and `skills/` (agent-invocable capabilities). `agents/`, `hooks/`, `scripts/`, `assets/`, `benchmarks/` are optional.
+- `.claude/skills/`, `.claude/agents/`: Dev-only resources (not distributed). Framework commands + skills install into `.claude/skills/` (commands get `disable-model-invocation: true` injected by the CLI writer).
 - `documents/`: SRS/SDS and supporting documentation
 - `scripts/`: Deno task scripts
 - `cli/`: Distribution tool (flowai). Published to JSR as `@korchasa/flowai`. Bundles `framework/` into `cli/src/bundled.json` at publish time — zero network dependency. Uses root `deno.json` (single config). Has own tests and `CLAUDE.md`.
@@ -60,10 +60,15 @@ Assumes users will follow the defined workflows and keep documentation up-to-dat
 
 ## Terminology (agentskills.io)
 
-All workflows are implemented as **Skills** according to the [agentskills.io](https://agentskills.io/home) standard (folders with `SKILL.md`). Logically, they are divided into:
-- **Commands** (`flowai-*`): High-level task workflows (e.g., `/flowai-commit`). Executed by the agent upon user request, but usually not invoked by the agent itself as a tool.
-- **Setup** (`flowai-setup-agent-*`): One-time project configuration commands (e.g., `flowai-setup-agent-code-style-ts-deno`). User-invoked only (`disable-model-invocation: true`), must not be triggered automatically.
-- **Skills** (`flowai-skill-*`): Procedural knowledge and specialized capabilities (e.g., `flowai-skill-draw-mermaid-diagrams`). Can be discovered and used by agents to perform specific sub-tasks.
+All workflows are implemented as **Skills** according to the [agentskills.io](https://agentskills.io/home) standard (folders with `SKILL.md`). At the framework source level they are split into two sibling directories per pack, which is the **primary classifier**:
+
+- **Commands** — `framework/<pack>/commands/<name>/SKILL.md`. User-only workflows. Invoked by the user (e.g. `/flowai-commit`); the agent does not auto-discover them. Names: `flowai-*`, `flowai-setup-*` (e.g. `flowai-commit`, `flowai-setup-agent-code-style-ts-deno`). Source SKILL.md MUST NOT declare `disable-model-invocation` — the CLI writer injects `disable-model-invocation: true` at sync time based on directory placement.
+- **Skills** — `framework/<pack>/skills/<name>/SKILL.md`. Agent-invocable capabilities (e.g. `flowai-skill-draw-mermaid-diagrams`). Name: `flowai-skill-*`. Source SKILL.md MUST NOT declare `disable-model-invocation`.
+
+### Two meanings of "command" — don't confuse them
+
+1. **Framework command**: a user-only primitive under `framework/<pack>/commands/`. Installs into `.{ide}/skills/` alongside skills; the only IDE-visible difference is the injected flag. This is the sense used everywhere in this project's source tree and documentation.
+2. **IDE slash command**: a flat `.md` file under `.{ide}/commands/` (e.g. `.claude/commands/my-cmd.md`). Owned by the user, managed by `flowai user-sync` for cross-IDE propagation. The CLI's `PlanItemType = "command"` refers exclusively to sense (2). Framework commands never land in this directory.
 
 ## Key Decisions
 - Use agentskills.io skills as the primary workflow system
@@ -82,6 +87,7 @@ All workflows are implemented as **Skills** according to the [agentskills.io](ht
 
 - **Environment Side-Effects**: When changes touch infra, databases, or external services, the plan must include migration, sync, or deploy steps — otherwise the change works locally but breaks in production.
 - **Verification Steps**: Every plan must include specific verification commands (tests, validation tools, connectivity checks) — a plan without verification is just a wish.
+- **DoD Evidence**: Every Definition of Done item MUST be paired with a runnable verification command (test name, grep pattern, validator invocation, file glob check). A DoD item without an evidence command is a wish, not a contract. When marking `[x]`, run the evidence command and capture its result — do NOT mark items based on visual code review alone. If a DoD item has multiple sub-bullets, evidence is required for EACH sub-bullet, not just the first one. This is the only safeguard against partial completion claimed as full.
 - **Functionality Preservation**: Before editing any file for refactoring, run existing tests and confirm they pass — this is a prerequisite, not a suggestion. Without a green baseline you cannot detect regressions. Run tests again after all edits. Add new tests if coverage is missing.
 - **Data-First**: When integrating with external APIs or processes, inspect the actual protocol and data formats before planning — assumptions about data shape are the #1 source of integration bugs.
 - **Reference-First**: When spec/task file lists reference files (existing implementations, examples, format specs) — READ THEM before writing code. Do not assume data formats — verify from reference source.
@@ -110,13 +116,13 @@ All workflows are implemented as **Skills** according to the [agentskills.io](ht
 - When a test fails, fix the source code — not the test. Do not modify a failing test to make it pass, do not add error swallowing or skip logic.
 - Do not create source files with guessed or fabricated data to satisfy imports — if the data source is missing, that is a blocker (see Diagnosing Failures).
 
-### Benchmark TDD (Skills/Agents)
+### Benchmark TDD (Commands/Skills/Agents)
 
-**For Skills:**
-1. **RED**: Write benchmark scenario (`framework/<pack>/skills/<skill>/benchmarks/<name>/mod.ts`) for new/changed skill behavior. Run benchmark — it MUST fail (proves the scenario tests something real).
-2. **GREEN**: Update skill (`framework/<pack>/skills/<name>/SKILL.md`) until benchmark passes.
-3. **REFACTOR**: Improve skill text or benchmark clarity. No behavior change. Re-run benchmark.
-4. **CHECK**: Run ALL benchmarks for the affected skill. Fix all failures.
+**For Skills and Commands** (same flow — `<kind>` = `skills` or `commands`):
+1. **RED**: Write benchmark scenario (`framework/<pack>/<kind>/<name>/benchmarks/<scenario>/mod.ts`) for new/changed behavior. Run benchmark — it MUST fail (proves the scenario tests something real).
+2. **GREEN**: Update SKILL.md (`framework/<pack>/<kind>/<name>/SKILL.md`) until benchmark passes.
+3. **REFACTOR**: Improve text or benchmark clarity. No behavior change. Re-run benchmark.
+4. **CHECK**: Run ALL benchmarks for the affected primitive. Fix all failures.
 
 **For Agents (subagents):**
 1. **RED**: Write benchmark scenario (`framework/<pack>/agents/<agent-name>/benchmarks/<name>/mod.ts`) for new/changed agent behavior. Use `BenchmarkAgentScenario` base class (field `agent` instead of `skill`). Run benchmark — it MUST fail.
@@ -126,12 +132,12 @@ All workflows are implemented as **Skills** according to the [agentskills.io](ht
 
 #### Benchmark Rules
 
-- EVERY skill/agent change MUST have a corresponding benchmark scenario (new or existing) that covers the changed behavior.
-- Write benchmark BEFORE changing the skill/agent (RED phase). If the benchmark already passes before the change, the scenario is not testing the right thing — revise it.
+- EVERY command/skill/agent change MUST have a corresponding benchmark scenario (new or existing) that covers the changed behavior.
+- Write benchmark BEFORE changing the primitive (RED phase). If the benchmark already passes before the change, the scenario is not testing the right thing — revise it.
 - Benchmark scenarios test OBSERVABLE BEHAVIOR (checklist items), not internal wording.
 - One scenario per distinct capability or edge case. Do not overload a single scenario.
-- Run ALL benchmarks for the affected skill/agent before finishing, not just the new one.
-- Skills use `BenchmarkSkillScenario` (field: `skill`). Agents use `BenchmarkAgentScenario` (field: `agent`).
+- Run ALL benchmarks for the affected primitive before finishing, not just the new one.
+- Commands and skills both use `BenchmarkSkillScenario` (field: `skill`) — the installed IDE representation is a `SKILL.md`, regardless of the source `commands/` vs `skills/` directory. Agents use `BenchmarkAgentScenario` (field: `agent`).
 - **No test-fitting.** If a benchmark fails, first determine whether the problem is in the skill/agent or in the benchmark. Signs of test-fitting: userQuery hints at the correct approach, simulatedUser/persona scripts the exact answer, mocks leak internal logic, setup pre-creates artifacts the skill should produce. Fix the skill/agent first; adjust the benchmark only if the scenario itself is wrong.
 - **Mocks are static.** The hooks-based mock mechanism returns the same `reason` string for ALL invocations of the mocked tool. Do NOT use conditional logic (`if`/`case`/`$`) in mock values — it will be shown as raw text, not executed. One mock = one response.
 

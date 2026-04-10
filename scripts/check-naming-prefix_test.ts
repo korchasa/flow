@@ -8,12 +8,19 @@ const PREFIX = "flowai-";
 
 // --- validateNamingPrefix ---
 
-Deno.test("validateNamingPrefix: name with flowai- prefix passes", () => {
-  assertEquals(validateNamingPrefix("flowai-commit", "skill"), []);
-});
-
 Deno.test("validateNamingPrefix: skill name flowai-skill-* passes", () => {
   assertEquals(validateNamingPrefix("flowai-skill-fix-tests", "skill"), []);
+});
+
+Deno.test("validateNamingPrefix: command name flowai-* passes", () => {
+  assertEquals(validateNamingPrefix("flowai-commit", "command"), []);
+});
+
+Deno.test("validateNamingPrefix: command name flowai-setup-* passes", () => {
+  assertEquals(
+    validateNamingPrefix("flowai-setup-agent-code-style-ts-deno", "command"),
+    [],
+  );
 });
 
 Deno.test("validateNamingPrefix: agent name flowai-* passes", () => {
@@ -24,20 +31,20 @@ Deno.test("validateNamingPrefix: hook name flowai-* passes", () => {
   assertEquals(validateNamingPrefix("flowai-lint-on-write", "hook"), []);
 });
 
-Deno.test("validateNamingPrefix: skill without prefix is error", () => {
+Deno.test("validateNamingPrefix: skill without prefix is error (NP-1)", () => {
   const errors = validateNamingPrefix("my-custom-skill", "skill");
   assertEquals(errors.length, 1);
   assertEquals(errors[0].criterion, "NP-1");
   assertEquals(errors[0].message.includes(PREFIX), true);
 });
 
-Deno.test("validateNamingPrefix: agent without prefix is error", () => {
+Deno.test("validateNamingPrefix: agent without prefix is error (NP-1)", () => {
   const errors = validateNamingPrefix("my-custom-agent", "agent");
   assertEquals(errors.length, 1);
   assertEquals(errors[0].criterion, "NP-1");
 });
 
-Deno.test("validateNamingPrefix: hook without prefix is error", () => {
+Deno.test("validateNamingPrefix: hook without prefix is error (NP-1)", () => {
   const errors = validateNamingPrefix("my-custom-hook", "hook");
   assertEquals(errors.length, 1);
   assertEquals(errors[0].criterion, "NP-1");
@@ -46,6 +53,30 @@ Deno.test("validateNamingPrefix: hook without prefix is error", () => {
 Deno.test("validateNamingPrefix: empty name is error", () => {
   const errors = validateNamingPrefix("", "skill");
   assertEquals(errors.length, 1);
+});
+
+// --- NP-2: command prefix convention ---
+
+Deno.test("validateNamingPrefix: command with flowai-skill-* prefix is error (NP-2)", () => {
+  // This name pattern belongs under skills/, not commands/.
+  const errors = validateNamingPrefix("flowai-skill-foo", "command");
+  assertEquals(errors.length, 1);
+  assertEquals(errors[0].criterion, "NP-2");
+});
+
+// --- NP-3: skill prefix convention ---
+
+Deno.test("validateNamingPrefix: skill with bare flowai-* prefix is error (NP-3)", () => {
+  // "flowai-commit" shape is a command, not a skill.
+  const errors = validateNamingPrefix("flowai-commit", "skill");
+  assertEquals(errors.length, 1);
+  assertEquals(errors[0].criterion, "NP-3");
+});
+
+Deno.test("validateNamingPrefix: skill with flowai-setup-* prefix is error (NP-3)", () => {
+  const errors = validateNamingPrefix("flowai-setup-foo", "skill");
+  assertEquals(errors.length, 1);
+  assertEquals(errors[0].criterion, "NP-3");
 });
 
 // --- validateAllNamingPrefixes (integration with real framework/) ---

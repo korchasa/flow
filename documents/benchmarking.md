@@ -6,15 +6,22 @@ The benchmarking system (`scripts/task-bench.ts`) evaluates agent performance by
 
 ## 2. Directory Structure
 
-Scenarios are co-located with skills; runs and infra stored centrally in `benchmarks/`.
+Scenarios are co-located with each primitive (commands, skills, agents); runs and infra stored centrally in `benchmarks/`.
 
 ```text
-framework/skills/<skill>/
-├── SKILL.md                    # Skill definition
+framework/<pack>/commands/<command>/
+├── SKILL.md                    # User-only primitive
 └── benchmarks/
     └── <scenario>/
         ├── mod.ts              # Scenario definition
         └── fixture/            # Test fixtures (optional)
+
+framework/<pack>/skills/<skill>/
+├── SKILL.md                    # Agent-invocable primitive
+└── benchmarks/
+    └── <scenario>/
+        ├── mod.ts
+        └── fixture/
 
 benchmarks/
 ├── runs/                       # All run artifacts (git-ignored)

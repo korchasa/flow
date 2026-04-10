@@ -72,7 +72,7 @@ export function buildCheckPlan(): CheckPlan {
         args: [
           "test",
           "-A",
-          "--ignore=framework/*/skills/*/benchmarks,framework/*/benchmarks/*/fixture",
+          "--ignore=framework/*/skills/*/benchmarks,framework/*/commands/*/benchmarks,framework/*/benchmarks/*/fixture",
           "framework",
         ],
       },

@@ -151,6 +151,123 @@ Deno.test("sync - conflict handling with --yes overwrites", async () => {
   assert(result.totalConflicts > 0);
 });
 
+Deno.test("sync - pack commands install into .{ide}/skills/ with injected flag", async () => {
+  const fs = new InMemoryFsAdapter();
+  fs.dirs.add("/project/.claude");
+
+  // Pack structure with one command (no flag in source) and one skill.
+  // Command SKILL.md deliberately omits `disable-model-invocation`
+  // so the test proves the reader injects it.
+  const source = new InMemoryFrameworkSource(
+    new Map([
+      ["framework/core/pack.yaml", "name: core\nversion: 1.0.0\n"],
+      [
+        "framework/core/commands/flowai-demo/SKILL.md",
+        "---\nname: flowai-demo\ndescription: A demo command\n---\n\n# Demo\n",
+      ],
+      [
+        "framework/core/commands/flowai-demo/scripts/helper.ts",
+        "export const X = 1;\n",
+      ],
+      [
+        "framework/core/skills/flowai-skill-foo/SKILL.md",
+        "---\nname: flowai-skill-foo\ndescription: A demo skill\n---\n\n# Skill\n",
+      ],
+    ]),
+  );
+
+  const config: FlowConfig = {
+    version: "1.1",
+    ides: ["claude"],
+    packs: ["core"],
+    skills: { include: [], exclude: [] },
+    agents: { include: [], exclude: [] },
+    commands: { include: [], exclude: [] },
+  };
+
+  const result = await sync("/project", config, fs, {
+    yes: true,
+    source,
+    onProgress: () => {},
+  });
+
+  // Both primitives live in the same target dir .claude/skills/.
+  const commandSkillMd = await fs.readFile(
+    "/project/.claude/skills/flowai-demo/SKILL.md",
+  );
+  const skillSkillMd = await fs.readFile(
+    "/project/.claude/skills/flowai-skill-foo/SKILL.md",
+  );
+
+  // Command SKILL.md was augmented with the injected flag.
+  assert(
+    /^disable-model-invocation:\s*true$/m.test(commandSkillMd),
+    `Expected injected flag in installed command SKILL.md:\n${commandSkillMd}`,
+  );
+  // Skill SKILL.md must NOT carry the flag — agents must be able to invoke it.
+  assert(
+    !/disable-model-invocation/.test(skillSkillMd),
+    `Skill SKILL.md must not have disable-model-invocation:\n${skillSkillMd}`,
+  );
+
+  // Command co-located scripts/ copied alongside.
+  assertEquals(
+    await fs.readFile("/project/.claude/skills/flowai-demo/scripts/helper.ts"),
+    "export const X = 1;\n",
+  );
+
+  assertEquals(result.errors.length, 0);
+});
+
+Deno.test("sync - commands.exclude removes command from target dir", async () => {
+  const fs = new InMemoryFsAdapter();
+  fs.dirs.add("/project/.claude");
+
+  const source = new InMemoryFrameworkSource(
+    new Map([
+      ["framework/core/pack.yaml", "name: core\nversion: 1.0.0\n"],
+      [
+        "framework/core/commands/flowai-keep/SKILL.md",
+        "---\nname: flowai-keep\ndescription: x\n---\n",
+      ],
+      [
+        "framework/core/commands/flowai-drop/SKILL.md",
+        "---\nname: flowai-drop\ndescription: y\n---\n",
+      ],
+    ]),
+  );
+
+  // Pre-create an installed flowai-drop to simulate stale state.
+  await fs.writeFile(
+    "/project/.claude/skills/flowai-drop/SKILL.md",
+    "# stale\n",
+  );
+
+  const config: FlowConfig = {
+    version: "1.1",
+    ides: ["claude"],
+    packs: ["core"],
+    skills: { include: [], exclude: [] },
+    agents: { include: [], exclude: [] },
+    commands: { include: [], exclude: ["flowai-drop"] },
+  };
+
+  await sync("/project", config, fs, {
+    yes: true,
+    source,
+    onProgress: () => {},
+  });
+
+  // flowai-keep installed...
+  assert(
+    await fs.exists("/project/.claude/skills/flowai-keep/SKILL.md"),
+  );
+  // ...flowai-drop removed by delete plan.
+  assert(
+    !(await fs.exists("/project/.claude/skills/flowai-drop/SKILL.md")),
+  );
+});
+
 Deno.test("sync - CLAUDE.md symlinks created when claude IDE active", async () => {
   const fs = new InMemoryFsAdapter();
   fs.dirs.add("/project/.claude");

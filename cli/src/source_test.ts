@@ -2,8 +2,10 @@ import { assertEquals, assertRejects } from "@std/assert";
 import {
   BundledSource,
   extractAgentNames,
+  extractCommandNames,
   extractPackAgentNames,
   extractPackAssetPaths,
+  extractPackCommandNames,
   extractPackHookNames,
   extractPackNames,
   extractPackScriptNames,
@@ -162,6 +164,53 @@ Deno.test("extractPackSkillNames - extracts skills within a pack", () => {
   assertEquals(extractPackSkillNames(paths, "nonexistent"), []);
 });
 
+Deno.test("extractPackSkillNames - ignores commands/ subtree", () => {
+  const paths = [
+    "framework/core/skills/flowai-skill-foo/SKILL.md",
+    "framework/core/commands/flowai-bar/SKILL.md",
+    "framework/core/commands/flowai-baz/SKILL.md",
+  ];
+  assertEquals(extractPackSkillNames(paths, "core"), ["flowai-skill-foo"]);
+});
+
+Deno.test("extractPackCommandNames - extracts commands within a pack", () => {
+  const paths = [
+    "framework/core/pack.yaml",
+    "framework/core/commands/flowai-commit/SKILL.md",
+    "framework/core/commands/flowai-commit/scripts/helper.ts",
+    "framework/core/commands/flowai-plan/SKILL.md",
+    "framework/core/skills/flowai-skill-foo/SKILL.md",
+    "framework/typescript/commands/flowai-setup-agent-code-style-ts-deno/SKILL.md",
+  ];
+  assertEquals(
+    extractPackCommandNames(paths, "core"),
+    ["flowai-commit", "flowai-plan"],
+  );
+  assertEquals(
+    extractPackCommandNames(paths, "typescript"),
+    ["flowai-setup-agent-code-style-ts-deno"],
+  );
+  assertEquals(extractPackCommandNames(paths, "nonexistent"), []);
+});
+
+Deno.test("extractPackCommandNames - ignores skills/ subtree", () => {
+  const paths = [
+    "framework/core/skills/flowai-skill-foo/SKILL.md",
+    "framework/core/commands/flowai-bar/SKILL.md",
+  ];
+  assertEquals(extractPackCommandNames(paths, "core"), ["flowai-bar"]);
+});
+
+Deno.test("extractCommandNames - extracts unique command names (legacy flat)", () => {
+  const paths = [
+    "framework/commands/flowai-commit/SKILL.md",
+    "framework/commands/flowai-commit/refs/a.md",
+    "framework/commands/flowai-plan/SKILL.md",
+    "framework/skills/flowai-skill-foo/SKILL.md",
+  ];
+  assertEquals(extractCommandNames(paths), ["flowai-commit", "flowai-plan"]);
+});
+
 Deno.test("extractPackAgentNames - extracts agents within a pack", () => {
   const paths = [
     "framework/core/pack.yaml",
@@ -241,7 +290,7 @@ Deno.test("extractPackAssetPaths - extracts asset paths within a pack", () => {
     "framework/core/pack.yaml",
     "framework/core/assets/AGENTS.template.md",
     "framework/core/assets/AGENTS.documents.template.md",
-    "framework/core/skills/flowai-init/SKILL.md",
+    "framework/core/commands/flowai-init/SKILL.md",
     "framework/engineering/assets/report.md",
   ];
   assertEquals(

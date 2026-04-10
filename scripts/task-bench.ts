@@ -1,8 +1,10 @@
 /**
  * task-bench.ts — Discovers and runs agent benchmark scenarios.
  *
- * Walks `framework/<pack>/skills/<skill>/benchmarks/` for scenario mod.ts files,
- * runs each through the benchmark runner with LLM-Judge evaluation, and
+ * Walks `framework/<pack>/skills/<skill>/benchmarks/`,
+ * `framework/<pack>/commands/<command>/benchmarks/`, and
+ * `framework/<pack>/agents/<agent>/benchmarks/` for scenario mod.ts files.
+ * Runs each through the benchmark runner with LLM-Judge evaluation, and
  * outputs results as console summary + HTML report.
  *
  * Usage: deno task bench [-f filter] [-m model] [-i ide] [-n runs]
@@ -76,8 +78,9 @@ async function importScenariosFromDir(
 }
 
 /**
- * Walks `framework/<pack>/skills/` and `framework/<pack>/agents/`
- * for benchmark scenario mod.ts files.
+ * Walks `framework/<pack>/skills/`, `framework/<pack>/commands/`,
+ * `framework/<pack>/agents/`, and `framework/<pack>/benchmarks/` for
+ * benchmark scenario mod.ts files.
  */
 async function discoverScenarios(): Promise<BenchmarkScenario[]> {
   const scenarios: BenchmarkScenario[] = [];
@@ -93,6 +96,15 @@ async function discoverScenarios(): Promise<BenchmarkScenario[]> {
     // Discover skill benchmarks: framework/<pack>/skills/<skill>/benchmarks/*/mod.ts
     await importScenariosFromDir(
       join(frameworkDir, packEntry.name, "skills"),
+      packEntry.name,
+      scenarios,
+    );
+
+    // Discover command benchmarks: framework/<pack>/commands/<command>/benchmarks/*/mod.ts
+    // Commands are sibling primitives to skills; their benchmarks live
+    // under commands/<name>/benchmarks/ and must be discovered too.
+    await importScenariosFromDir(
+      join(frameworkDir, packEntry.name, "commands"),
       packEntry.name,
       scenarios,
     );

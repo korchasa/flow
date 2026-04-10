@@ -68,7 +68,7 @@
 
 #### 3.1.2 Script Language Policy
 
-All project scripts (both `framework/<pack>/skills/*/scripts/` and root `scripts/`) use Deno/TypeScript exclusively. Python appears only in benchmark fixtures (test project stubs).
+All project scripts (`framework/<pack>/skills/*/scripts/`, `framework/<pack>/commands/*/scripts/`, and root `scripts/`) use Deno/TypeScript exclusively. Python appears only in benchmark fixtures (test project stubs).
 
 #### 3.1.3 Skill Tool Hints (`allowed-tools`)
 
@@ -138,7 +138,7 @@ Adoption is optional. IDEs that support `allowed-tools` will auto-approve matchi
   - **Parallel Execution Protection**: Uses `benchmarks/benchmarks.lock` file containing the PID to prevent concurrent runs. Implements signal listeners (`SIGINT`, `SIGTERM`) and `unload` events for reliable cleanup.
   - **Isolation**: Benchmarks run in isolated sandboxes using `SpawnedAgent` (direct `Deno.Command` based). Sandbox contains only pack-scoped primitives: core pack benchmark → core only; non-core pack benchmark → core + that pack.
   - **Docker**: Optional Docker isolation (`Dockerfile` based on `denoland/deno:alpine`) with `git`, `bash`, `curl`, and `cursor-agent` installed.
-  - **Co-located Scenarios**: Scenarios are co-located with skills as `framework/<pack>/skills/<skill>/benchmarks/<scenario>/mod.ts`. Pack-level scenarios (e.g., AGENTS.md rules) live at `framework/<pack>/benchmarks/<scenario>/mod.ts` with shared fixtures.
+  - **Co-located Scenarios**: Scenarios are co-located with primitives — `framework/<pack>/skills/<skill>/benchmarks/<scenario>/mod.ts` for skills and `framework/<pack>/commands/<command>/benchmarks/<scenario>/mod.ts` for commands. Pack-level scenarios (e.g., AGENTS.md rules) live at `framework/<pack>/benchmarks/<scenario>/mod.ts` with shared fixtures.
   - **JSON Configuration**: `benchmarks/config.json` stores unified model presets.
   - **Direct Model Support**: If a preset is not found, the system uses the provided name as the model identifier with default settings (temperature: 0).
   - **Side-Effect Validation**: System checks sandbox state (files, git) using LLM-Judge via Claude CLI (`cliChatCompletion` in `llm.ts`). Uses `--output-format json` + `--json-schema` for structured verdicts. No external API key required. Judge retries once on failure before marking items failed.
@@ -266,7 +266,7 @@ graph TD
 ### 3.12 Standalone Primitive Adaptation — `flowai-adapt`
 
 - **Purpose:** On-demand adaptation of all installed framework primitives (skills, agents, AGENTS.md artifacts, hooks) to project specifics — independent of `flowai-update`.
-- **Skill:** `framework/core/skills/flowai-adapt/SKILL.md`. User-invoked only (`disable-model-invocation: true`).
+- **Command:** `framework/core/commands/flowai-adapt/SKILL.md`. User-only primitive under `commands/` directory; `disable-model-invocation: true` is injected by the CLI writer at sync time.
 - **Subagents:**
   - `flowai-skill-adapter` — adapts skill SKILL.md (reused from flowai-update).
   - `flowai-agent-adapter` — adapts agent `.md` body, preserves YAML frontmatter.

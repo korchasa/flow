@@ -27,3 +27,21 @@ Build tooling, verification, and benchmark infrastructure for flowai.
 - `deno task test` (check deno.json)
 - `deno task dev` (check deno.json)
 - `deno task bench` (check deno.json)
+
+## `deno task check` Output Quirks
+
+- The output ALWAYS contains three lines:
+  ```
+  === FAIL deno eval Deno.exit(42) ===
+  === FAIL deno eval Deno.exit(1) ===
+  === FAIL deno eval Deno.exit(2) ===
+  ```
+  These are **intentional test fixtures** inside `runCommandsInParallelBuffered` tests in `task-check_test.ts` — they verify that the parallel runner correctly reports failed sub-commands. They are NOT real failures.
+- **Real verdict** comes from the final `N passed | M failed` summary lines, NOT from the presence of `=== FAIL` strings. Always grep for `failed` count, not for `FAIL`.
+- If the agent stops on `=== FAIL deno eval Deno.exit(...)` without checking the summary line, it is a false alarm.
+
+## Lint Exclude / Test Ignore Drift
+
+- `deno.json` `lint.exclude` and `scripts/task-check.ts` `--ignore` flag must list the SAME paths (`framework/*/skills/*/benchmarks/`, `framework/*/commands/*/benchmarks/`, `framework/*/benchmarks/*/fixture/`).
+- These two locations drift in practice. When adding a new ignore pattern, update BOTH.
+- Drift symptom: `deno task check` lint passes but `deno task check` test phase imports test fixtures as production code (`no-explicit-any` errors in `*/fixture/*.ts`).

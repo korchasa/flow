@@ -39,6 +39,7 @@
   "lint": {
     "exclude": [
       "framework/*/skills/*/benchmarks/",
+      "framework/*/commands/*/benchmarks/",
       "framework/*/benchmarks/*/fixture/"
     ]
   },
