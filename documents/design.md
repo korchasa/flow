@@ -152,24 +152,9 @@ Adoption is optional. IDEs that support `allowed-tools` will auto-approve matchi
   - **Interactive Flows**: `UserEmulator` simulates user responses via LLM for multi-turn scenarios (persona-driven).
   - **Multi-Turn Benchmarking**: `SpawnedAgent` + `runner.ts` support automatic session resumption (`--resume`) when `UserEmulator` provides input.
 
-### 3.4a Experiments Subsystem (`scripts/experiments/`) — FR-EXP
+### 3.4a Experiments Subsystem (RELOCATED) — FR-EXP
 
-- **Purpose:** Parameterized empirical studies of the agent platform (max memory length, position sensitivity, model × IDE comparisons). Separate from benchmarks (which test primitives for regression); experiments measure system characteristics and produce committed numeric evidence.
-- **Architecture:**
-  - **Shared infrastructure** (`scripts/experiments/lib/`):
-    - `types.ts` — `Experiment`, `Cell`, `TrialResult`, `ExperimentReport` contracts.
-    - `runner.ts` — cartesian sweep over `axes × reps`; spawns `SpawnedAgent` per trial; captures agent output; invokes judge; aggregates results.
-    - `judge.ts` — thin wrapper over `scripts/benchmarks/lib/judge.ts` for binary single-rule adherence evaluation.
-    - `noise.ts` — deterministic (seed-reproducible) noise content builder; samples sections from a committed corpus to hit target token budget (±5%).
-    - `tokens.ts` — text-size-to-tokens heuristic (default: 1 token ≈ 4 chars).
-    - `report.ts` — JSON serialization (versioned schema) + Markdown renderer with headline number.
-  - **Per-experiment directory** (`scripts/experiments/<name>/`): `README.md` (methodology/caveats), variant files (each exporting an `Experiment`), `shared.ts` (rule library), committed static inputs (e.g., noise corpus), `results/` (committed JSON + MD per run).
-- **Reuse from benchmarks:** `SpawnedAgent`, `AgentAdapter` family (Claude, Cursor), LLM judge via `cliChatCompletion`. Experiments do NOT touch `scripts/benchmarks/lib/runner.ts` — it remains specific to pass/fail scenarios.
-- **Adapter extension:** `AgentAdapter` gains `writeMemoryFile(sandboxPath, scope, content)` where `scope ∈ {"root","documents","scripts","global"}`. Claude writes `AGENTS.md` + `CLAUDE.md` symlink per scope; Cursor writes `.cursorrules` at `scope="root"` (other scopes throw until Cursor supports nested memory); OpenCode TBD.
-- **CLI:** `deno task experiment <name> [--variant] [--model] [--ide] [--reps] [--sizes] [--parallel]`. Entry point: `scripts/task-experiment.ts`. Parallel default: 1 (reproducibility).
-- **Results lifecycle:** JSON + Markdown files committed under `scripts/experiments/<name>/results/<ISO-DATE>-<model-slug>-<variant>.{json,md}`. JSON includes schema version, per-cell/per-trial data, tokens/cost per trial, full judge reasons. Markdown includes headline number + adherence curve table.
-- **Isolation from benchmarks:** `task-bench.ts` discovery walks only `framework/<pack>/.../benchmarks/` and skips `scripts/experiments/`. No cross-contamination.
-- **First experiment** (FR-EXP.MEMORY-LENGTH): `claude-md-length/` with two variants — `single-file` (one root memory file, size ∈ {500,1k,2k,4k,8k,16k} tokens) and `tree-sum` (split across root + `documents/` + `scripts/`, total ∈ {1.5k,3k,6k,12k,24k} tokens). Three rule types tested independently per cell: format marker, response language, word negation. 5 reps per cell. Headline: `max(tokens : mean_adherence ≥ 0.8)`.
+Relocated to [`flowai-experiments`](https://github.com/korchasa/flowai-experiments) on 2026-04-11 (provenance SHA `f311142`). That repo owns: the experiment runner/judge/noise/report/tokens libs, the `claude-md-length` variants and committed results, the `deno task experiment` CLI, and the `writeMemoryFile`/`getCleanroomEnv` adapter extensions that were experiment-only. The `AgentAdapter` contract in `flow` returns to regression-benchmark responsibilities (no memory-file injection, no cleanroom env plumbing). `task-bench.ts` discovery was always scoped to `framework/<pack>/.../benchmarks/`, so no isolation logic changed.
 
 ### 3.5 Global Framework Distribution — FR-DIST (`cli/`)
 

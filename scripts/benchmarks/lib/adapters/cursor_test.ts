@@ -154,30 +154,3 @@ Deno.test("CursorAdapter - setupMocks with empty mocks does nothing", async () =
   assertEquals(existsSync(join(tmpDir, ".cursor")), false);
   await Deno.remove(tmpDir, { recursive: true });
 });
-
-Deno.test("CursorAdapter - writeMemoryFile root writes .cursorrules", async () => {
-  const tmpDir = await Deno.makeTempDir();
-  try {
-    await adapter.writeMemoryFile(tmpDir, "root", "# Rules\n- be nice");
-    const content = await Deno.readTextFile(join(tmpDir, ".cursorrules"));
-    assertEquals(content, "# Rules\n- be nice");
-  } finally {
-    await Deno.remove(tmpDir, { recursive: true });
-  }
-});
-
-Deno.test("CursorAdapter - writeMemoryFile non-root throws", async () => {
-  const tmpDir = await Deno.makeTempDir();
-  try {
-    let threw = false;
-    try {
-      await adapter.writeMemoryFile(tmpDir, "documents", "x");
-    } catch (e) {
-      threw = true;
-      assertEquals((e as Error).name, "MemoryScopeNotSupportedError");
-    }
-    assertEquals(threw, true);
-  } finally {
-    await Deno.remove(tmpDir, { recursive: true });
-  }
-});
