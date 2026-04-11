@@ -16,9 +16,9 @@ export const MaintenanceToolingRelevanceBench = new class
 
   checklist = [
     {
-      id: "task_file_report",
+      id: "inline_findings",
       description:
-        "Did the agent create a maintenance report in 'documents/tasks/'?",
+        "Did the agent present its findings inline in the chat response (grouped by category), without creating any audit/report file under 'documents/tasks/' or elsewhere?",
       critical: true,
     },
     {

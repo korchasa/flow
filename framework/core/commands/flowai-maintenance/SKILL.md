@@ -8,7 +8,7 @@ description: >-
 
 ## Overview
 
-Execute a rigorous 9-point maintenance sweep to identify structural deviations, documentation inconsistencies, dead code, complexity hotspots, technical debt, missing code documentation, terminology drift, instruction coherence issues, and tooling relevance problems. All findings must be actionable and saved to a task file in `documents/tasks/`.
+Execute a rigorous 9-point maintenance sweep to identify structural deviations, documentation inconsistencies, dead code, complexity hotspots, technical debt, missing code documentation, terminology drift, instruction coherence issues, and tooling relevance problems. Present all findings inline in your response, grouped by category.
 
 ## Context
 
@@ -29,12 +29,11 @@ It addresses:
 ## Rules & Constraints
 
 <rules>
-1.  **Output Target**: All findings MUST be written to `documents/tasks/<YYYY-MM-DD>-maintenance.md`. Start with a timestamped header.
-2.  **Precision**: Use specific thresholds (e.g., File > 500 lines).
-3.  **Constructive**: Every "Issue" must have a "Proposed Fix".
-4.  **Holistic**: Scan `documents/`, `.cursor/`, and source code directories.
-5.  **Mandatory**: Use a task management tool (e.g., `todo_write`, `todowrite`) to track progress through the 9 phases.
-6.  **Language Agnostic**: Adapt checks (imports, syntax, test patterns) to the primary language of the project (TS, JS, Py, Go, etc.).
+1.  **Precision**: Use specific thresholds (e.g., File > 500 lines).
+2.  **Constructive**: Every issue must have a proposed fix.
+3.  **Holistic**: Scan `documents/`, `.cursor/`, and source code directories.
+4.  **Mandatory**: Use a task management tool (e.g., `todo_write`, `todowrite`) to track progress through the 9 phases.
+5.  **Language Agnostic**: Adapt checks (imports, syntax, test patterns) to the primary language of the project (TS, JS, Py, Go, etc.).
 </rules>
 
 ## Instructions
@@ -43,8 +42,6 @@ It addresses:
 
 1. **Initialize & Plan**
    - Use a task management tool (e.g., `todo_write`, `todowrite`) to create a plan covering the 9 phases below.
-   - Check `documents/tasks/` for existing maintenance reports. Review prior reports for context, but
-     always create a new report file.
    - Identify project's primary language and source directories.
 
 2. **Phase 1: Structural Integrity**
@@ -125,43 +122,32 @@ It addresses:
      actually uses, and propose a fix (remove, replace with stack-appropriate
      alternative, or add justification).
 
-10. **Phase 9: Reporting**
-   - Compile all findings into the task file with the following format:
-     ```markdown
-     # Maintenance Report (YYYY-MM-DD)
+10. **Phase 9: Deliver findings**
+   - Output all findings inline in your response, grouped by category. Use plain-text category labels (not markdown `#` headings). Skip any category with no findings. Each issue line follows the shape `- <file/symbol>: <problem>. (Fix: <proposed fix>)`.
+   - Category order: Structural Issues, Hygiene & Quality, Technical Debt, Consistency, Documentation Coverage, Instruction Coherence, Tooling Relevance.
+   - Example of the inline shape (use plain-text labels, no `#` headings):
+     ```
+     1. Structural Issues
+     - src/oldfile.ts: located in root, should be in src/utils/. (Fix: Move file)
 
-     ## 1. Structural Issues
+     2. Hygiene & Quality
+     - utils.ts: unused export `myFunc`. (Fix: Delete)
+     - main.ts: 550 lines, exceeds 500-line limit. (Fix: Extract `processLogic` to a new file)
 
-     - [ ] File X is in root but should be in Y. (Fix: Move file)
+     3. Technical Debt
+     - api.ts: 5 TODOs clustered around error handling. (Fix: Create a tracked issue and resolve together)
 
-     ## 2. Hygiene & Quality
+     4. Consistency
+     - Docs say "User", code says "Client". (Fix: Standardize on User)
 
-     - [ ] Unused export `myFunc` in `utils.*`. (Fix: Delete)
-     - [ ] `main.*` is 550 lines. (Fix: Extract `processLogic` to new file)
+     5. Documentation Coverage
+     - utils.ts: function `parseData` missing JSDoc. (Fix: Add doc)
 
-     ## 3. Technical Debt
+     6. Instruction Coherence
+     - CLAUDE.md: "use tabs" (Code Style) conflicts with "use 2 spaces" (Error Handling). (Fix: Keep tabs, remove conflicting rule)
 
-     - [ ] 5 TODOs in `api.*` regarding error handling.
-
-     ## 4. Consistency
-
-     - [ ] Docs say "User", code says "Client". (Fix: Standardize on User)
-
-     ## 5. Documentation Coverage
-
-     - [ ] `utils.*` - function `parseData` missing docs. (Fix: Add docs)
-     - [ ] `ComplexClass` missing usage example. (Fix: Add example)
-
-     ## 6. Instruction Coherence
-
-     - [ ] CLAUDE.md: "use tabs" (Code Style) vs "use 2 spaces" (Error Handling). (Fix: Keep tabs, remove conflicting rule)
-     - [ ] CLAUDE.md vs AGENTS.md: Test policy differs. (Fix: Align on single policy in AGENTS.md)
-
-     ## 7. Tooling Relevance
-
-     - [ ] Skill `django-migrations` targets Python/Django, project is TypeScript/Deno. (Fix: Remove skill)
-     - [ ] Agent `kubernetes-deployer` references K8s, no K8s manifests in project. (Fix: Remove agent)
-     - [ ] Hook `pre-commit-python-lint.sh` runs flake8/black, no Python files exist. (Fix: Remove hook)
+     7. Tooling Relevance
+     - .claude/skills/django-migrations: targets Python/Django in a TS/Deno project. (Fix: Remove skill)
      ```
 
 </step_by_step>
@@ -177,5 +163,5 @@ It addresses:
 [ ] Checked for missing code documentation (File/Class/Method).
 [ ] Checked instruction coherence across CLAUDE.md, AGENTS.md, and docs (contradictions, ambiguities, redundancy).
 [ ] Checked tooling relevance (skills, agents, hooks vs. project stack and domain).
-[ ] Saved structured report to `documents/tasks/`.
+[ ] Presented all findings inline, grouped by category.
 </verification>

@@ -15,43 +15,37 @@ export const MaintenanceBasicBench = new class extends BenchmarkSkillScenario {
 
   checklist = [
     {
-      id: "task_file_report",
+      id: "inline_findings",
       description:
-        "Did the agent create a maintenance report in 'documents/tasks/'? (Check logs for task file content)",
+        "Did the agent present its findings inline in the chat response (grouped by category), without creating any audit/report file under 'documents/tasks/' or elsewhere?",
       critical: true,
     },
     {
       id: "todo_found",
-      description: "Did the report identify the TODO in src/main.ts?",
+      description: "Did the findings identify the TODO in src/main.ts?",
       critical: true,
     },
     {
       id: "god_object_found",
       description:
-        "Did the report identify SystemManager as a God Object candidate?",
+        "Did the findings identify SystemManager as a God Object candidate?",
       critical: true,
     },
     {
       id: "unused_export_found",
-      description: "Did the report identify unusedExport?",
+      description: "Did the findings identify unusedExport?",
       critical: true,
     },
     {
       id: "constructive_fixes",
       description:
-        "Does every identified issue in the report have a 'Proposed Fix' or recommendation?",
-      critical: false,
-    },
-    {
-      id: "report_path_format",
-      description:
-        "Is the report saved to 'documents/tasks/YYYY-MM-DD-maintenance.md' with a timestamped header?",
+        "Does every identified issue include a '(Fix: ...)' proposal or recommendation?",
       critical: false,
     },
     {
       id: "file_length_check",
       description:
-        "Did the report check for files exceeding 500 lines or functions exceeding 50 lines?",
+        "Did the findings check for files exceeding 500 lines or functions exceeding 50 lines?",
       critical: false,
     },
   ];
