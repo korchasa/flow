@@ -1,4 +1,19 @@
-# Benchmarking Subsystem Design
+# Evaluation Subsystem Design
+
+Two distinct evaluation classes share infrastructure (`SpawnedAgent`, IDE adapters, LLM judge) but serve different goals.
+
+## 0. Benchmarks vs Experiments
+
+- **Benchmark** — regression test for a single framework primitive (skill, command, agent). Binary pass/fail per scenario. Run via `deno task bench`. Scenarios co-located with primitive under `framework/<pack>/.../<primitive>/benchmarks/`. Run artifacts in `benchmarks/runs/` (gitignored). Goal: detect regressions in primitive behavior.
+- **Experiment** — parameterized sweep producing a curve or headline number. Not tied to any primitive. Run via `deno task experiment`. Code under `scripts/experiments/<name>/`. Results committed to `scripts/experiments/<name>/results/` as JSON + Markdown. Goal: empirically measure a system characteristic (e.g., max memory file length at which adherence stays ≥80%).
+
+Key differences:
+
+- **Output unit** — benchmark: pass/fail per checklist item; experiment: continuous metric over axes.
+- **Repetition** — benchmark: typically 1 run per scenario; experiment: N reps per cell for statistical confidence.
+- **Result lifecycle** — benchmark: ephemeral runs, result stored in git only indirectly via tests; experiment: raw results committed as evidence.
+- **Discovery** — benchmark: walked from `framework/`; experiment: explicit name passed to CLI.
+- **Scope** — benchmark: tests one primitive's behavior; experiment: tests the agent platform, IDE, model, or combinations thereof.
 
 ## 1. Overview
 
@@ -87,3 +102,57 @@ The trace is a structured HTML document designed for readability and detailed in
 | `flowai-plan-variants-complex` | FAILED | 3 | 0 | 30.5 | No task file, no variants, no tradeoffs |
 | `flowai-plan-variants-obvious` | FAILED | 1 | 0 | 17.1 | Task file not created |
 | `flowai-maintenance-basic` | FAILED | 2 | 0 | 118.7 | Claims task file update but doesn't; missed TODO |
+
+## 6. Experiments Subsystem
+
+Parallel track to Benchmarks. Infrastructure in `scripts/experiments/lib/`; individual experiments in `scripts/experiments/<name>/`.
+
+### 6.1 Directory Structure
+
+```text
+scripts/experiments/
+├── lib/
+│   ├── types.ts        # Experiment, Cell, TrialResult, ExperimentReport
+│   ├── runner.ts       # Sweep orchestrator over SpawnedAgent
+│   ├── judge.ts        # Binary adherence judge wrapper
+│   ├── noise.ts        # Deterministic noise content builder
+│   ├── tokens.ts       # Token count heuristic
+│   └── report.ts       # JSON + Markdown report writers
+├── <experiment>/
+│   ├── README.md       # Methodology, how to read, caveats
+│   ├── <variant>.ts    # Experiment definition(s)
+│   ├── shared.ts       # Rule library, common setup
+│   ├── <data>.md       # Committed static inputs (e.g., noise corpus)
+│   └── results/        # Committed JSON + MD per run
+│       └── <date>-<model>-<variant>.{json,md}
+```
+
+### 6.2 Contract
+
+```typescript
+interface Experiment {
+  id: string;
+  name: string;
+  description: string;
+  axes: Record<string, unknown[]>;     // cartesian product of cells
+  defaults: { reps: number; model?: string; ide?: string };
+  setupCell(cell: Cell, ctx: CellContext): Promise<void>;
+  query(cell: Cell): string;           // prompt to agent (must not hint at rule)
+  judgePrompt(cell: Cell, agentOutput: string): JudgeRequest;
+}
+```
+
+### 6.3 CLI
+
+- `deno task experiment <name> [--variant <v>] [--model <m>] [--ide <i>] [--reps <n>] [--sizes <csv>] [--parallel <n>]`
+- Default parallelism: 1 (reproducibility over speed).
+- Results written to `scripts/experiments/<name>/results/<ISO-DATE>-<model-slug>-<variant>.{json,md}`.
+
+### 6.4 Headline Number
+
+Each experiment defines a `headline(report)` function producing a single string like:
+`"Max safe tokens: 4000 at ≥80% adherence, model=claude-opus-4-6, ide=claude, n=15/cell"`
+
+### 6.5 Cross-IDE Support
+
+Experiments reuse the same `AgentAdapter` layer as benchmarks. The adapter contract is extended with a `writeMemoryFile(sandboxPath, scope, content)` method so experiments can place memory files in the correct IDE-specific location (`CLAUDE.md`/`AGENTS.md` for Claude, `.cursorrules` for Cursor, etc.).

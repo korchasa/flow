@@ -1,5 +1,6 @@
 import { join } from "@std/path";
-import type { AgentAdapter, ParsedAgentOutput } from "./types.ts";
+import type { AgentAdapter, MemoryScope, ParsedAgentOutput } from "./types.ts";
+import { MemoryScopeNotSupportedError } from "./types.ts";
 import type { SessionUsage } from "../usage.ts";
 
 interface ClaudeEvent {
@@ -18,6 +19,48 @@ interface ClaudeEvent {
   message?: {
     content?: Array<{ type: string; text?: string }>;
   };
+}
+
+/**
+ * Reads the Claude Code OAuth access token from the macOS keychain.
+ * Throws on non-macOS or when the entry is missing.
+ */
+async function readClaudeOauthTokenFromKeychain(): Promise<string> {
+  if (Deno.build.os !== "darwin") {
+    throw new Error(
+      "ClaudeAdapter.getCleanroomEnv: keychain-based auth is only supported on macOS",
+    );
+  }
+  const cmd = new Deno.Command("security", {
+    args: ["find-generic-password", "-s", "Claude Code-credentials", "-w"],
+    stdout: "piped",
+    stderr: "piped",
+  });
+  const out = await cmd.output();
+  if (!out.success) {
+    const stderr = new TextDecoder().decode(out.stderr);
+    throw new Error(
+      `ClaudeAdapter.getCleanroomEnv: failed to read keychain entry "Claude Code-credentials": ${stderr}`,
+    );
+  }
+  const raw = new TextDecoder().decode(out.stdout).trim();
+  let parsed: { claudeAiOauth?: { accessToken?: string } };
+  try {
+    parsed = JSON.parse(raw);
+  } catch (e) {
+    throw new Error(
+      `ClaudeAdapter.getCleanroomEnv: keychain payload is not JSON: ${
+        (e as Error).message
+      }`,
+    );
+  }
+  const token = parsed?.claudeAiOauth?.accessToken;
+  if (!token) {
+    throw new Error(
+      "ClaudeAdapter.getCleanroomEnv: keychain payload missing claudeAiOauth.accessToken",
+    );
+  }
+  return token;
 }
 
 /** Adapter for Claude Code CLI. Parses stream-json (NDJSON) output and uses settings.local.json for mocking. */
@@ -184,5 +227,92 @@ MOCK_EOF
     // Claude Code transcript parsing not implemented yet — return null
     await Promise.resolve();
     return null;
+  }
+
+  /**
+   * Returns env vars that isolate the spawned `claude` process from the
+   * user's global state:
+   * - `CLAUDE_CONFIG_DIR=<configDir>` — empty dir, prevents loading of
+   *   `~/.claude/CLAUDE.md` and friends.
+   * - `CLAUDE_CODE_OAUTH_TOKEN=<token>` — bypasses file-based OAuth
+   *   resolution (which depends on the original HOME). Token is read
+   *   from the macOS keychain entry `Claude Code-credentials`.
+   * - `CLAUDECODE=""` — unset the marker that says we're inside Claude
+   *   Code (enables the parent CLI to spawn a fresh subprocess).
+   *
+   * Throws if the keychain entry cannot be read (e.g. on Linux, or if
+   * the user is not authenticated).
+   */
+  async getCleanroomEnv(
+    configDir: string,
+  ): Promise<Record<string, string>> {
+    const token = await readClaudeOauthTokenFromKeychain();
+    return {
+      CLAUDE_CONFIG_DIR: configDir,
+      CLAUDE_CODE_OAUTH_TOKEN: token,
+      CLAUDECODE: "",
+    };
+  }
+
+  /**
+   * Writes an AGENTS.md file at the specified scope and creates a
+   * CLAUDE.md symlink alongside it so Claude Code picks it up.
+   * - root       → <sandbox>/AGENTS.md
+   * - documents  → <sandbox>/documents/AGENTS.md
+   * - scripts    → <sandbox>/scripts/AGENTS.md
+   * - global     → <sandbox>/.claude-global/CLAUDE.md (simulated global;
+   *                real ~/.claude/CLAUDE.md is outside sandbox and not
+   *                safe to touch from experiments).
+   */
+  async writeMemoryFile(
+    sandboxPath: string,
+    scope: MemoryScope,
+    content: string,
+  ): Promise<void> {
+    let dir: string;
+    switch (scope) {
+      case "root":
+        dir = sandboxPath;
+        break;
+      case "documents":
+        dir = join(sandboxPath, "documents");
+        break;
+      case "scripts":
+        dir = join(sandboxPath, "scripts");
+        break;
+      case "global":
+        // Simulated — real global CLAUDE.md is user-wide and must not be
+        // mutated by an experiment. We stage a copy and note in SDS that
+        // global-scope tests in Claude are approximations.
+        dir = join(sandboxPath, ".claude-global");
+        break;
+      default:
+        throw new MemoryScopeNotSupportedError(this.ide, scope);
+    }
+
+    await Deno.mkdir(dir, { recursive: true });
+    const agentsPath = join(dir, "AGENTS.md");
+    await Deno.writeTextFile(agentsPath, content);
+
+    // Create/refresh CLAUDE.md symlink → AGENTS.md
+    const claudePath = join(dir, "CLAUDE.md");
+    try {
+      await Deno.remove(claudePath);
+    } catch (e) {
+      if (!(e instanceof Deno.errors.NotFound)) throw e;
+    }
+    try {
+      await Deno.symlink("AGENTS.md", claudePath);
+    } catch (e) {
+      // On systems without symlink support, fall back to a copy.
+      if (
+        e instanceof Deno.errors.PermissionDenied ||
+        e instanceof Deno.errors.NotSupported
+      ) {
+        await Deno.writeTextFile(claudePath, content);
+      } else {
+        throw e;
+      }
+    }
   }
 }

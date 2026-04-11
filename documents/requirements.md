@@ -102,6 +102,33 @@ Note: FR-DIST.MAPPING defines cross-IDE resource mapping; open questions need us
   - [ ] `agents-rules-no-silent-fallbacks` — don't add defaults/fallbacks without asking
   - [ ] `agents-rules-run-all-tests` — run full test suite, not just changed files
 
+### FR-EXP: Experiments Subsystem
+
+- **Description:** Parameterized empirical studies that measure system characteristics of the agent platform (model × IDE × memory layout × workload), distinct from regression benchmarks. Run via `deno task experiment`. Results committed to repo as evidence (`scripts/experiments/<name>/results/`) — unlike benchmark runs which are ephemeral.
+- **Scenario:** A researcher wants to measure, e.g., max CLAUDE.md/AGENTS.md length at which an agent still follows rules ≥80% of the time. The experiment sweeps token budget across axes (size, rule type, repetitions) and produces a JSON dataset plus a Markdown summary with a headline number.
+- **Acceptance:**
+  - [x] `scripts/experiments/lib/` provides `Experiment`, `Cell`, `TrialResult`, `ExperimentReport` types.
+  - [x] `scripts/experiments/lib/runner.ts` orchestrates cartesian sweep over axes × reps using `SpawnedAgent` and `AgentAdapter`.
+  - [x] `scripts/experiments/lib/judge.ts` evaluates one trial as binary adherence (pass/fail) against a single rule.
+  - [x] `scripts/experiments/lib/noise.ts` builds deterministic noise content (seed-reproducible) up to a target token budget.
+  - [x] `scripts/experiments/lib/tokens.ts` estimates text size in tokens.
+  - [x] `scripts/experiments/lib/report.ts` serializes JSON results and renders Markdown with headline number.
+  - [x] `deno task experiment <name> [--variant] [--model] [--ide] [--reps] [--sizes]` CLI entry point.
+  - [x] `AgentAdapter` extended with `writeMemoryFile(sandboxPath, scope, content)` so experiments can inject memory files per IDE.
+  - [x] `AgentAdapter` extended with `getCleanroomEnv(configDir)` so experiments isolate from user-level state (global memory files, OAuth state in HOME). Implemented for Claude (CLAUDE_CONFIG_DIR + macOS keychain OAuth token); Cursor returns empty (no hierarchical memory to isolate).
+  - [x] Experiment discovery is isolated from `deno task bench` discovery (`task-bench.ts` walks only `framework/`).
+
+### FR-EXP.MEMORY-LENGTH: AGENTS.md/CLAUDE.md Max Length Experiment
+
+- **Description:** Empirically measures the maximum total memory-file token budget at which the agent reliably (≥80%) follows a target rule. Replaces the secondary-source "<200 lines" best-practice claim with a model-anchored, reproducible number. Covers two layouts: single root memory file (`single-file`) and distributed across root + `documents/` + `scripts/` memory files (`tree-sum`). Located at `scripts/experiments/claude-md-length/`.
+- **Scenario:** Researcher runs `deno task experiment claude-md-length --variant single-file --model <model>`. The runner iterates token sizes × rule types × repetitions, spawns a fresh agent per trial (cleanroom-isolated from user state), judges each response against the target rule. Results saved as JSON + Markdown in `results/`. Headline number: `max(tokens : mean_adherence ≥ 0.8)`.
+- **Acceptance:**
+  - [x] `scripts/experiments/claude-md-length/single-file.ts` defines sweep over `{tokens: [500,1000,2000,4000,8000,16000], rule: [format,language,negation]}` × 5 reps.
+  - [x] `scripts/experiments/claude-md-length/tree-sum.ts` defines sweep over `{tokens: [1500,3000,6000,12000,24000], rule: [format,language,negation]}` × 5 reps, distributing token budget across root + `documents/AGENTS.md` + `scripts/AGENTS.md` in equal thirds.
+  - [x] `scripts/experiments/claude-md-length/noise-corpus.md` committed, ~320 lines (~7700 tokens) of non-directive content for an imaginary project ("Nimbus Logistics API"). Sufficient for max axis values via deterministic shuffled repetition.
+  - [x] `scripts/experiments/claude-md-length/README.md` documents methodology, how to read results, and known caveats.
+  - [x] First full runs committed for `claude-haiku-4-5`: `single-file` (90 trials, headline 1000 tokens) and `tree-sum` (75 trials, headline 6000 total tokens).
+
 ### FR-COMPONENT: Component Coverage
 
 All 41 skills have at least one benchmark scenario. Coverage is the source of truth: `find framework -name "mod.ts" -path "*/benchmarks/*" | wc -l`. Agents (4 canonical definitions) are not benchmarked individually — they are exercised as subagents within skill benchmarks.

@@ -259,7 +259,8 @@ cli/                    # Distribution tool — published to JSR as @korchasa/fl
   src/                  #   CLI source (BundledSource, sync, transform, plan)
   scripts/              #   Bundle script (generates bundled.json + _version.ts)
 documents/              # Project documentation (SRS, SDS, tasks)
-scripts/                # Deno task scripts + benchmark infrastructure
+scripts/                # Deno task scripts + benchmark + experiment infrastructure
+  experiments/          #   Parameterized sweeps (committed evidence: results/*.json + *.md)
 benchmarks/             # Benchmark runs, config, lock (scenarios in framework/<pack>/{commands,skills}/*/benchmarks/)
 deno.json               # Single config: JSR metadata, imports, tasks
 AGENTS.md               # Project vision, rules, agent instructions

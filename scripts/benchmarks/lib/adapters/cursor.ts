@@ -1,5 +1,6 @@
 import { join } from "@std/path";
-import type { AgentAdapter, ParsedAgentOutput } from "./types.ts";
+import type { AgentAdapter, MemoryScope, ParsedAgentOutput } from "./types.ts";
+import { MemoryScopeNotSupportedError } from "./types.ts";
 import { calculateSessionUsage, type SessionUsage } from "../usage.ts";
 
 interface CursorAgentOutput {
@@ -155,5 +156,37 @@ MOCK_EOF
 
   async calculateUsage(sessionId: string): Promise<SessionUsage | null> {
     return await calculateSessionUsage(sessionId);
+  }
+
+  /**
+   * Cursor does not have hierarchical memory loading equivalent to
+   * Claude's `~/.claude/CLAUDE.md`. The cwd-only `.cursorrules` is
+   * already isolated from user-level state because experiments run in
+   * a sandbox dir without `.cursorrules`. No special env override is
+   * required, so this returns an empty map.
+   */
+  getCleanroomEnv(_configDir: string): Promise<Record<string, string>> {
+    return Promise.resolve({});
+  }
+
+  /**
+   * Writes project-level rules for Cursor.
+   * - root → <sandbox>/.cursorrules
+   * - others → not supported; throws MemoryScopeNotSupportedError.
+   *
+   * Cursor does not have Claude-style hierarchical memory loading.
+   * Experiments that require sub-directory memory injection must skip
+   * non-root scopes on this adapter.
+   */
+  writeMemoryFile(
+    sandboxPath: string,
+    scope: MemoryScope,
+    content: string,
+  ): Promise<void> {
+    if (scope !== "root") {
+      throw new MemoryScopeNotSupportedError(this.ide, scope);
+    }
+    const path = join(sandboxPath, ".cursorrules");
+    return Deno.writeTextFile(path, content);
   }
 }

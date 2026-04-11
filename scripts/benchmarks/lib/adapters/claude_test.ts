@@ -156,3 +156,45 @@ Deno.test("ClaudeAdapter - setupMocks with empty mocks does nothing", async () =
   assertEquals(existsSync(join(tmpDir, ".claude")), false);
   await Deno.remove(tmpDir, { recursive: true });
 });
+
+Deno.test("ClaudeAdapter - writeMemoryFile root writes AGENTS.md + CLAUDE.md symlink", async () => {
+  const tmpDir = await Deno.makeTempDir();
+  try {
+    await adapter.writeMemoryFile(tmpDir, "root", "# Project memory\nRule.");
+    const agentsContent = await Deno.readTextFile(join(tmpDir, "AGENTS.md"));
+    assertEquals(agentsContent, "# Project memory\nRule.");
+    // CLAUDE.md should exist (as symlink or copy)
+    const claudePath = join(tmpDir, "CLAUDE.md");
+    assertEquals(existsSync(claudePath), true);
+    const claudeContent = await Deno.readTextFile(claudePath);
+    assertEquals(claudeContent, "# Project memory\nRule.");
+  } finally {
+    await Deno.remove(tmpDir, { recursive: true });
+  }
+});
+
+Deno.test("ClaudeAdapter - writeMemoryFile documents scope", async () => {
+  const tmpDir = await Deno.makeTempDir();
+  try {
+    await adapter.writeMemoryFile(tmpDir, "documents", "# Docs memory");
+    const content = await Deno.readTextFile(
+      join(tmpDir, "documents", "AGENTS.md"),
+    );
+    assertEquals(content, "# Docs memory");
+    assertEquals(existsSync(join(tmpDir, "documents", "CLAUDE.md")), true);
+  } finally {
+    await Deno.remove(tmpDir, { recursive: true });
+  }
+});
+
+Deno.test("ClaudeAdapter - writeMemoryFile overwrites existing", async () => {
+  const tmpDir = await Deno.makeTempDir();
+  try {
+    await adapter.writeMemoryFile(tmpDir, "root", "v1");
+    await adapter.writeMemoryFile(tmpDir, "root", "v2");
+    const content = await Deno.readTextFile(join(tmpDir, "AGENTS.md"));
+    assertEquals(content, "v2");
+  } finally {
+    await Deno.remove(tmpDir, { recursive: true });
+  }
+});
