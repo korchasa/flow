@@ -4,6 +4,7 @@
 - **Cursor**: docs.cursor.com [^1]
 - **Claude Code**: code.claude.com/docs [^2]
 - **OpenCode**: opencode.ai/docs [^3]
+- **OpenAI Codex**: github.com/openai/codex, developers.openai.com/codex [^35]
 
 ## 1. Built-in Tools Comparison
 
@@ -29,6 +30,13 @@
 - **Process**: `todowrite`, `todoread`, `task` (subagents), `skill`, `parallel`.
 - **Other**: `question`, `webfetch`, `websearch` (when `OPENCODE_ENABLE_EXA=1`), `lsp` (experimental) [^8]
 
+### OpenAI Codex
+- **Files**: `file_read`, `apply_patch` (first-class in Responses API), `view_image` (feature-gated).
+- **System**: Shell tool (PTY-backed execution, feature `shell_tool = true`).
+- **Process**: `update_plan` (TODO/plan items). Subagents via `[agents.<name>]` TOML config (built-in: `default`, `explorer`, `worker`).
+- **Other**: `web_search` (modes: `cached`/`live`/`disabled`), MCP tools (from configured servers), App/connector tools (from plugins). [^35]
+- **Note**: No `glob`/`grep` — file search done via shell tool. No dedicated `edit` — uses `apply_patch`. Feature-gated: `js_repl` (experimental), `image_generation` (under dev).
+
 
 ---
 
@@ -38,16 +46,19 @@
 - **Cursor**: `AGENTS.md` (root/subdir), `.cursor/rules/` (`alwaysApply: true`).[^21]
 - **Claude Code**: `CLAUDE.md` (root/subdir), `.claude/CLAUDE.md`, `~/.claude/CLAUDE.md` (global), `CLAUDE.local.md` (gitignored, project-local), managed paths (`/etc/claude-code/CLAUDE.md`, MDM plist/registry). `@include` directive (max 5 levels). 40K char/file limit. `omitClaudeMd` agent flag to skip hierarchy.[^2] [^33]
 - **OpenCode**: `AGENTS.md` > `CLAUDE.md`. `opencode.json` (`instructions`).[^3]
+- **OpenAI Codex**: `AGENTS.md` (same as OpenCode). Hierarchy: git root → cwd (deeper overrides parent). `AGENTS.override.md` at any level replaces `AGENTS.md` at that level. Fallback filenames via `project_doc_fallback_filenames` config key. Global: `~/.codex/AGENTS.md`. Size limit: `project_doc_max_bytes = 32768` (default 32 KiB). Additional: `model_instructions_file` (replaces built-in instructions), `developer_instructions` (inline extra instructions) in `config.toml`.[^35]
 
 ### 2.2 Conditional Instructions
 - **Cursor**: `.cursor/rules/` (`globs`, `description`).[^21]
 - **Claude Code**: `.claude/rules/` (`paths`). Triggers on `Read` only (not `Write`/`Edit`). `globs:` field silently ignored. `description:` alone does not scope (becomes always-apply). Subdirectory rules (`.claude/rules/subdir/*.md`) discovered recursively. Limits: 200 lines / 4 KB per file, ~5 files per turn (~20 KB aggregate). Truncated files include note to use Read tool. [^2] [^32] [^33]
 - **OpenCode**: `opencode.json` (`instructions` with globs).[^3]
+- **OpenAI Codex**: No conditional/path-scoped instructions. Subdir `AGENTS.md` files apply when cwd is within that subdir (directory-level scoping, not glob-based). Execution policy via `.rules` files (Starlark syntax) scopes to command patterns, not file paths.[^35]
 
 ### 2.3 Custom Commands (`/command`)
 - **Cursor**: `.cursor/commands/*.md`. Arguments passed in free form.
 - **Claude Code**: `.claude/commands/*.md`, `.claude/commands/<namespace>/*.md` (merged into skill loader). Supports `$0`–`$N` positional args. Shell execution in prompt: `` !`command` `` (inline), ` ```! block ``` ` (multi-line; disabled for MCP skills). `${CLAUDE_SKILL_DIR}`, `${CLAUDE_SESSION_ID}` placeholders. Full frontmatter: `name`, `description`, `argument-hint`, `when_to_use`, `allowed-tools` (permission rule syntax), `model` (`sonnet`/`opus`/`haiku`/`inherit`), `effort` (`low`/`medium`/`high`/`max` or integer), `context` (`inline`/`fork`), `agent` (agent type for fork), `paths` (conditional activation), `hooks`, `shell` (`bash`/`powershell`), `type` (`user`/`feedback`/`project`/`reference`), `disable-model-invocation`, `user-invocable`, `hide-from-slash-command-tool`, `version`. [^2] [^33]
 - **OpenCode**: `.opencode/commands/*.md`. Supports `$ARGUMENTS`, `$1`–`$N`, `` !`shell` ``, `@filepath`. Frontmatter: `description`, `agent`, `model`, `subtask` (boolean).[^3]
+- **OpenAI Codex**: No file-based commands directory. TUI slash commands are built-in only (`/model`, `/review`, `/permissions`, `/status`, `/fork`, `/clear`, `/exit`, `/copy`, `/plugins`, `/mcp`, `/agent`, `/feedback`). Skills invocable via `$skill-name` syntax. `!<cmd>` runs local shell command. No user-defined custom commands.[^35]
 
 ### 2.4 Event Hooks / Plugins
 
@@ -138,6 +149,28 @@ export const MyPlugin: Plugin = async ({ project, client, $, directory, worktree
 
 **Custom tools**: Override built-in tools by using same name.
 
+#### OpenAI Codex Hooks [^35]
+
+**Config**: `~/.codex/hooks.json` (user), `<repo>/.codex/hooks.json` (project). Feature-gated: `codex_hooks = true` required (stage: "under development").
+
+**Schema** (same nesting as Claude Code):
+```json
+{ "hooks": { "<Event>": [{ "matchers": ["regex"], "hooks": [{ "type": "command", "command": "script.sh", "statusMessage": "...", "timeoutSec": 600 }] }] } }
+```
+
+**Hook types** (3):
+- `command` — shell script; receives JSON via stdin, returns JSON via stdout.
+- `prompt` — LLM evaluation; `$ARGUMENTS` placeholder.
+- `agent` — spawns subagent for multi-turn verification.
+
+**Events** (5): `SessionStart`, `PreToolUse` (Bash only currently), `PostToolUse` (Bash only currently), `UserPromptSubmit`, `Stop`.
+
+**stdin JSON fields**: `session_id`, `transcript_path`, `cwd`, `hook_event_name`, `model`, `turn_id`.
+
+**stdout response format**: `{ "continue": true, "stopReason": "...", "systemMessage": "...", "suppressOutput": false }`. `PreToolUse` can block: `"permissionDecision": "deny"` or `"decision": "block"`. `Stop` can continue: `"decision": "block"` + `"reason"`.
+
+**Fail mode**: Fail-open. Multiple matching hooks execute concurrently. Not supported on Windows.
+
 
 ### 2.5 Skills (SKILL.md)
 - **Cursor**: `.cursor/skills/<name>/SKILL.md`; also `.claude/skills/`, `.codex/skills/` (compat).[^10]
@@ -149,6 +182,7 @@ export const MyPlugin: Plugin = async ({ project, client, $, directory, worktree
 - **Cursor**: `.cursor/mcp.json` (project/user). Transports: stdio, SSE, Streamable HTTP. OAuth. Config interpolation (`${env:NAME}`, `${workspaceFolder}`). MCP Marketplace (one-click install).[^1]
 - **Claude Code**: `.mcp.json` (project), `~/.claude.json` (user/local), `managed-mcp.json` (org). Config scopes: local, user, project, dynamic, enterprise, claudeai, managed. Transports: HTTP (recommended), SSE (deprecated), stdio, ws, sse-ide, ws-ide, sdk, claudeai-proxy. OAuth 2.0. Tool Search (auto >10% context). `claude mcp serve` (self as MCP server). Channels (push messages). Plugins can bundle MCP servers. Per-agent MCP via `mcpServers` field. [^15] [^33]
 - **OpenCode**: `opencode.jsonc` (`mcp` field). Types: local (command) and remote (URL). OAuth (RFC 7591). Glob-based tool permissions. CLI: `opencode mcp auth|list|logout|debug`.[^3]
+- **OpenAI Codex**: `[mcp_servers.<name>]` tables in `config.toml`. Transports: stdio (`command`/`args`/`env`/`cwd`), Streamable HTTP (`url`/`bearer_token_env_var`/`http_headers`/`scopes`). Per-server: `startup_timeout_sec`, `tool_timeout_sec`, `enabled_tools`/`disabled_tools`, `required`. OAuth: `codex mcp login <server>`. CLI: `codex mcp add|remove|list|get|login|logout`. Self as MCP server: `codex mcp-server` (stdio). Plugin-bundled MCP via `.mcp.json` in plugin dir. Per-agent MCP via `mcp_servers` field in agent TOML.[^35]
 
 ### 2.7 Context Ignoring
 
@@ -160,6 +194,9 @@ export const MyPlugin: Plugin = async ({ project, client, $, directory, worktree
 - **Claude Code**: `permissions.deny: ["Read(path)"]` in `settings.json`; `respectGitignore: true` (default) — set to `false` to surface gitignored files.[^15]
 - **GitHub Copilot**: Server-side YAML in GitHub org/enterprise Settings → Content Exclusion (Business/Enterprise only; 30 min sync lag; independent of `.gitignore`).[^25]
 - **OpenCode**: `.gitignore`, `.ignore`, `opencode.json` (`watcher.ignore`).[^3]
+
+**Sandbox-based exclusion** (no dedicated ignore file):
+- **OpenAI Codex**: `[sandbox_workspace_write]` in `config.toml` controls writable paths. `writable_roots` whitelist, `network_access = false` (default). `.git/` and `.codex/` always read-only in `workspace-write` mode. No `.codexignore` or equivalent file.[^35]
 
 **Rely on `.gitignore` only** (no dedicated mechanism documented):
 - Windsurf, Zed, JetBrains AI Assistant, Continue.dev.
@@ -174,6 +211,7 @@ export const MyPlugin: Plugin = async ({ project, client, $, directory, worktree
 - **Cursor**: Accept/reject per-tool. No named modes. `.cursor/rules/` can restrict tool use.
 - **Claude Code**: Named modes: `default` (ask outside CWD), `plan` (read-only), `acceptEdits` (auto-accept file edits), `bypassPermissions` (auto-approve all), `auto` (ML classifier, feature-gated). Per-agent override via `permissionMode` frontmatter. Permission rules syntax: `Tool(pattern)` (e.g. `Bash(git *)`, `Write(*.ts)`). Dangerous pattern detection strips interpreter/shell allow-rules at auto-mode entry (`dangerousPatterns.ts`); dangerous command detection via yolo classifier (`rm -rf`, `git reset --hard`, etc.). [^33]
 - **OpenCode**: `permission` field in agent frontmatter (`auto`/`ask`/`deny`). No permission rule syntax.
+- **OpenAI Codex**: Two orthogonal axes. **Approval policy** (`-a`): `untrusted` (only trusted cmds auto-run), `on-request` (model decides), `never` (never ask); granular sub-policies (`sandbox_approval`, `rules`, `mcp_elicitations`, `request_permissions`, `skill_approval`). **Sandbox** (`-s`): `read-only`, `workspace-write` (`.git/`+`.codex/` read-only), `danger-full-access`. Shortcuts: `--full-auto` = `on-request` + `workspace-write`, `--dangerously-bypass-approvals-and-sandbox` (`--yolo`). Execution policy: `.rules` files (Starlark), decisions: `forbidden`/`prompt`/`allow` (strictest wins). OS-native sandbox: Seatbelt (macOS), Bubblewrap/Landlock (Linux), Restricted token (Windows). Smart approvals: model proposes `prefix_rule` during escalation; `approvals_reviewer = "guardian_subagent"` for routing.[^35]
 
 ### 2.10 Custom Tools
 - **OpenCode**: `.opencode/tools/*.{ts,js}` (project), `~/.config/opencode/tools/` (user). Uses `tool()` from `@opencode-ai/plugin`. Filename = tool name. Multiple exports create `<filename>_<exportname>`. Can override built-in tools by using same name.[^3]
@@ -223,6 +261,22 @@ Plugins = packaging format that bundles multiple primitives (skills, agents, hoo
 **Local plugins**: `.opencode/plugins/*.{js,ts}` (project) or `~/.config/opencode/plugins/` (global). Dependencies in `.opencode/package.json` (bun install at startup).
 
 **SDKs**: JS/TS, Go, Python.
+
+#### OpenAI Codex [^35]
+
+**Manifest**: `.codex-plugin/plugin.json` (required: `name`, `version`, `description`; optional: `author`, `homepage`, `repository`, `license`, `keywords`). Component pointers: `skills` (`"./skills/"`), `mcpServers` (`"./.mcp.json"`), `apps` (`"./.app.json"`).
+
+**Bundled components**: Skills, MCP servers (`.mcp.json`), Apps/connectors (`.app.json`), Assets.
+
+**Dir structure**: `skills/`, `.codex-plugin/plugin.json`, `.mcp.json`, `.app.json`, `assets/`.
+
+**UI metadata**: `displayName`, `shortDescription`, `longDescription`, `developerName`, `category`, `capabilities`, `brandColor`, `composerIcon`, `logo`, `screenshots`, `defaultPrompt`, `websiteURL`, `privacyPolicyURL`, `termsOfServiceURL`.
+
+**Distribution**: Official curated Plugin Directory. Marketplace files: `$REPO_ROOT/.agents/plugins/marketplace.json` (repo-scoped), `~/.agents/plugins/marketplace.json` (personal).
+
+**Plugin cache**: `~/.codex/plugins/cache/$MARKETPLACE_NAME/$PLUGIN_NAME/$VERSION/`.
+
+**Config**: `[plugins."github@openai-curated"] enabled = true` in `config.toml`. TUI: `/plugins` to browse/install.
 
 
 ### 2.12 Execution Mode Differences (Claude Code specific)
@@ -521,26 +575,47 @@ Detection order: `CURSOR_AGENT` first (may co-exist with `CLAUDECODE` in nested 
 
 **Data**: Messages, cost summaries, timestamps per session.
 
+#### OpenAI Codex [^35]
+
+**Format**: JSONL (`history.jsonl`).
+
+**Scope**: Local sessions + cloud sessions (Codex Cloud/Web).
+
+**Paths**:
+- Session transcripts: `~/.codex/history.jsonl`
+- Session data: `~/.codex/sessions/`
+- Auth: `~/.codex/auth.json`
+- Agent memories (experimental): `~/.codex/memories/`
+- Config home override: `CODEX_HOME` env var
+
+**Resume**: `codex resume` (picker), `codex resume --last`, `codex resume <SESSION_ID>`. `codex fork` to branch a session.
+
 ---
 
 ## 4. Comparative Summary
 
-| Primitive | Cursor | Claude Code | OpenCode |
-| :--- | :--- | :--- | :--- |
-| **Global Rules** | — | `~/.claude/CLAUDE.md` | `~/.config/opencode/AGENTS.md` |
-| **Project Rules** | `AGENTS.md` | `CLAUDE.md` | `AGENTS.md` |
-| **Folder Rules** | `subdir/AGENTS.md` | `subdir/CLAUDE.md` | — |
-| **Hooks** | `hooks.json` (20 events, 2 types) | `settings.json` (27 events, 4+1 types) | `.opencode/plugins/` (30+ events, code) |
-| **Skills** | Yes [^10] | Yes [^11] | Yes [^12] |
-| **Subagents** | `Task` | `Task` | `task` |
-| **Custom Tools** | MCP | MCP | `.opencode/tools/` + MCP |
-| **Custom Agents** | `.cursor/agents/` | `.claude/agents/` | `.opencode/agents/` |
-| **Commands** | `.cursor/commands/` | `.claude/commands/` | `.opencode/commands/` |
-| **Permission Modes** | Per-tool accept/reject | 5 named modes + rule syntax [^33] | `auto`/`ask`/`deny` |
-| **Plugin Bundles** | `.cursor-plugin/` [^26] | `.claude-plugin/` [^27] | npm packages |
-| **Marketplace** | cursor.com/marketplace | claude.ai (~101 plugins) | npm |
-| **MCP Config** | `.cursor/mcp.json` | `.mcp.json` | `opencode.jsonc` |
-| **Session Storage** | SQLite `state.vscdb` (GUI) + `store.db` (CLI) + `agent-transcripts/` [^28][^34] | JSONL `~/.claude/projects/` [^30] | SQLite `opencode.db` [^31] |
+| Primitive | Cursor | Claude Code | OpenCode | OpenAI Codex |
+| :--- | :--- | :--- | :--- | :--- |
+| **Global Rules** | — | `~/.claude/CLAUDE.md` | `~/.config/opencode/AGENTS.md` | `~/.codex/AGENTS.md` |
+| **Project Rules** | `AGENTS.md` | `CLAUDE.md` | `AGENTS.md` | `AGENTS.md` (+`AGENTS.override.md`) |
+| **Folder Rules** | `subdir/AGENTS.md` | `subdir/CLAUDE.md` | — | `subdir/AGENTS.md` (cwd-based) |
+| **Hooks** | `hooks.json` (20 events, 2 types) | `settings.json` (27 events, 4+1 types) | `.opencode/plugins/` (30+ events, code) | `hooks.json` (5 events, 3 types; feature-gated) [^35] |
+| **Skills** | Yes [^10] | Yes [^11] | Yes [^12] | Yes (`.codex/skills/`, `.agents/skills/`) [^35] |
+| **Subagents** | `Task` | `Task` | `task` | `[agents.<name>]` TOML |
+| **Custom Tools** | MCP | MCP | `.opencode/tools/` + MCP | MCP |
+| **Custom Agents** | `.cursor/agents/` | `.claude/agents/` | `.opencode/agents/` | `config.toml` `[agents]` + `.toml` sidecar |
+| **Commands** | `.cursor/commands/` | `.claude/commands/` | `.opencode/commands/` | — (built-in slash only) |
+| **Permission Modes** | Per-tool accept/reject | 5 named modes + rule syntax [^33] | `auto`/`ask`/`deny` | Approval × Sandbox + `.rules` (Starlark) |
+| **Plugin Bundles** | `.cursor-plugin/` [^26] | `.claude-plugin/` [^27] | npm packages | `.codex-plugin/` [^35] |
+| **Marketplace** | cursor.com/marketplace | claude.ai (~101 plugins) | npm | Plugin Directory (curated) |
+| **MCP Config** | `.cursor/mcp.json` | `.mcp.json` | `opencode.jsonc` | `config.toml` `[mcp_servers]` |
+| **Session Storage** | SQLite `state.vscdb` (GUI) + `store.db` (CLI) + `agent-transcripts/` [^28][^34] | JSONL `~/.claude/projects/` [^30] | SQLite `opencode.db` [^31] | JSONL `~/.codex/` + `sessions/` [^35] |
+| **Config Format** | JSON | JSON | JSON/JSONC | TOML |
+| **Execution Policy** | — | Permission rules syntax | — | `.rules` (Starlark, prefix-match) |
+| **Enterprise/Managed** | — | Managed policy paths, MDM | — | `requirements.toml` (admin-enforced), MDM |
+| **Code Review** | — | — | — | `codex review` (non-interactive) |
+| **CI/CD** | `cursor-agent` CLI | `claude -p` headless | — | `codex exec`, GitHub Action |
+| **IDE Extensions** | Native | VS Code, JetBrains | TUI only | VS Code (+ Cursor/Windsurf compat) |
 
 ---
 
@@ -570,3 +645,4 @@ Detection order: `CURSOR_AGENT` first (may co-exist with `CLAUDECODE` in nested 
 [^32]: Empirical verification of Claude Code `paths:` behavior (v2.1.91, macOS, 2026-04-04). 12 test cases: all `paths:` syntax variants (YAML array quoted/unquoted, single value, CSV) work correctly; scoping triggers on Read only (not Write/Edit); `globs:` field silently ignored; nested `.claude/rules/subdir/` discovered. See `documents/tasks/2026-04-04-claude-code-glob-rules.md`.
 [^33]: Claude Code CLI experiments
 [^34]: Empirical verification of Cursor Agent CLI (cursor-agent v2026.03.20, macOS arm64, 2026-04-05). Headless mode (`-p --trust --yolo`). Tool list: `SemanticSearch`, `Shell`, `Grep`, `Delete`, `WebSearch`, `WebFetch`, `ReadLints`, `EditNotebook`, `TodoWrite`, `StrReplace`, `Write`, `Read`, `Glob`, `Task`, `list_mcp_resources`, `fetch_mcp_resource`. Env vars: `CURSOR_AGENT=1`, `CURSOR_INVOKED_AS=cursor-agent`, `CLAUDECODE=1`, `CLAUDE_AGENT_SDK_VERSION=0.2.92`, `CLAUDE_CODE_ENTRYPOINT=claude-vscode`. Chat storage: `~/.cursor/chats/<hash>/<uuid>/store.db` (SQLite: `blobs` + `meta` tables). Auth: Keychain (`cursor-access-token`) for GUI, `~/.cursor/cli-config.json` (`authInfo`) for CLI. See `documents/tasks/2026-04-05-cursor-agent-cli.md`.
+[^35]: https://github.com/openai/codex — OpenAI Codex CLI (Apache-2.0, Rust). npm: `@openai/codex`. Docs: https://developers.openai.com/codex. Empirical verification against codex-cli 0.118.0–0.120.0 (2026-04-12). Config: TOML (`~/.codex/config.toml`). Skills: `.codex/skills/`, `.agents/skills/`. Agents: `[agents.<name>]` in config.toml + `.toml` sidecar. Hooks: `hooks.json` (feature-gated `codex_hooks`). Plugins: `.codex-plugin/plugin.json`. MCP: `[mcp_servers]` in config.toml + `codex mcp` CLI. Sandbox: Seatbelt/Bubblewrap/Landlock. Execution policy: `.rules` (Starlark). IDE: VS Code extension, desktop app, Codex Web. Enterprise: `requirements.toml` (MDM/cloud-managed).
