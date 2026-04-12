@@ -55,7 +55,7 @@ Note: FR-DIST.MAPPING defines cross-IDE resource mapping; open questions need us
 ### FR-DOCS: Documentation Management
 
 - **Description:** The system must define and enforce documentation schemas (SRS/SDS) to maintain project knowledge.
-- **Acceptance:** Enforced by `documents/AGENTS.md` rules.
+- **Acceptance:** Enforced by `AGENTS.md` documentation rules section.
 
 ### FR-HOWTO: Automation & How-To
 
@@ -88,7 +88,7 @@ Note: FR-DIST.MAPPING defines cross-IDE resource mapping; open questions need us
 
 ### FR-BENCH.RULES: AGENTS.md Rules Benchmarks
 
-- **Description:** Pack-level benchmarks (`framework/core/benchmarks/agents-rules-*/`) that verify agents follow AGENTS.md template rules on a real project fixture (ai-skel-ts). Templates stored at `framework/core/assets/`.
+- **Description:** Pack-level benchmarks (`framework/core/benchmarks/agents-rules-*/`) that verify agents follow AGENTS.md template rules on a real project fixture (ai-skel-ts). Template stored at `framework/core/assets/AGENTS.template.md`.
 - **Acceptance verified by benchmarks:**
   - [x] `agents-rules-tdd-cycle` — TDD RED→GREEN→REFACTOR→CHECK
   - [x] `agents-rules-fail-fast` — no stubs, fix source not test, stop on missing config
@@ -119,8 +119,8 @@ All 41 skills have at least one benchmark scenario. Coverage is the source of tr
 
 ### FR-INIT: Project Initialization
 
-- **Description:** The `flowai-init` skill bootstraps AI agent understanding of a project by analyzing codebase, generating 3 AGENTS.md files (root, `documents/`, `scripts/`) from pack-level asset templates, and scaffolding documentation (CLAUDE.md, SRS, SDS). Uses `generate_agents.ts` (Deno/TS, read-only) for project analysis. AGENTS.md templates are pack-level assets (not flowai-init scaffolds) — their updates are tracked independently via `assets:` in `pack.yaml`.
-- **Use case scenario:** User runs `/flowai-init` on existing or new project. Agent runs the analysis script, determines Greenfield vs Brownfield by its own judgment, interviews user (Greenfield) or reverse-engineers architecture (Brownfield), generates 3 AGENTS.md files, documentation (SRS, SDS, task file), and configures development commands.
+- **Description:** The `flowai-init` skill bootstraps AI agent understanding of a project by analyzing codebase, generating a single AGENTS.md file from the pack-level asset template, and scaffolding documentation (CLAUDE.md, SRS, SDS). Uses `generate_agents.ts` (Deno/TS, read-only) for project analysis. The AGENTS.md template is a pack-level asset (not a flowai-init scaffold) — its updates are tracked independently via `assets:` in `pack.yaml`. Legacy three-file layouts (`documents/AGENTS.md`, `scripts/AGENTS.md`) are detected and collapsed into the single root file during brownfield initialization.
+- **Use case scenario:** User runs `/flowai-init` on existing or new project. Agent runs the analysis script, determines Greenfield vs Brownfield by its own judgment, interviews user (Greenfield) or reverse-engineers architecture (Brownfield), generates AGENTS.md, documentation (SRS, SDS, task file), and configures development commands.
 - **Acceptance verified by benchmarks:** `flowai-init-greenfield`, `flowai-init-brownfield`, `flowai-init-brownfield-update`, `flowai-init-brownfield-idempotent`, `flowai-init-vision-integration`, `flowai-init-claude-md-symlinks`
 - **Infrastructure acceptance (code/scripts):**
   - [x] **FR-INIT.STACK Stack detection**: `generate_agents.ts` detects 6 stacks via marker files.
@@ -172,7 +172,7 @@ All 41 skills have at least one benchmark scenario. Coverage is the source of tr
   - [x] Include + exclude mutually exclusive.
 
 #### FR-DIST.SYMLINKS CLAUDE.md Symlinks
-- **Desc:** When `claude` IDE configured, create `CLAUDE.md -> AGENTS.md` symlinks wherever `AGENTS.md` exists.
+- **Desc:** When `claude` IDE configured, create `CLAUDE.md -> AGENTS.md` symlink at project root.
 - **Acceptance:**
   - [x] Scans project, creates/updates symlinks.
   - [x] Skips existing regular files.
@@ -448,12 +448,12 @@ All 41 skills have at least one benchmark scenario. Coverage is the source of tr
 
 ### FR-UPDATE: Framework Update — `flowai-update`
 
-- **Description:** Single entry point for updating the flowai framework. Handles CLI update, skill/agent sync via `flowai sync`, migration of asset-mapped artifacts (AGENTS.md files from pack-level templates), and migration of scaffolded project artifacts using template diffs as migration source.
+- **Description:** Single entry point for updating the flowai framework. Handles CLI update, skill/agent sync via `flowai sync`, migration of the AGENTS.md asset artifact (from the pack-level template), and migration of scaffolded project artifacts using template diffs as migration source. Detects legacy three-file AGENTS.md layouts and collapses them into a single root file.
 - **Acceptance verified by benchmarks:** `flowai-update-basic`, `flowai-update-skill-adaptation`, `flowai-update-sync-command`, `flowai-update-template-vs-artifact`
 
 ### FR-ADAPT: Standalone Primitive Adaptation — `flowai-adapt`
 
-- **Description:** On-demand adaptation of all installed framework primitives (skills, agents, AGENTS.md artifacts, hooks) to project specifics — independent of the update cycle. Uses `flowai-skill-adapter` subagent for skills and `flowai-agent-adapter` subagent for agents. Supports filtering by type (`--skills`, `--agents`, `--assets`, `--hooks`) and by name.
+- **Description:** On-demand adaptation of all installed framework primitives (skills, agents, AGENTS.md artifact, hooks) to project specifics — independent of the update cycle. Uses `flowai-skill-adapter` subagent for skills and `flowai-agent-adapter` subagent for agents. Supports filtering by type (`--skills`, `--agents`, `--assets`, `--hooks`) and by name.
 - **Use case scenario:** Developer installs flowai on a Python project. All skills contain generic Deno examples. Runs `/flowai-adapt` to adapt all primitives to Python/pytest/ruff. Can also run `/flowai-adapt --skills flowai-commit` to adapt a single skill.
 - **Acceptance verified by benchmarks:** `flowai-adapt-skills-basic`, `flowai-adapt-agents-basic`
 

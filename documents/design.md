@@ -146,7 +146,7 @@ Adoption is optional. IDEs that support `allowed-tools` will auto-approve matchi
   - **Evidence Pipeline**: Raw NDJSON agent logs are converted to readable conversation format (`format_logs.ts`). Evidence (user query, agent logs, git diff/status/log, task files, generated files) is written to `<runDir>/judge-evidence.md` and passed to Claude CLI via `--append-system-prompt-file`. This avoids E2BIG/stdin size limits for large traces (~250KB). The user message to judge contains only the checklist and evaluation instruction. Evidence files persist in run directory for debugging.
   - **Execution Stability**: `SpawnedAgent` per-step timeout + global scenario timeout (default 15 min, `totalTimeoutMs`). Kills agent and proceeds to judge with partial evidence on expiry.
   - **Skill Integration**: Both `framework/<pack>/skills/` and `framework/<pack>/commands/` are copied into the sandbox IDE config dir (pack-scoped) by `copyFrameworkToIdeDir` in `scripts/benchmarks/lib/utils.ts`. Commands land in the same `.{ide}/skills/` target as skills; each command's `SKILL.md` gets `disable-model-invocation: true` injected via `injectDisableModelInvocation` from `cli/src/sync.ts` (single source of truth, mirrors production sync). The flag marks the primitive as user-only — it remains discoverable but is not auto-triggered by the model.
-  - **Project Instructions**: Scenarios MUST declare `agentsTemplateVars` (required field; PROJECT_NAME, TOOLING_STACK, etc.) — runner renders AGENTS.md from pack-level templates (`framework/<pack>/assets/`) at runtime (single source of truth). Optional `generateDocuments`/`scripts` flags generate `documents/AGENTS.md` and `scripts/AGENTS.md`. For Claude adapter, CLAUDE.md symlinks are created automatically. Legacy `agentsMarkdown` and fixture `AGENTS.md` are not supported.
+  - **Project Instructions**: Scenarios MUST declare `agentsTemplateVars` (required field; PROJECT_NAME, TOOLING_STACK, etc.) — runner renders the single AGENTS.md from the pack-level template (`framework/<pack>/assets/AGENTS.template.md`) at runtime (single source of truth). All sections (documentation rules, development commands, planning rules, TDD flow) live in this one template. For Claude adapter, a root CLAUDE.md symlink is created automatically. Legacy `agentsMarkdown` and fixture `AGENTS.md` are not supported.
   - **IDE Session Naming**: Claude adapter passes `--name <skill>/<scenario>` for session identification.
   - **Rich Tracing**: Generates single-file `trace.html` with dashboard, per-scenario detail views, and sidebar navigation. Modular architecture: `trace.ts` (facade) → `trace-collector.ts` (data) + `trace-renderer.ts` (HTML structure) + `trace-styles.ts` (CSS/JS) + `trace-types.ts` (shared types).
   - **Unified Data UI**: All technical data (logs, scripts, prompts) use a consistent `.data-block` component with line numbers, word wrap, and smart expand/collapse.
@@ -191,7 +191,7 @@ graph TD
   - `cli/src/transform.ts` — transforms universal agent frontmatter into IDE-specific format
   - `cli/src/toml_merge.ts` — merges flowai-managed `[agents.<name>]` blocks into an existing Codex `config.toml` without touching unrelated user sections. Pure (no FS). Uses `jsr:@std/toml`. Tracks managed agent names in `.codex/flowai-agents.json` manifest (parallels `flowai-hooks.json`). Throws on malformed input TOML (never silently overwrites). See FR-DIST.CODEX-AGENTS.
   - `cli/src/ide.ts` — IDE detection by config dir presence + `isInsideIDE()` env var check (`CURSOR_AGENT`, `CLAUDECODE`, `OPENCODE`, `CODEX_THREAD_ID`, `CODEX_SANDBOX`)
-  - `cli/src/symlinks.ts` — `CLAUDE.md -> AGENTS.md` symlinks (FR-DIST.SYMLINKS)
+  - `cli/src/symlinks.ts` — root `CLAUDE.md -> AGENTS.md` symlink (FR-DIST.SYMLINKS)
   - `cli/src/version.ts` — self-update check against JSR registry (fail-open)
   - `cli/src/update.ts` — `runSelfUpdate(options?)`: shared update logic for `flowai update` subcommand and `flowai sync` pre-flight; checks JSR via `checkForUpdate()`, installs via `runUpdate()`; graceful on network error; `yes` mode prints command instead of prompting (FR-DIST.UPDATE-CMD)
   - `cli/src/adapters/fs.ts` — `FsAdapter` abstraction + `DenoFsAdapter` + `InMemoryFsAdapter`
@@ -232,8 +232,7 @@ graph TD
 
 ### 3.8 flowai-init Multi-File Architecture + Diff-Based Updates — FR-INIT.IDEMPOTENT
 
-- **Purpose:** Preserve user edits during re-initialization. 3 AGENTS.md files
-  (`./`, `./documents/`, `./scripts/`). Agent-driven generation from pack-level asset templates. AGENTS.md template updates tracked independently via `pack.yaml` `assets:` field (not flowai-init scaffolds).
+- **Purpose:** Preserve user edits during re-initialization. Single root AGENTS.md file generated from the pack-level asset template. Legacy three-file layouts (`documents/AGENTS.md`, `scripts/AGENTS.md`) are detected and collapsed into root. Template updates tracked independently via `pack.yaml` `assets:` field (not flowai-init scaffolds).
 - **Script:** `generate_agents.ts` (Deno/TS) — analyze-only. Command: `analyze`.
 - **Behavioral requirements:** See benchmarks `flowai-init-*` (6 scenarios).
 
@@ -246,7 +245,7 @@ graph TD
 ### 3.10 Framework Update Skill — `flowai-update`
 
 - **Purpose:** Single entry point for updating framework + migrating asset-mapped and scaffolded artifacts.
-- **Asset artifacts:** AGENTS.md templates mapped via `pack.yaml` `assets:` field (template → project artifact). Tracked independently from skills — changes detected even when no skills are updated.
+- **Asset artifacts:** AGENTS.md template mapped via `pack.yaml` `assets:` field (single template → single project artifact). Tracked independently from skills — changes detected even when no skills are updated.
 - **Scaffolded artifacts:** Remaining artifacts mapped via `pack.yaml` `scaffolds:` field (skill → artifact paths).
 - **CLI integration:** `flowai` bare command is no-op inside IDE. `flowai sync` required explicitly.
 - **Behavioral requirements:** See benchmarks `flowai-update-*` (4 scenarios).
@@ -272,7 +271,7 @@ graph TD
 
 ### 3.12 Standalone Primitive Adaptation — `flowai-adapt`
 
-- **Purpose:** On-demand adaptation of all installed framework primitives (skills, agents, AGENTS.md artifacts, hooks) to project specifics — independent of `flowai-update`.
+- **Purpose:** On-demand adaptation of all installed framework primitives (skills, agents, AGENTS.md artifact, hooks) to project specifics — independent of `flowai-update`.
 - **Command:** `framework/core/commands/flowai-adapt/SKILL.md`. User-only primitive under `commands/` directory; `disable-model-invocation: true` is injected by the CLI writer at sync time.
 - **Subagents:**
   - `flowai-skill-adapter` — adapts skill SKILL.md (reused from flowai-update).
