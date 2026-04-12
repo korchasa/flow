@@ -69,26 +69,32 @@ jobs:
           git config --local user.name "github-actions[bot]"
 
           LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          echo "LATEST_TAG=${LATEST_TAG}"
           if [ -z "$LATEST_TAG" ]; then
             RELEASABLE=true
           else
             COMMITS=$(git log --oneline ${LATEST_TAG}..HEAD --grep="^feat\|^fix\|^perf\|^break\|^refactor\|^build" | wc -l)
             if [ "$COMMITS" -gt 0 ]; then RELEASABLE=true; else RELEASABLE=false; fi
           fi
+          echo "RELEASABLE=${RELEASABLE}"
 
           if [ "$RELEASABLE" = "true" ]; then
             deno task bundle
-            deno task release
-            git push --follow-tags origin main
+            # Create release commit AND tag (no --skip.tag)
+            deno run -A npm:standard-version
 
             NEW_VERSION=$(deno eval "console.log(JSON.parse(Deno.readTextFileSync('deno.json')).version)")
-            echo "version=${NEW_VERSION}" >> $GITHUB_OUTPUT
-            echo "released=true" >> $GITHUB_OUTPUT
-
-            # Generate release notes from conventional commits
             NEW_TAG="v${NEW_VERSION}"
+            echo "NEW_VERSION=${NEW_VERSION} NEW_TAG=${NEW_TAG}"
+
+            # Generate release notes BEFORE push (fail early)
             NOTES_FILE=$(mktemp)
             deno run -A scripts/generate-release-notes.ts "$LATEST_TAG" "$NEW_TAG" "${{ github.repository }}" > "$NOTES_FILE"
+
+            git push --follow-tags origin main
+
+            echo "version=${NEW_VERSION}" >> $GITHUB_OUTPUT
+            echo "released=true" >> $GITHUB_OUTPUT
             echo "notes_file=${NOTES_FILE}" >> $GITHUB_OUTPUT
           else
             echo "Nothing to release"

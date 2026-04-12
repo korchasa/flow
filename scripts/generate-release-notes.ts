@@ -85,17 +85,26 @@ function generateNotes(
 
 if (import.meta.main) {
   const [fromTag, toTag, repo] = Deno.args;
-  if (!fromTag || !toTag) {
+  if (!toTag) {
     console.error(
       "Usage: generate-release-notes.ts <from-tag> <to-tag> [owner/repo]",
     );
     Deno.exit(1);
   }
 
-  const subjects = await getCommitSubjects(fromTag, toTag);
+  // If fromTag is empty (first release), use the repo root commit
+  let resolvedFrom = fromTag;
+  if (!resolvedFrom) {
+    const { stdout } = await new Deno.Command("git", {
+      args: ["rev-list", "--max-parents=0", "HEAD"],
+    }).output();
+    resolvedFrom = new TextDecoder().decode(stdout).trim().split("\n")[0];
+  }
+
+  const subjects = await getCommitSubjects(resolvedFrom, toTag);
   const notes = generateNotes(
     subjects,
-    fromTag,
+    resolvedFrom,
     toTag,
     repo ?? "korchasa/flowai",
   );
