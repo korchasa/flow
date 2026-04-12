@@ -81,7 +81,141 @@ All workflows are implemented as **Skills** according to the [agentskills.io](ht
 2. **SRS** (`documents/requirements.md`): "What" & "Why". Source of truth for requirements.
 3. **SDS** (`documents/design.md`): "How". Architecture and implementation. Depends on SRS.
 4. **Tasks** (`documents/tasks/<YYYY-MM-DD>-<slug>.md`): Temporary plans/notes per task.
-5. **`README.md`**: Public-facing overview. Installation, usage, quick start. Derived from AGENTS.md + SRS + SDS.
+5. **IDE Differences** (`documents/ides-difference.md`): Reference. Cross-IDE capability comparison (primitives, hooks, agents, MCP). Informs FR-HOOK-DOCS–FR-IDE-SCOPE.
+6. **`README.md`**: Public-facing overview. Derived from AGENTS.md + SRS + SDS. Installation, usage, pack/skill catalog, project structure. Keep in sync with framework state.
+
+## Documentation Rules
+
+Your memory resets between sessions. Documentation is the only link to past decisions and context. Keeping it accurate is not optional — stale docs actively mislead future sessions.
+
+- Follow AGENTS.md, SRS, and SDS strictly — they define what the project is and how it works.
+- Workflow for changes: new or updated requirement -> update SRS -> update SDS -> implement. Skipping steps leads to docs-code drift.
+- Status markers: `[x]` = implemented, `[ ]` = pending.
+- **Traceability**: Code references requirements, not the reverse. Three mechanisms:
+  1. **Code-evidenced**: Source files contain `// FR-<ID>` (TS/JS) or `# FR-<ID>` (YAML/shell)
+     comments near implementing logic. Validated by `deno task check` (`check-traceability.ts`).
+  2. **Benchmark-evidenced**: SRS states "Acceptance verified by benchmarks: <list>".
+     No code comments needed — benchmarks ARE the evidence.
+  3. **Structural**: Requirement proven by file/directory existence.
+     No code comments needed — `[x]` status + description is sufficient.
+- **No `Evidence:` paths in SRS.** Traceability lives in code, not in docs.
+
+### SRS Format (`documents/requirements.md`)
+
+- **Requirement numbering**: Exactly 2 levels — `FR-x` and `FR-x.y`. No `FR-x.y.z`.
+  Acceptance criteria under `FR-x.y` are plain bullet items (no FR prefix).
+
+```markdown
+# SRS
+## 1. Intro
+- **Desc:**
+- **Def/Abbr:**
+## 2. General
+- **Context:**
+- **Assumptions/Constraints:**
+## 3. Functional Reqs
+### 3.1 FR-CMD-EXEC
+- **Desc:**
+- **Scenario:**
+- **Acceptance:**
+---
+
+## 4. Non-Functional
+
+- **Perf/Reliability/Sec/Scale/UX:**
+
+## 5. Interfaces
+
+- **API/Proto/UI:**
+
+## 6. Acceptance
+
+- **Criteria:**
+
+````
+
+### SDS Format (`documents/design.md`)
+```markdown
+# SDS
+## 1. Intro
+- **Purpose:**
+- **Rel to SRS:**
+## 2. Arch
+- **Diagram:**
+- **Subsystems:**
+## 3. Components
+### 3.1 Comp A
+- **Purpose:**
+- **Interfaces:**
+- **Deps:**
+...
+## 4. Data
+- **Entities:**
+- **ERD:**
+- **Migration:**
+## 5. Logic
+- **Algos:**
+- **Rules:**
+## 6. Non-Functional
+- **Scale/Fault/Sec/Logs:**
+## 7. Constraints
+- **Simplified/Deferred:**
+````
+
+### Tasks (`documents/tasks/`)
+
+- One file per task or session: `<YYYY-MM-DD>-<slug>.md` (kebab-case slug, max 40 chars).
+- Examples: `2026-03-24-add-dark-mode.md`, `2026-03-24-fix-auth-bug.md`.
+- Do not reuse another session's task file — create a new file. Old tasks provide context but may contain outdated decisions.
+- Use GODS format (see below) for issues and plans.
+- Directory is gitignored. Files accumulate — this is expected.
+
+### GODS Format
+
+```markdown
+---
+implements:
+  - FR-XXX
+---
+# [Task Title]
+
+## Goal
+
+[Why? Business value.]
+
+## Overview
+
+### Context
+
+[Full problematics, pain points, operational environment, constraints, tech debt, external URLs, @-refs to relevant files/docs.]
+
+### Current State
+
+[Technical description of existing system/code relevant to task.]
+
+### Constraints
+
+[Hard limits, anti-patterns, requirements (e.g., "Must use Deno", "No external libs").]
+
+## Definition of Done
+
+- [ ] [Criteria 1]
+- [ ] [Criteria 2]
+
+## Solution
+
+[Detailed step-by-step for SELECTED variant only. Filled AFTER user selects variant.]
+```
+
+### Compressed Style Rules (All Docs)
+
+- No changelogs — docs reflect current state, not history.
+- English only (except tasks, which may use the user's language).
+- Summarize by extracting facts and compressing — no loss of information, just fewer words.
+- Every word must carry meaning — no filler, no fluff, no stopwords where a shorter synonym works.
+- Prefer compact formats: lists, tables, YAML, Mermaid diagrams.
+- Abbreviate terms after first use — define once, abbreviate everywhere.
+- Use symbols and numbers to replace words where unambiguous (e.g., `->` instead of "leads to").
 
 ## Planning Rules
 
@@ -151,6 +285,66 @@ The goal is to identify the root cause, not to suppress the symptom. A quick wor
 4. Second fix attempt failed — STOP. Output "STOP-ANALYSIS REPORT" (state, expected, 5-why chain, root cause, hypotheses). Wait for user help.
 
 When the root cause is outside your control (missing API keys/URLs, missing generator scripts, unavailable external services, wrong environment configuration) — STOP immediately and ask the user for the correct values. Do not guess, do not invent replacements, do not create workarounds.
+
+## Development Commands
+
+### Shell Environment
+- Always use `NO_COLOR=1` when running shell commands — ANSI escape codes waste tokens and clutter output.
+- When writing scripts, respect the `NO_COLOR` env var (https://no-color.org/) — disable ANSI colors when it is set.
+- All project scripts auto-detect AI agent environments (`CLAUDECODE=1`) and disable ANSI colors automatically. Manual `NO_COLOR=1` prefix is not required when running from Claude Code.
+
+### Responsibility
+
+Build tooling, verification, and benchmark infrastructure for flowai.
+
+- `scripts/*.ts` — Deno task entry points (check, test, dev, bench)
+- `scripts/benchmarks/lib/` — Benchmark framework: adapter layer for IDE CLIs, scenario runner, LLM judge, trace visualization, token usage estimation
+- `scripts/check-*.ts` — Validation scripts for skills and sync integrity
+
+### Standard Interface
+- `check` — the main command for comprehensive project verification. Runs the following steps in order:
+  - code formatting check
+  - static code analysis (linting)
+  - all project tests
+  - skill validation
+- `test <path>` — runs a single test file or test suite.
+- `dev` — runs the application in development mode with watch mode enabled.
+
+### Detected Commands
+- `deno task check` (check deno.json)
+- `deno task test` (check deno.json)
+- `deno task dev` (check deno.json)
+- `deno task bench` (check deno.json)
+
+### `deno task check` Output Quirks
+
+- The output ALWAYS contains three lines:
+  ```
+  === FAIL deno eval Deno.exit(42) ===
+  === FAIL deno eval Deno.exit(1) ===
+  === FAIL deno eval Deno.exit(2) ===
+  ```
+  These are **intentional test fixtures** inside `runCommandsInParallelBuffered` tests in `task-check_test.ts` — they verify that the parallel runner correctly reports failed sub-commands. They are NOT real failures.
+- **Real verdict** comes from the final `N passed | M failed` summary lines, NOT from the presence of `=== FAIL` strings. Always grep for `failed` count, not for `FAIL`.
+- If the agent stops on `=== FAIL deno eval Deno.exit(...)` without checking the summary line, it is a false alarm.
+
+### Benchmark Infrastructure Smoke Test
+
+Before writing or modifying a benchmark scenario for a command or skill, run one **existing** scenario for the same primitive to verify infrastructure works:
+
+```sh
+deno task bench -f <existing-scenario-id>
+```
+
+If it finishes with 0 agent steps or "Unknown skill" — the benchmark runner has an infrastructure bug (e.g., `copyFrameworkToIdeDir` not copying the primitive). Fix the runner first; do not write new scenarios on broken infrastructure.
+
+The runner also pre-checks that `scenario.skill` is mounted in the sandbox before spawning the agent and warns on suspiciously short agent output (< 200 chars with exit 0).
+
+### Lint Exclude / Test Ignore Drift
+
+- `deno.json` `lint.exclude` and `scripts/task-check.ts` `--ignore` flag must list the SAME paths (`framework/*/skills/*/benchmarks/`, `framework/*/commands/*/benchmarks/`, `framework/*/benchmarks/*/fixture/`).
+- These two locations drift in practice. When adding a new ignore pattern, update BOTH.
+- Drift symptom: `deno task check` lint passes but `deno task check` test phase imports test fixtures as production code (`no-explicit-any` errors in `*/fixture/*.ts`).
 
 ## Code Documentation
 
