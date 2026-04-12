@@ -317,11 +317,11 @@ Deno.test("buildManifest: creates manifest from hook defs", () => {
       } as HookDefinition,
     },
     {
-      name: "flowai-test-before-commit",
+      name: "flowai-mermaid-validate",
       hook: {
-        event: "PreToolUse",
-        matcher: "Bash",
-        description: "Run tests",
+        event: "PostToolUse",
+        matcher: "Write|Edit",
+        description: "Validate Mermaid",
       } as HookDefinition,
     },
   ];
@@ -330,5 +330,5 @@ Deno.test("buildManifest: creates manifest from hook defs", () => {
   assertEquals(Object.keys(m.hooks).length, 2);
   assertEquals(m.hooks["flowai-lint-on-write"].event, "PostToolUse");
   assertEquals(m.hooks["flowai-lint-on-write"].matcher, "Write|Edit");
-  assertEquals(m.hooks["flowai-test-before-commit"].event, "PreToolUse");
+  assertEquals(m.hooks["flowai-mermaid-validate"].event, "PostToolUse");
 });
