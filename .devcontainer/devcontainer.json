@@ -9,16 +9,13 @@
     },
     "ghcr.io/devcontainers/features/github-cli:1": {},
     "ghcr.io/devcontainers-extra/features/deno:latest": {},
-    "ghcr.io/devcontainers/features/python:1": {},
-    "ghcr.io/devcontainers/features/node:1": {}
+    "ghcr.io/jsburckhardt/devcontainer-features/opencode:1": {}
   },
 
   "customizations": {
     "vscode": {
       "extensions": [
         "denoland.vscode-deno",
-        "ms-python.python",
-        "ms-python.vscode-pylance",
         "anthropic.claude-code",
         "eamodio.gitlens",
         "editorconfig.editorconfig"
@@ -32,33 +29,28 @@
     }
   },
 
-  "remoteEnv": {
-    "ANTHROPIC_API_KEY": "${localEnv:ANTHROPIC_API_KEY}",
-    "GITHUB_TOKEN": "${localEnv:GITHUB_TOKEN}"
-  },
-
-  "secrets": {
-    "ANTHROPIC_API_KEY": {
-      "description": "API key for AI CLI tools (console.anthropic.com)"
-    },
-    "GITHUB_TOKEN": {
-      "description": "GitHub PAT for gh CLI"
-    }
-  },
+  // No remoteEnv / no secrets — all authentication (Claude, GitHub, OpenCode, ...)
+  // is the user's responsibility and is performed manually inside the container.
+  // Passing ANTHROPIC_API_KEY through ${localEnv:...} is specifically dangerous:
+  // when the variable is unset on the host, it resolves to an empty string and
+  // Claude Code interprets that as an explicit API-key auth attempt, breaking
+  // the OAuth flow the user runs via `claude login`.
 
   "mounts": [
-    "source=claude-config-${devcontainerId},target=/home/vscode/.claude,type=volume",
-    "source=opencode-config-${devcontainerId},target=/home/vscode/.config/opencode,type=volume",
+    "source=${localWorkspaceFolderBasename}-claude-config,target=/home/vscode/.claude,type=volume",
+    "source=${localWorkspaceFolderBasename}-opencode-config,target=/home/vscode/.config/opencode,type=volume",
     "source=${localEnv:HOME}/.claude,target=/home/vscode/.claude-host,type=bind,readonly",
     "source=${localEnv:HOME}/.config/opencode,target=/home/vscode/.config/opencode-host,type=bind,readonly",
-    "source=bashhistory-${devcontainerId},target=/commandhistory,type=volume"
+    "source=${localWorkspaceFolderBasename}-bashhistory,target=/commandhistory,type=volume"
   ],
 
+  // Object form runs entries in parallel. Volume chown lives inside
+  // setup-container.sh as a self-healing guard; CLI installers only touch
+  // ~/.local/bin, so there is no race between `setup` and the *-cli entries.
   "postCreateCommand": {
     "deps": "deno install",
-    "claude-cli": "sudo chown vscode:vscode ~/.claude && curl -fsSL https://claude.ai/install.sh | bash",
-    "opencode-cli": "sudo chown vscode:vscode ~/.config/opencode && curl -fsSL https://opencode.ai/install | bash",
-    "fix-history": "sudo chown vscode:vscode /commandhistory 2>/dev/null || true"
+    "setup": ".devcontainer/setup-container.sh",
+    "claude-cli": "curl -fsSL https://claude.ai/install.sh | bash"
   },
 
   "postStartCommand": {
