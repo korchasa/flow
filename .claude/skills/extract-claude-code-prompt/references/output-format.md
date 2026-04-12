@@ -73,3 +73,4 @@ Brief summary of included tools. Full tool descriptions are part of the prompt b
 3. **Minimal annotations** — only annotate where the text is conditional or dynamic. Static text stands alone.
 4. **System prompt sections** flow into each other separated by `\n\n`, matching the real join behavior (`blocks.join('\n\n')`).
 5. **One file** — entire template in a single `.txt` for easy diffing between versions.
+6. **No narrative commentary** — the output contains only the template text and placeholder annotations. Do not include explanations like "The nd() function at line X does Y" or "This section is assembled by...". If implementation notes are needed, write them in a separate `_notes.md` file alongside the template.

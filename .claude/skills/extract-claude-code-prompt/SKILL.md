@@ -1,7 +1,7 @@
 ---
 name: extract-claude-code-prompt
 description: >-
-  Extract Claude Code system prompt from its compiled Bun binary into a
+  Extract Claude Code system prompt from its compiled binary or JS bundle into a
   structured template file. Produces a document mirroring the real API request
   with exact prompt text, ant-only variants, feature-gated sections, and
   minified-variable mappings. Use when extracting, documenting, or comparing
@@ -10,19 +10,20 @@ description: >-
 
 # Extract Claude Code Prompt
 
-Procedure for recovering the complete Claude Code LLM request template from the Bun binary.
+Procedure for recovering the complete Claude Code LLM request template from the binary or JS bundle.
 
 ## When to Use
 
 - Extracting system prompt after a Claude Code update
 - Comparing prompt changes between versions
 - Documenting ant-only vs external user differences
+- Extracting prompt from a historical version (downloaded via npm)
 
 ## Inputs
 
 | Input | Required | Description |
 |-------|----------|-------------|
-| Binary path | Yes | Bun Mach-O arm64, ~200MB. Find via: `which claude` → follow symlink → `~/.local/share/claude/versions/<ver>` |
+| Artifact path | Yes | Either: (a) Bun Mach-O arm64 ~200MB from `~/.local/share/claude/versions/<ver>`, or (b) JS bundle `cli.js` ~11MB from npm package |
 | Output path | Yes | Where to write the template `.txt` file |
 
 ## Claude Code Prompt Architecture
@@ -76,27 +77,73 @@ Dynamic (per-session):
 
 ## Procedure
 
-### Phase 1: Extract Strings from Binary
+### Phase 0: Locate or Download the Artifact
 
-1. Find the binary:
+**To find a version by date** (e.g., "early January 2026"):
+```bash
+# Use the helper script to find versions by date range
+scripts/cc-find-version.sh 2026-01-01 2026-01-10
+# Or manually:
+npm view @anthropic-ai/claude-code time --json | python3 -c "
+import json, sys
+data = json.load(sys.stdin)
+for ver, ts in sorted(data.items()):
+    if '2026-01' in ts: print(f'{ver}: {ts}')
+"
+```
+
+**To download a specific version:**
+```bash
+mkdir -p /tmp/claude-code-<ver> && cd /tmp/claude-code-<ver>
+npm pack @anthropic-ai/claude-code@<ver>
+tar xzf anthropic-ai-claude-code-*.tgz
+```
+
+**To use the currently installed version:**
+```bash
+which claude                 # → ~/.local/bin/claude (symlink)
+ls -la $(which claude)       # → follow to ~/.local/share/claude/versions/<ver>
+claude --version             # → e.g. 2.1.104
+```
+
+### Phase 0.5: Detect Artifact Type
+
+```bash
+file <path-to-artifact>
+```
+
+| Result | Type | Size | Approach |
+|--------|------|------|----------|
+| `Mach-O 64-bit executable arm64` | Bun binary | ~200MB | Use `strings` extraction (Phase 1A) |
+| `a /usr/bin/env node script text` | JS bundle | ~11MB | Read JS directly (Phase 1B) |
+
+**Historical note:** versions before ~2.1.90 ship as JS bundles; later versions are Bun Mach-O binaries.
+
+### Phase 1A: Extract Strings from Binary (Mach-O only)
+
+1. Extract all strings (~350K lines for a ~200MB binary):
    ```bash
-   which claude                 # → ~/.local/bin/claude (symlink)
-   ls -la $(which claude)       # → follow to ~/.local/share/claude/versions/<ver>
-   claude --version             # → e.g. 2.1.104
-   ```
-2. Extract all strings (~350K lines for a ~200MB binary):
-   ```bash
-   strings ~/.local/share/claude/versions/<ver> > /tmp/binary-strings.txt
+   strings <binary-path> > /tmp/binary-strings.txt
    wc -l /tmp/binary-strings.txt
    ```
-3. Find prompt anchors:
+2. Find prompt anchors:
    ```bash
    grep -n "You are an interactive agent" /tmp/binary-strings.txt
    grep -n "Executing actions with care" /tmp/binary-strings.txt
    grep -n "# Doing tasks" /tmp/binary-strings.txt
    ```
 
-### Phase 2: Navigate the Binary Strings
+### Phase 1B: Read JS Bundle Directly (Node script only)
+
+The JS bundle is a minified single-file Node.js script. The prompt is embedded as string literals.
+```bash
+wc -l <path>/cli.js                                    # typically ~5000 lines
+grep -n "You are Claude Code" <path>/cli.js            # find identity prefix
+grep -n "# Doing tasks" <path>/cli.js                  # find prompt sections
+```
+Skip Phase 2 (navigate binary strings) — proceed directly to Phase 3.
+
+### Phase 2: Navigate the Binary Strings (Mach-O only — skip for JS bundles)
 
 Strings exist in **two forms** — choose the right one:
 
@@ -155,22 +202,38 @@ This yields the header values: `time: <BUILD_TIME>`, `version: <VERSION>`.
 
 We are analyzing the binary **from outside** — there is no live Claude Code session to compare against.
 
-1. **Internal consistency**: all 17 sections present and ordered, no gaps between anchors.
+1. **Internal consistency**: all sections present and ordered, no gaps between anchors.
 2. **Tool name completeness**: every minified variable used in prompt functions has a resolved mapping. Search for unresolved short vars (2-3 chars) in extracted text.
 3. **Version match**: `claude --version` (installed) vs MACRO object in binary — confirm they are the same binary.
-4. **Compare against previous template**: if a prior version's template exists in `tmp/`, diff to identify changes and verify nothing was accidentally dropped.
-5. **Section count**: standalone constants region should contain the same anchor strings (`# System`, `# Doing tasks`, etc.) as the minified JS — cross-reference both forms.
+4. **Compare against previous template** (mandatory if prior versions exist):
+   ```bash
+   scripts/cc-diff-templates.sh tmp/claude-prompts/claude-code-v<old>.txt tmp/claude-prompts/claude-code-v<new>.txt
+   ```
+   Review the diff for: added/removed sections, changed tool names, new conditional gates. Confirm nothing was accidentally dropped.
+5. **Section count**: standalone constants region should contain the same anchor strings (`# System`, `# Doing tasks`, etc.) as the minified JS — cross-reference both forms (Mach-O only).
 
 ## Checklist
 
-- [ ] Binary found and version confirmed via MACRO object
-- [ ] All 17 sections extracted in order
-- [ ] Dynamic boundary identified
-- [ ] Ant-only variants documented for each affected section
-- [ ] Opus 4.6 `anti_verbosity` section captured (via `quiet_salted_ember`)
+- [ ] Artifact type determined (Bun binary vs JS bundle)
+- [ ] Version confirmed via MACRO object
+- [ ] All prompt sections extracted in order
+- [ ] Dynamic boundary identified (if present in this version)
+- [ ] Ant-only variants documented for each affected section (if present)
+- [ ] Opus 4.6 `anti_verbosity` section captured — or noted as absent in this version
 - [ ] All tool name variables resolved (no unresolved short vars in output)
 - [ ] Metadata (version, build time) extracted from MACRO object
 - [ ] Messages[0] prepended context format documented
 - [ ] Git status appended to system prompt
 - [ ] API parameters (model, max_tokens, thinking) documented
-- [ ] Cross-referenced minified JS vs standalone constants for consistency
+- [ ] Cross-referenced minified JS vs standalone constants for consistency (Mach-O only)
+- [ ] Diff against previous template run and reviewed (if prior versions exist in `tmp/claude-prompts/`)
+
+## Helper Scripts
+
+All paths below are relative to the skill directory.
+
+| Script | Purpose |
+|--------|---------|
+| `scripts/cc-find-version.sh <from> <to>` | Find Claude Code npm versions in a date range |
+| `scripts/cc-download-version.sh <ver> [dir]` | Download version, detect artifact type, print metadata |
+| `scripts/cc-diff-templates.sh <old> <new>` | Diff two extracted templates, report section-level changes |
