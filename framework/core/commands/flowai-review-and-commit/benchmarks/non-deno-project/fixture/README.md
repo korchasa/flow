@@ -1,0 +1,3 @@
+# TextStats
+
+Text statistics utility.

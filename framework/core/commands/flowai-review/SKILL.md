@@ -66,16 +66,30 @@ Input sources:
      report "No changes to review" and STOP.
 
 2. **Pre-flight Project Check**
-   - If source code files were changed since the last successful project check
-     in this session (or if no check has been run yet), run the project check
-     command (`deno task check`, `npm run lint`, `make check`, etc.) NOW,
-     before starting the review.
-   - Skip ONLY if no code files were modified since the last successful check
-     run in this session.
+   - **Determine the check command** using this priority:
+     1. If `AGENTS.md`/`CLAUDE.md` (already in your context) documents a
+        project check command, use that command.
+     2. Otherwise detect the stack from manifest files in the repo root:
+        - `deno.json`/`deno.jsonc` → `deno task check`
+        - `package.json` → the script defined as `check` (or fall back to
+          `lint`/`test`)
+        - `Makefile` with a `check` target → `make check`
+        - `pyproject.toml` → `ruff check .` / `pytest` (if configured there)
+        - `go.mod` → `go vet ./... && go test ./...`
+     3. None of the above → note "No automated checks configured" in the
+        report and proceed. Do NOT invent a command.
+   - **MUST NOT** run a stack-specific command when its manifest is absent.
+     Any `deno *` command (`deno task check`, `deno check <file>`, `deno fmt`,
+     `deno lint`, `deno test`, `deno cache`) creates `deno.lock` as a side
+     effect and is forbidden without `deno.json`/`deno.jsonc`. Same rule for
+     `npm *` without `package.json`, `go *` without `go.mod`,
+     `python -m py_compile`/`pytest`/`ruff` without `pyproject.toml`, etc.
+     Pre-flight artifacts (`deno.lock`, `__pycache__/`, `node_modules/`,
+     `.pytest_cache/`) in the working tree after verification are a bug.
+   - Skip the run ONLY if no code files were modified since the last
+     successful check run in this session.
    - If the check fails: report failures immediately, then continue with the
      review — failures will be included in the final report as `[critical]`.
-   - If no check command is found: note "No automated checks configured" and
-     proceed.
 
 3. **Gather Context**
    - If you don't know the content of `documents/requirements.md` (SRS) and `documents/design.md` (SDS) — read them now.
@@ -97,8 +111,9 @@ Input sources:
      background tasks, or IDE-specific parallel execution — e.g., `Task`,
      `Agent`, `parallel`):
      - **SA1**: If pre-flight check (step 2) already ran, skip SA1. Otherwise,
-       run the project check command (`deno task check`, `npm run lint`,
-       `make check`, etc.). Delegate to a console/shell-capable agent
+       run the project check command **chosen via the same manifest-detection
+       rule from step 2** (MUST NOT run stack-specific commands without the
+       corresponding manifest). Delegate to a console/shell-capable agent
        (e.g., `flowai-console-expert`). Return pass/fail + full output.
      - **SA2**: Run hygiene grep scan on diff output — search for `TODO`,
        `FIXME`, `HACK`, `XXX`, `console.log`, `temp_*`, `*.tmp`, `*.bak`,
