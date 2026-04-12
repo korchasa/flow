@@ -595,10 +595,10 @@ All 41 skills have at least one benchmark scenario. Coverage is the source of tr
   - [x] **FR-SCRIPTS.STORE** Scripts stored at `framework/<pack>/scripts/<name>`.
   - [x] **FR-SCRIPTS.COPY** Copied to `.{ide}/scripts/` during sync.
 
-### FR-REFLECT: Reflection with Session History Search
+### FR-REFLECT: Reflection with Session History Search and Self-Criticism
 
-- **Description:** Reflection skills (`flowai-reflect`) must search session history for similar errors/mistakes, identify patterns, and include findings in output.
-- **Acceptance verified by benchmarks:** `flowai-reflect-session-history-pattern`, `flowai-reflect-context-inefficiency`, `flowai-reflect-process-loop`
+- **Description:** Reflection skills (`flowai-reflect`, `flowai-reflect-by-history`) must search session history for similar errors/mistakes, identify patterns, and include findings in output. Before presenting the final report, the agent must perform self-criticism — validate findings, check for false positives and blind spots, evaluate proportionality of proposed fixes, and revise the report accordingly.
+- **Acceptance verified by benchmarks:** `flowai-reflect-session-history-pattern`, `flowai-reflect-context-inefficiency`, `flowai-reflect-process-loop`, `flowai-reflect-self-criticism`, `flowai-reflect-by-history-self-criticism`
 
 ### FR-CICD: CI/CD Pipeline Security
 

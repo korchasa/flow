@@ -144,6 +144,16 @@ When proposing a fix, classify *where* it belongs:
       - Evidence: session 2026-03-25 only
    ```
 
-8. **Present & Confirm**
-   - Present the report.
+8. **Self-Criticism**
+   Before presenting the report, critically examine your own cross-session analysis:
+   - **Validity**: Re-examine each finding — is it backed by concrete evidence from multiple sessions, or did you over-generalize from superficially similar events? A TypeError in two sessions is not a "recurring pattern" if the root causes differ.
+   - **False Positives**: Are any flagged patterns actually acceptable behavior? (e.g., reading a related file to understand existing conventions is not "redundant"; updating tests after intentional behavior change is not always "modifying tests instead of code").
+   - **Proportionality**: Is each proposed systemic fix proportional to the pattern's frequency and impact? A pattern seen in 2 out of 10 sessions may not warrant a new hook — consider lighter interventions (a doc note, a rule) first.
+   - **Blind Spots**: Did you focus too narrowly on one pattern type and miss others? Consider whether the sessions contain unremarked security issues, performance problems, or missing documentation.
+   - **Severity Calibration**: Are recurring/isolated classifications accurate? Re-check that "recurring" patterns share the same root cause across sessions, not just similar symptoms.
+   - **Revise**: Based on the above, update the report — remove weak findings, strengthen valid ones, reclassify patterns, adjust severity. Explicitly note what changed and why.
+
+9. **Present & Confirm**
+   - Present the revised report from steps 7–8.
+   - Clearly mark which findings were adjusted during self-criticism and why.
    - Ask the user if they want to apply any of the proposed changes.

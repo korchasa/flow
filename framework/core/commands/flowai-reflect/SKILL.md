@@ -196,8 +196,18 @@ When proposing a fix, classify *where* it belongs:
       - Evidence: sessions 2025-12-01, 2025-12-15, 2026-01-10 — same pattern of trial-and-error mock editing
       - Priority: HIGH (systemic, not isolated)
 
-13. **Report Findings**
-   - Present the report from step 12.
+13. **Self-Criticism**
+   Before presenting the report, critically examine your own analysis:
+   - **Validity**: Re-examine each finding — is it backed by concrete evidence from the transcript/history, or is it speculative? Remove or downgrade findings that rely on assumptions rather than observed behavior.
+   - **False Positives**: Are any flagged issues actually acceptable or intentional? (e.g., reading a related file to understand patterns is not "redundant context"; updating a test after changing behavior is not always "modifying tests instead of code").
+   - **Proportionality**: Is each proposed fix proportional to the problem severity? A minor one-off issue does not warrant a new rule or hook — flag disproportionate recommendations and simplify them.
+   - **Blind Spots**: What categories of problems might you have missed entirely? Consider whether you focused too narrowly on one error type and overlooked others (e.g., security, performance, missing docs).
+   - **Severity Calibration**: Are severity labels (HIGH/MEDIUM/LOW, recurring/isolated) accurate? Re-check the evidence — a pattern that appeared in 2 sessions with different root causes is not truly recurring.
+   - **Revise**: Based on the above, update the report — remove weak findings, strengthen valid ones, adjust severity, add any newly discovered issues from blind-spot analysis. Explicitly note what changed and why.
+
+14. **Report Findings**
+   - Present the revised report from steps 12–13.
+   - Clearly mark which findings were adjusted during self-criticism and why.
    - List the proposed actionable items.
    - Ask the user if they want to apply these changes immediately.
 </step_by_step>
