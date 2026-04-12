@@ -40,6 +40,18 @@ Build tooling, verification, and benchmark infrastructure for flowai.
 - **Real verdict** comes from the final `N passed | M failed` summary lines, NOT from the presence of `=== FAIL` strings. Always grep for `failed` count, not for `FAIL`.
 - If the agent stops on `=== FAIL deno eval Deno.exit(...)` without checking the summary line, it is a false alarm.
 
+## Benchmark Infrastructure Smoke Test
+
+Before writing or modifying a benchmark scenario for a command or skill, run one **existing** scenario for the same primitive to verify infrastructure works:
+
+```sh
+deno task bench -f <existing-scenario-id>
+```
+
+If it finishes with 0 agent steps or "Unknown skill" — the benchmark runner has an infrastructure bug (e.g., `copyFrameworkToIdeDir` not copying the primitive). Fix the runner first; do not write new scenarios on broken infrastructure.
+
+The runner also pre-checks that `scenario.skill` is mounted in the sandbox before spawning the agent and warns on suspiciously short agent output (< 200 chars with exit 0).
+
 ## Lint Exclude / Test Ignore Drift
 
 - `deno.json` `lint.exclude` and `scripts/task-check.ts` `--ignore` flag must list the SAME paths (`framework/*/skills/*/benchmarks/`, `framework/*/commands/*/benchmarks/`, `framework/*/benchmarks/*/fixture/`).

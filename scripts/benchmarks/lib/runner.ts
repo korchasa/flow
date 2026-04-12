@@ -246,6 +246,28 @@ export async function runScenario(
     // Scenario-specific setup: creates commits, modified/untracked files on top of "init"
     await scenario.setup(sandboxPath);
 
+    // Sanity check: verify target skill is actually mounted in sandbox.
+    // Catches copyFrameworkToIdeDir regressions that would cause the agent
+    // to exit with 0 steps and "Unknown skill", producing a false-pass.
+    if (scenario.skill) {
+      const skillMdPath = join(
+        sandboxPath,
+        adapter.configDir,
+        "skills",
+        scenario.skill,
+        "SKILL.md",
+      );
+      try {
+        await Deno.stat(skillMdPath);
+      } catch {
+        throw new Error(
+          `Setup failure: skill "${scenario.skill}" not found in sandbox ` +
+            `at ${skillMdPath}. Check that copyFrameworkToIdeDir copies ` +
+            `the primitive correctly (skills/ AND commands/).`,
+        );
+      }
+    }
+
     // 3. Run Agent (High-Level Lifecycle)
     console.log("  Starting agent interaction...");
     const start = performance.now();
@@ -301,6 +323,16 @@ export async function runScenario(
     const durationMs = performance.now() - start;
 
     console.log(`  Agent finished with exit code ${code}`);
+
+    // Warn on suspiciously short agent output — likely infrastructure issue
+    // (skill not mounted, prompt rejected, sandbox misconfigured).
+    if (logs.length < 200 && code === 0) {
+      console.warn(
+        `  WARNING: Agent output very short (${logs.length} chars) with ` +
+          `exit 0 — possible infrastructure issue (skill not found, ` +
+          `prompt rejected, etc.). Inspect sandbox and agent logs.`,
+      );
+    }
 
     // 4. Calculate Usage (Tokens)
     let tokensUsed = 0;
