@@ -345,7 +345,7 @@ The runner also pre-checks that `scenario.skill` is mounted in the sandbox befor
 
 ### Lint Exclude / Test Ignore Drift
 
-- `deno.json` `lint.exclude` and `scripts/task-check.ts` `--ignore` flag must list the SAME paths (`framework/*/skills/*/benchmarks/`, `framework/*/commands/*/benchmarks/`, `framework/*/benchmarks/*/fixture/`).
+- `deno.json` `lint.exclude` and `scripts/task-check.ts` `--ignore` flag must list the SAME paths (`framework/*/skills/*/benchmarks/`, `framework/*/commands/*/benchmarks/`, `framework/*/agents/*/benchmarks/`, `framework/*/benchmarks/*/fixture/`).
 - These two locations drift in practice. When adding a new ignore pattern, update BOTH.
 - Drift symptom: `deno task check` lint passes but `deno task check` test phase imports test fixtures as production code (`no-explicit-any` errors in `*/fixture/*.ts`).
 

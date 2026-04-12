@@ -41,6 +41,7 @@
     "exclude": [
       "framework/*/skills/*/benchmarks/",
       "framework/*/commands/*/benchmarks/",
+      "framework/*/agents/*/benchmarks/",
       "framework/*/benchmarks/*/fixture/"
     ]
   },
