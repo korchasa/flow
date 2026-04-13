@@ -128,21 +128,83 @@ When proposing a fix, classify *where* it belongs:
    - **Recurring Patterns**: Issues found in 2+ sessions, with frequency and evidence
    - **Isolated Issues**: Notable one-off problems (lower priority)
    - **Primitive Usage Summary**: Which primitives were used/underused across sessions
-   - **Corrective Actions**: Proposed fixes, each classified by artifact type with evidence:
+   - **Corrective Actions**: Numbered list. Each item is a **self-contained narrative** — a reader must understand the full problem, its cause, and the proposed solution without reading any session transcript. Use the section structure below.
 
-   Example format:
+   **Section structure per item:**
+
    ```
+   N. **[Recurring|Isolated] <clear problem title> (N/M sessions)**
+
+      **What happened**: Full story across sessions. For each session where the issue appeared:
+      what was the task, what actions did the agent take, what went wrong? Quote error messages
+      and tool calls. A reader who never saw the sessions must get the complete picture.
+
+      **Impact**: Measurable cost per occurrence and total. How many steps/tokens were wasted
+      each time? What errors or regressions were introduced? What is the cumulative cost across
+      all affected sessions?
+
+      **Root cause**: Why does this keep happening (recurring) or why did it happen (isolated)?
+      What knowledge, rule, or automation is missing? Why haven't previous fixes resolved it?
+
+      **Proposed fix**:
+      - **Where**: Exact file path and section (e.g., `CLAUDE.md` § "TDD Flow", after rule 4;
+        or new file `test/helpers.ts`).
+      - **Draft content**: The actual text to add — a rule, code, hook config, or skill
+        description. Ready to paste. In a quote block or code block.
+      - **Why this works**: How this fix addresses the root cause. Why will the agent behave
+        differently with this artifact in place?
+
+      **Recurrence risk**: HIGH/MEDIUM/LOW. What specific scenarios trigger this issue?
+      How often do they occur? For isolated issues — under what conditions should this be
+      escalated to a systemic fix?
+   ```
+
+   **Quality bar**: If you remove the title, a reader should still understand what happened, why it matters, and what to do about it. If any section would make a reader ask "what does this mean?" or "why?" — expand it.
+
+   **Anti-patterns (avoid):**
+   - One-line sections: `Impact: 4-6 wasted steps` — doing what? With what consequence?
+   - Bare session references: `Evidence: sessions 2026-03-15, 2026-03-20` — describe what happened in each session.
+   - Actionless fixes: `Fix: add rule "mock before import"` — what is the full rule text? Where exactly to add it?
+   - Vague locations: `Where: CLAUDE.md` — which section? After which existing rule?
+
+   **Examples (desired detail level):**
+
    1. **[Recurring] JWT mock ordering breaks on every refactor (3/4 sessions)**
-      - Artifact: Rule + Code Change
-      - Fix: Add rule "mock before import" + create shared test/helpers.ts
-      - Evidence: sessions 2026-03-15, 2026-03-20, 2026-03-28 — same TypeError pattern
-      - Priority: HIGH (systemic)
 
-   2. **[Isolated] Forgot to check existing middleware patterns**
-      - Artifact: —
-      - Fix: One-off, no systemic action needed
-      - Evidence: session 2026-03-25 only
-   ```
+      **What happened**: In three out of four analyzed sessions, the agent hit the same `TypeError: jwtVerifier is not a function` when working with test files. **Session 2026-03-15**: agent refactored imports in `auth.test.ts`, moved the `import { authenticate } from './auth'` line above the mock setup call. Test failed at line 12 with `TypeError: jwtVerifier is not a function`. Agent spent 3 steps trying different import orders before discovering the cause. **Session 2026-03-20**: identical error in `user.test.ts:8` after restructuring test setup. Agent spent 4 steps reordering imports. **Session 2026-03-28**: same error in `admin.test.ts:15`, resolved in 6 steps by trial-and-error. In all three cases the root cause was identical: the module under test captures the JWT verifier at import time, so `setupMockJwt()` must be called *before* the `import` statement, not after.
+
+      **Impact**: 13 wasted agent steps across 3 sessions (3 + 4 + 6). Each occurrence adds ~5 minutes of trial-and-error debugging with identical symptoms. The pattern is invisible — nothing in project docs or code explains the import-time binding behavior of the JWT module.
+
+      **Root cause**: The `auth` module calls `getJwtVerifier()` at module load time and caches the result. If the mock is set up after import, the module already holds a reference to the real (undefined) verifier. No rule or code comment documents this constraint. The agent rediscovers it from scratch each session.
+
+      **Proposed fix**:
+      - **Where**: (1) `CLAUDE.md` § "Test Rules", after "No stubs or mocks for internal code." (2) New file `test/helpers.ts`.
+      - **Draft content**:
+        Rule text: _"In test files for JWT-authenticated modules, call `setupMockJwt()` from `test/helpers.ts` BEFORE importing the module under test. The auth module captures the JWT verifier at import time — mocking after import has no effect."_
+        Helper file `test/helpers.ts`:
+        ```typescript
+        export function setupMockJwt() {
+          globalThis.jwtVerifier = (token: string) => ({ sub: "test-user", exp: Date.now() + 3600 });
+        }
+        ```
+      - **Why this works**: The rule explains the *why* (import-time binding), so the agent understands the constraint rather than memorizing a procedure. The shared helper eliminates copy-paste mock setup across test files.
+
+      **Recurrence risk**: HIGH — triggers on every refactor that touches import order in test files. Without the fix, each occurrence costs ~5 minutes and 4-6 agent steps.
+
+   2. **[Isolated] Agent wrote custom auth check instead of using existing middleware**
+
+      **What happened**: In session 2026-03-25, the user asked to "just add a quick admin check to the dashboard endpoint." The agent wrote a custom `checkAdmin()` function directly in `dashboard_handler.ts` that reads the user role from the request and returns 403 if not admin. However, the project already has a `requireRole('admin')` middleware in `src/middleware/auth.ts:34` that does exactly this — including proper error formatting, audit logging, and role hierarchy support. The agent never read the `src/middleware/` directory in this session, likely because the user's framing ("just add a quick check") implied a small inline solution.
+
+      **Impact**: The custom `checkAdmin()` duplicates existing functionality but lacks audit logging and role hierarchy support that the middleware provides. This creates a security inconsistency — the dashboard endpoint silently bypasses the audit trail that all other admin endpoints use.
+
+      **Root cause**: One-off skip — in all other analyzed sessions, the agent read `src/middleware/` before adding auth logic. The user's urgency framing ("just add a quick check") likely biased the agent toward an inline solution.
+
+      **Proposed fix**:
+      - **Where**: No systemic action needed yet.
+      - **Draft content**: N/A — replace the custom `checkAdmin()` in `dashboard_handler.ts` with `app.use('/dashboard', requireRole('admin'))` and delete the custom function. This is a one-time code fix, not a rule.
+      - **Why this works**: Restores consistency with the existing middleware pattern.
+
+      **Recurrence risk**: LOW — occurred in 1/4 sessions. **Escalation trigger**: if the same skip appears in 2+ future sessions, add a rule to `CLAUDE.md` § "Core Project Rules": _"Before adding auth/validation logic, read `src/middleware/` for existing patterns. Do not write inline auth checks."_
 
 8. **Self-Criticism**
    Before presenting the report, critically examine your own cross-session analysis:

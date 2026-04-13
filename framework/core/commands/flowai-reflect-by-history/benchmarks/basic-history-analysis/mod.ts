@@ -51,5 +51,23 @@ export const ReflectByHistoryBasicBench = new class
         "Did the agent cite evidence from multiple sessions (not just one) to support the pattern claim?",
       critical: false,
     },
+    {
+      id: "narrative_what_happened",
+      description:
+        "Does each corrective action include a 'What happened' section that tells the full story per session — what the agent was doing, what actions it took, what went wrong — with enough detail that a reader who never saw the sessions understands the complete situation?",
+      critical: true,
+    },
+    {
+      id: "narrative_impact",
+      description:
+        "Does each corrective action include an 'Impact' section with measurable cost — steps wasted, time lost, errors introduced — not just a generic statement?",
+      critical: true,
+    },
+    {
+      id: "fix_has_where_and_draft",
+      description:
+        "Does each corrective action's proposed fix specify an exact file path + section ('Where') AND include ready-to-paste draft content (rule text, code, or config) — not just a vague action like 'add a rule'?",
+      critical: true,
+    },
   ];
 }();

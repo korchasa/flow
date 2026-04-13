@@ -164,37 +164,35 @@ When proposing a fix, classify *where* it belongs:
    - **Context Waste**: What unnecessary information consumed context budget?
    - **Undocumented Discoveries**: What useful knowledge was gained but not captured in project files?
    - **Automation Opportunities**: What manual work could be codified as a skill, rule, or hook?
-   - **Corrective Actions**: What should the agent do differently? Format as two-level list with artifact type and evidence:
+   - **Corrective Actions**: Numbered list. Each item is a **self-contained narrative** — a reader must understand the full problem, its cause, and the proposed solution without reading any other document or transcript.
 
-   1. **[Process] Retried 3x without strategy change**
-      - Artifact: Rule (AGENTS.md)
-      - Fix: Add backoff rule
-      - Evidence: steps 5-7 in transcript — same `sed` command repeated
-   2. **[Technical] Ignored existing error handling pattern**
-      - Artifact: —
-      - Fix: Check similar code before implementing
-      - Evidence: agent wrote try/catch while project uses Result type
-   3. **[Missing] Never read AGENTS.md before starting**
-      - Artifact: Rule (AGENTS.md)
-      - Fix: Add "read project docs first" rule
-      - Evidence: agent guessed project stack, got it wrong
-   4. **[Redundant] Read entire 2000-line log file**
-      - Artifact: —
-      - Fix: Use grep/search instead of full read
-      - Evidence: only line 1842 was relevant
-   5. **[Discovery] API returns 429 after 10 req/s — not documented**
-      - Artifact: Project Docs (docs/api.md)
-      - Fix: Add rate limit info
-      - Evidence: agent hit 429 twice before adjusting request rate
-   6. **[Automation] Manual frontmatter validation on every .md edit**
-      - Artifact: Hook (pre-commit)
-      - Fix: Add frontmatter schema check
-      - Evidence: agent manually verified frontmatter 3 times in session
-   7. **[Recurring] Stale mocks cause TypeError in test fixes (3/3 sessions)**
-      - Artifact: Rule (AGENTS.md) + Skill (mock refresh)
-      - Fix: Add rule "always regenerate mocks from current interfaces before fixing tests"; create a skill for automated mock refresh
-      - Evidence: sessions 2025-12-01, 2025-12-15, 2026-01-10 — same pattern of trial-and-error mock editing
-      - Priority: HIGH (systemic, not isolated)
+   **Sections per item** (all required):
+   - **What happened**: Full story with quoted tool calls/errors. A reader who never saw the transcript must get the complete picture.
+   - **Impact**: Measurable cost — tokens/lines wasted, time lost, errors/regressions introduced, downstream effects.
+   - **Root cause**: Why the agent made this mistake. What knowledge/rule/context was missing.
+   - **Proposed fix**: (a) **Where** — exact file path + section. (b) **Draft content** — ready-to-paste text. (c) **Why this works** — how it addresses the root cause.
+   - **Recurrence risk**: HIGH/MEDIUM/LOW + specific trigger scenarios + frequency.
+
+   **Quality bar**: Remove the title — a reader should still understand what happened, why it matters, and what to do. If any section would make a reader ask "what does this mean?" — expand it.
+
+   **Anti-patterns**: one-line sections (`Impact: 500 lines wasted` — wasted how?); bare step references (`What happened: steps 5-7`); actionless fixes (`Fix: check similar code` — what artifact enforces this?); vague locations (`Where: AGENTS.md` — which section?).
+
+   **Example:**
+
+   1. **[Discovery] Adding a field to SettingsSnapshot requires synchronized updates across ~10 files**
+
+      **What happened**: Agent added `allowedHosts` field to `BotVersionSettingsSnapshot` interface in `types/mod.ts`. `deno check` passed (structural typing). But `deno test --no-run` (step 34) revealed 7 type errors: `parseSettingsJson()` in `parser.ts` lacked a default, `flattenBot()` in `script.js` omitted the field, reducers `APPLY_BOT_UPDATE` and `SET_CURRENT_BOT_FIELDS` in `store.ts` didn't handle it, `handleCreateBot()` + `handleUpdateBot()` in `frontend_handler.ts` missed it. Agent then spent ~20 min chasing errors one-by-one through the dependency graph.
+
+      **Impact**: 20+ min on cascading fixes. 7 type errors discovered late, each requiring a separate read-edit-check cycle. The coupling is invisible — nothing documents which files must be updated together.
+
+      **Root cause**: `SettingsSnapshot` is consumed by ~10 functions across 7 files, but no checklist or code comment lists these dependencies. Every developer rediscovers the graph from scratch.
+
+      **Proposed fix**:
+      - **Where**: `types/mod.ts`, JSDoc on `BotVersionSettingsSnapshot` (line ~25).
+      - **Draft content**: `/** When adding a field: update (1) parseSettingsJson() in parser.ts — backward-compat default, (2) flattenBot() in script.js, (3) saveCurrentBot() in script.js, (4) APPLY_BOT_UPDATE in store.ts, (5) SET_CURRENT_BOT_FIELDS in store.ts, (6) applyUpdate() in chat_handler.ts, (7) handleCreateBot()+handleUpdateBot() in frontend_handler.ts, (8) all test files constructing SettingsSnapshot. Run deno test --no-run after. */`
+      - **Why this works**: Checklist at the interface definition — agents/developers see it before making changes, eliminating trial-and-error discovery.
+
+      **Recurrence risk**: HIGH — triggers on every new settings field (next: FR-29 `state`). ~20 min saved per occurrence.
 
 13. **Self-Criticism**
    Before presenting the report, critically examine your own analysis:

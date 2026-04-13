@@ -56,6 +56,24 @@ export const ReflectContextBench = new class extends BenchmarkSkillScenario {
       critical: false,
     },
     {
+      id: "narrative_what_happened",
+      description:
+        "Does each corrective action include a 'What happened' section that tells the full story — what the agent was doing, what actions it took, and what went wrong — with enough detail that a reader who never saw the transcript understands the complete situation?",
+      critical: true,
+    },
+    {
+      id: "narrative_impact",
+      description:
+        "Does each corrective action include an 'Impact' section with measurable cost — tokens/lines wasted, time lost, errors introduced, or downstream consequences — not just a generic statement like '500 lines wasted'?",
+      critical: true,
+    },
+    {
+      id: "fix_has_where_and_draft",
+      description:
+        "Does each corrective action's proposed fix specify an exact file path + section ('Where') AND include ready-to-paste draft content (rule text, code comment, or hook config) — not just a vague action like 'add a rule'?",
+      critical: true,
+    },
+    {
       id: "no_file_changes",
       description:
         "Did the agent NOT modify any project files (reflect is analysis-only, no changes to agent instructions/rules)?",
