@@ -38,6 +38,20 @@
 4. **Tasks** (`documents/tasks/<YYYY-MM-DD>-<slug>.md`): Temporary plans/notes per task.
 5. **`README.md`**: Public-facing overview. Installation, usage, quick start. Derived from AGENTS.md + SRS + SDS.
 
+## Documentation Map
+
+Maps source code paths to documentation sections that describe them. Used by commit workflows to determine which doc sections need updating when files change.
+
+{{DOCUMENTATION_MAP}}
+
+If this section is empty or absent, commit workflows use a default mapping:
+- New/changed exports, classes, types → SDS (component section)
+- New feature, CLI command, skill, agent → SRS (new FR) + SDS (new component)
+- Removed feature/component → remove from SRS + SDS
+- Changed behavior → SDS (update description)
+- Renamed/moved modules → SDS (update paths)
+- README.md → only for user-facing changes
+
 ## Documentation Rules
 
 Your memory resets between sessions. Documentation is the only link to past decisions and context. Keeping it accurate is not optional — stale docs actively mislead future sessions.
@@ -45,9 +59,10 @@ Your memory resets between sessions. Documentation is the only link to past deci
 - Follow AGENTS.md, SRS, and SDS strictly — they define what the project is and how it works.
 - Workflow for changes: new or updated requirement → update SRS → update SDS → implement. Skipping steps leads to docs-code drift.
 - Status markers: `[x]` = implemented, `[ ]` = pending.
-- Every `[x]` acceptance criterion must include evidence — file paths with line numbers proving implementation. Format:
-  `- [x] Criterion text. Evidence: \`path/to/file.ts:42\`, \`other/file.md:10\``
-  Without evidence, the criterion stays `[ ]` — claims without proof are assumptions.
+- **Traceability**: Every `[x]` criterion requires evidence. Placement depends on evidence type:
+  1. **Code-evidenced**: Source files contain `// FR-<ID>` (TS/JS) or `# FR-<ID>` (YAML/shell) comments near implementing logic. No paths in SRS — the code comment IS the evidence.
+  2. **Non-code evidence** (benchmarks, URLs, config files without comment support, file/dir existence): Placed directly in SRS/SDS next to the criterion.
+  Without evidence of either type, the criterion stays `[ ]`.
 
 ### SRS Format (`documents/requirements.md`)
 ```markdown

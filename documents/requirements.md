@@ -96,6 +96,7 @@ Note: FR-DIST.MAPPING defines cross-IDE resource mapping; open questions need us
   - [x] `agents-rules-contradictions` — contradiction detection, ask and stop
   - [x] `agents-rules-functionality-preservation` — run tests before/after refactoring
   - [x] `agents-rules-evidence-claims` — read code before fixing, cite evidence
+  - [x] `agents-rules-traceability-placement` — code evidence in code (`// FR-<ID>`), not in SRS; non-code evidence in SRS
 - **Open (not yet implemented):**
   - [ ] `agents-rules-variant-analysis` — propose variants with pros/cons before coding
   - [ ] `agents-rules-proactive-resolution` — find answers in codebase, don't ask user

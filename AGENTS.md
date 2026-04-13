@@ -91,14 +91,13 @@ Your memory resets between sessions. Documentation is the only link to past deci
 - Follow AGENTS.md, SRS, and SDS strictly — they define what the project is and how it works.
 - Workflow for changes: new or updated requirement -> update SRS -> update SDS -> implement. Skipping steps leads to docs-code drift.
 - Status markers: `[x]` = implemented, `[ ]` = pending.
-- **Traceability**: Code references requirements, not the reverse. Three mechanisms:
+- **Traceability**: Every `[x]` criterion requires evidence. Placement depends on type:
   1. **Code-evidenced**: Source files contain `// FR-<ID>` (TS/JS) or `# FR-<ID>` (YAML/shell)
      comments near implementing logic. Validated by `deno task check` (`check-traceability.ts`).
-  2. **Benchmark-evidenced**: SRS states "Acceptance verified by benchmarks: <list>".
-     No code comments needed — benchmarks ARE the evidence.
-  3. **Structural**: Requirement proven by file/directory existence.
-     No code comments needed — `[x]` status + description is sufficient.
-- **No `Evidence:` paths in SRS.** Traceability lives in code, not in docs.
+     No paths in SRS — the code comment IS the evidence.
+  2. **Non-code evidence** (benchmarks, URLs, config files without comment support, file/dir existence):
+     Placed directly in SRS/SDS next to the criterion.
+  Without evidence of either type, the criterion stays `[ ]`.
 
 ### SRS Format (`documents/requirements.md`)
 
