@@ -106,14 +106,16 @@ The project follows Conventional Commits 1.0.0 and uses a structured documentati
 6. **Verify Clean State**
    - Run `git status` to confirm all changes are committed.
    - If uncommitted changes remain, investigate and report to the user.
-7. **Session Complexity Check → Suggest Reflect**
+7. **Session Complexity Check → Auto-Invoke Reflect**
    - After all commits are done, analyze the current conversation for complexity signals:
      - Errors or failed attempts occurred (test failures, lint errors, build errors).
      - Agent retried the same action multiple times.
      - User corrected the agent's approach or output.
      - Workarounds or non-obvious solutions were applied.
-   - If **any** of these signals are detected, suggest:
-     "This session had [errors/retries/corrections/workarounds]. Consider running `/flowai-reflect` to capture improvements for project instructions."
+   - If **any** of these signals are detected:
+     a. Announce briefly which signals fired (one line, e.g., "Detected retries and user correction — running /flowai-reflect").
+     b. Invoke the `flowai-reflect` skill directly (via the Skill tool, native slash-command execution, or inline execution of its `SKILL.md` instructions — whichever the host IDE supports).
+     c. Do NOT ask the user for confirmation; proceed autonomously.
    - If none detected, skip silently.
 </step_by_step>
 
@@ -126,5 +128,5 @@ The project follows Conventional Commits 1.0.0 and uses a structured documentati
 - [ ] Commits executed automatically without user prompt.
 - [ ] Conventional Commits format used.
 - [ ] Task file cleanup: completed task files deleted, partial task files confirmed with user.
-- [ ] Session complexity check performed; `/flowai-reflect` suggested if signals detected.
+- [ ] Session complexity check performed; `/flowai-reflect` auto-invoked if signals detected.
 </verification>

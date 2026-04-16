@@ -52,7 +52,7 @@ const SYNC_CHECKS: Array<{
       {
         skill: "flowai-commit-beta",
         phase: "Commit Phase",
-        allowedDivergentSteps: [1],
+        allowedDivergentSteps: [1, 7],
       },
     ],
   },
