@@ -1,6 +1,6 @@
 ---
 name: flowai-investigate
-description: Iterative issue investigation with user-controlled hypothesis selection
+description: Autonomous iterative issue investigation via hypothesis-driven experiments
 argument-hint: issue description or error message
 effort: high
 ---
@@ -9,23 +9,23 @@ effort: high
 
 ## Overview
 
-Diagnose the root cause through a controlled, iterative process where the user
-selects hypotheses and approves experiments.
+Diagnose the root cause of an issue autonomously. Propose candidate hypotheses, pick the most promising one, run discrete-outcome experiments, update probabilities with evidence, iterate. No user checkpoints. Final report recommends a fix; it does not apply one.
 
 ## Context
 
 <context>
-Used for debugging and root cause analysis. The process is iterative and relies on user guidance to navigate the hypothesis space.
+Used for debugging and root cause analysis. The agent navigates the hypothesis space without HITL (human-in-the-loop) pauses. The user audits the trail through the printed Hypothesis Board and the final report.
 </context>
 
 ## Rules & Constraints
 
 <rules>
-1. **No Production Changes**: Diagnostic changes must be rolled back or isolated.
-2. **Clean Baseline**: Worktree must be clean between experiments.
-3. **User Control**: The agent MUST NOT proceed to experiment execution without explicit user selection of a hypothesis and approval of the experiment design.
-4. **Transparency**: Always display the current "Hypothesis Board" with probabilities and evidence before asking for the next step.
-5. **Mandatory**: The agent MUST use a task management tool (e.g., todo write) to track the execution steps and current iteration state.
+1. **No Production Changes**: Diagnostic edits (logging, probes, patches) must be reverted before the next step. The recommended fix is reported, NOT applied.
+2. **Clean Baseline**: Worktree must be clean between experiments (verify via version-control status).
+3. **Autonomous Flow**: Do NOT pause for user selection of hypotheses or approval of experiments. Pick the highest-probability untested hypothesis and proceed.
+4. **Transparency**: Print the "Hypothesis Board" (probabilities + evidence) before each experiment and in the final report so the reasoning trail is auditable.
+5. **Termination**: Stop when one hypothesis reaches ≥80% probability, when three consecutive experiments fail to shift probabilities, or after 5 iterations — whichever comes first.
+6. **Task tracking**: Use a task management tool (e.g., todo write, todowrite) to record iteration state and steps.
 </rules>
 
 ## Instructions
@@ -33,39 +33,30 @@ Used for debugging and root cause analysis. The process is iterative and relies 
 <step_by_step>
 
 1. **Initialize**
-   - Use a task management tool (e.g., todo write) to create a plan based on these steps.
-   - Gather initial data (logs, error messages, environment details).
+   - Create a task list covering the steps below.
+   - Gather initial data: error messages, logs, relevant source files, reproduction steps.
 2. **Hypotheses Generation**
-   - Propose 3-7 candidate root causes (hypotheses) with initial probabilities
-     and reasoning.
-   - **MANDATORY STOP**: Present the list to the user and ask: "Which hypothesis
-     should we investigate first?"
-   - Wait for explicit user selection. Do NOT proceed to Step 3, recommend a
-     hypothesis yourself, or skip this checkpoint.
-3. **Experiment Design**
-   - For the selected hypothesis, design a discrete-outcome experiment.
-   - Explain what "Success" and "Failure" outcomes will mean for the hypothesis.
-   - **Checkpoint**: Get user approval for the experiment design.
-4. **Execution & Update**
-   - Run the approved experiment.
-   - Collect outcomes and update the Hypothesis Board (adjust probabilities, add
-     evidence).
-   - Restore baseline (revert diagnostic changes).
-5. **Iteration Loop**
-   - Show the updated Hypothesis Board and a summary of the last experiment's
-     findings.
-   - Ask the user: "Would you like to continue with another hypothesis from the
-     list, generate new ones, or do we have enough info to propose a fix?"
-6. **Final Report**
-   - Once the root cause is identified, provide a summary of evidence and
-     recommend a fix. </step_by_step>
+   - Propose 3-7 candidate root causes with initial probabilities (sum ≈ 100%) and one-line reasoning each.
+   - Print the initial "Hypothesis Board".
+3. **Experiment Loop** (autonomous; no user checkpoints)
+   - Pick the highest-probability untested hypothesis.
+   - Design a discrete-outcome experiment; state what "Success" and "Failure" imply for the hypothesis.
+   - Execute it (read code, run commands, inspect outputs). Keep any diagnostic edits isolated and revert them afterwards.
+   - Record the outcome, adjust probabilities, append evidence to the Board.
+   - Verify baseline is restored and print the updated Board.
+   - Evaluate the termination condition (rule 5). If not met, repeat.
+4. **Final Report**
+   - Print the final Hypothesis Board with the winning hypothesis highlighted.
+   - Summarize each experiment: what was tested, what was observed, what it proved.
+   - Recommend a concrete fix (file, line, proposed change) — do NOT apply it.
+</step_by_step>
 
 ## Verification
 
 <verification>
-[ ] Hypotheses presented and selected by user.
-[ ] Experiment designed and approved before execution.
-[ ] Hypothesis Board updated after each iteration.
-[ ] Baseline restored after each experiment.
-[ ] Final recommendation based on experimental evidence.
+[ ] 3-7 hypotheses generated with initial probabilities.
+[ ] Hypothesis Board printed before and after each experiment.
+[ ] Agent proceeded autonomously — no user approval checkpoints.
+[ ] Diagnostic changes reverted; baseline clean between experiments.
+[ ] Final report names a single root cause with evidence and recommends a fix without applying it.
 </verification>

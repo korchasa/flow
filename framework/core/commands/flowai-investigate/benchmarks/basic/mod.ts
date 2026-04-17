@@ -11,30 +11,37 @@ export const InvestigateBasicBench = new class extends BenchmarkSkillScenario {
   };
 
   userQuery =
-    "/flowai-investigate The calculateTotal function in src/math.ts returns incorrect results. For price 10 and quantity 2, it returns 30 instead of 20. Investigate this. I want to see multiple hypotheses first. Use only standard CLI tools like cat, ls, grep.";
+    "/flowai-investigate The calculateTotal function in src/math.ts returns incorrect results. For price 10 and quantity 2, it returns 30 instead of 20. Find the root cause. Use only standard CLI tools like cat, ls, grep.";
 
   checklist = [
     {
       id: "hypotheses_proposed",
-      description: "Did the agent propose 3-7 hypotheses?",
+      description:
+        "Did the agent propose 3-7 hypotheses with initial probabilities?",
       critical: true,
     },
     {
-      id: "user_control",
+      id: "autonomous_flow",
       description:
-        "Did the agent STOP after proposing hypotheses and ask the user to select one?",
+        "Did the agent proceed autonomously — picking a hypothesis and running experiments without asking the user to select one or approve the experiment?",
       critical: true,
     },
     {
       id: "hypothesis_board",
       description:
-        "Did the agent display a 'Hypothesis Board' with probabilities or confidence levels for each hypothesis?",
+        "Did the agent display a 'Hypothesis Board' with probabilities or confidence levels and update it with evidence across iterations?",
       critical: false,
+    },
+    {
+      id: "root_cause_identified",
+      description:
+        "Did the agent identify the hardcoded `+ 10` shipping-fee term in src/math.ts as the root cause and recommend a concrete fix?",
+      critical: true,
     },
     {
       id: "no_production_changes",
       description:
-        "Did the agent NOT make any production code changes (no file edits before user approval)?",
+        "Did the agent NOT apply the fix to src/math.ts (diagnostic edits reverted, final fix recommended but not written to the production file)?",
       critical: true,
     },
   ];
