@@ -95,7 +95,6 @@ The trace is a structured HTML document designed for readability and detailed in
 
 | Scenario ID | Result | Errors | Warnings | Time (s) | Notes |
 | :--- | :--- | :---: | :---: | :---: | :--- |
-| `flowai-answer-basic` | PASSED | 0 | 0 | 17.6 | |
 | `flowai-commit-basic` | PASSED | 0 | 1 | 19.0 | |
 | `flowai-commit-atomic-refactor` | PASSED | 0 | 0 | 21.1 | |
 | `flowai-commit-atomic-docs` | PASSED | 0 | 0 | 18.9 | |

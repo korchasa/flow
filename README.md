@@ -116,7 +116,6 @@ Base commands for development workflows (commit, plan, review, init, etc.).
 - `flowai-reflect` — self-analysis of recent work
 - `flowai-maintenance` — project health check
 - `flowai-investigate` — deep bug investigation
-- `flowai-answer` — codebase questions without modifications
 - `flowai-epic` — structured feature specification
 - `flowai-update` — update flowai framework (sync skills/agents, migrate artifacts)
 
@@ -248,7 +247,6 @@ Every task follows the same supervised loop:
 
 - `flowai-maintenance` — project health audit
 - `flowai-investigate` — root cause analysis for complex bugs
-- `flowai-answer` — codebase Q&A without modifications
 
 ## Key Principles
 
