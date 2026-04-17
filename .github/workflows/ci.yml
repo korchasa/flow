@@ -85,7 +85,6 @@ jobs:
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-          deno task bundle
           deno run -A npm:standard-version
           NEW_VERSION=$(deno eval "console.log(JSON.parse(Deno.readTextFileSync('deno.json')).version)")
           NEW_TAG="v${NEW_VERSION}"
@@ -97,7 +96,9 @@ jobs:
 
       - name: Publish to JSR
         if: steps.releasable.outputs.should_release == 'true'
-        run: deno publish --allow-dirty
+        run: |
+          deno task bundle
+          deno publish --allow-dirty
 
       - name: Create GitHub Release
         if: steps.releasable.outputs.should_release == 'true'
