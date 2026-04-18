@@ -913,3 +913,70 @@ Deno.test("both modes coexist - independent targets", async () => {
     true,
   );
 });
+
+// --- FR-DIST.SYNC — --dry-run ---
+
+Deno.test("sync - dry-run does not write files but produces plan actions", async () => {
+  const fs = new InMemoryFsAdapter();
+  fs.dirs.add("/project/.claude");
+  const src = makeMinimalFramework();
+
+  const filesBefore = fs.files.size;
+
+  const result = await sync(
+    "/project",
+    makeConfig({ packs: ["core"], ides: ["claude"] }),
+    fs,
+    { yes: true, dryRun: true, source: src },
+  );
+
+  // No files written
+  assertEquals(
+    fs.files.size,
+    filesBefore,
+    "dry-run must leave fs untouched",
+  );
+  assertEquals(
+    await fs.exists("/project/.claude/skills/flowai-skill-demo/SKILL.md"),
+    false,
+  );
+
+  // Plan actions still produced
+  assert(
+    result.skillActions.some(
+      (a) => a.name === "flowai-skill-demo" && a.action === "create",
+    ),
+    "dry-run must still compute skillActions from plan",
+  );
+  assertEquals(
+    result.totalWritten,
+    0,
+    "dry-run must not increment totalWritten",
+  );
+});
+
+Deno.test("sync - dry-run global mode does not touch user dirs", async () => {
+  const fs = new InMemoryFsAdapter();
+  const src = makeMinimalFramework();
+
+  const filesBefore = fs.files.size;
+
+  await sync(
+    "/project",
+    makeConfig({ packs: ["core"], ides: ["claude"] }),
+    fs,
+    {
+      yes: true,
+      dryRun: true,
+      scope: "global",
+      home: "/home/user",
+      source: src,
+    },
+  );
+
+  assertEquals(fs.files.size, filesBefore);
+  assertEquals(
+    await fs.exists("/home/user/.claude/skills/flowai-skill-demo/SKILL.md"),
+    false,
+  );
+});

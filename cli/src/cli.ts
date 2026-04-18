@@ -6,6 +6,7 @@ import { Command } from "@cliffy/command";
 import { Confirm } from "@cliffy/prompt";
 import { wait } from "@denosaurs/wait";
 import { DenoFsAdapter } from "./adapters/fs.ts";
+import { detectColor, red } from "./color.ts";
 import { loadConfig } from "./config.ts";
 import {
   generateConfig,
@@ -14,9 +15,10 @@ import {
 import { isInsideIDE } from "./ide.ts";
 import { type LoopOptions, runLoop } from "./loop.ts";
 import { type MigrateOptions, runMigrate } from "./migrate.ts";
-import { resolveHomeDir, type SyncScope } from "./scope.ts";
+import { resolveHomeDir, resolveIdeBaseDir, type SyncScope } from "./scope.ts";
 import {
   DEFAULT_GIT_URL,
+  type FlowConfig,
   KNOWN_IDES,
   type PlanItem,
   type ResourceAction,
@@ -41,40 +43,137 @@ function withSyncOptions<T extends Command<any>>(cmd: T): T {
       "-g, --global",
       "Install framework primitives into IDE user-level dirs (~/.claude/, ~/.cursor/, etc.) instead of project-local dirs. Uses ~/.flowai.yaml as config.",
       { default: false },
+    )
+    .option(
+      "-n, --dry-run",
+      "Preview the sync plan without writing any files. Exits 0 regardless of plan size; useful before `-g` to verify target paths.",
+      { default: false },
     ) as T;
 }
 
 /** Extract sync options from parsed cliffy options */
 function extractSyncOptions(
   options: Record<string, unknown>,
-): { yes: boolean; skipUpdateCheck: boolean; global: boolean } {
+): {
+  yes: boolean;
+  skipUpdateCheck: boolean;
+  global: boolean;
+  dryRun: boolean;
+} {
   return {
     yes: options.yes as boolean,
     skipUpdateCheck: options.skipUpdateCheck as boolean,
     global: options.global === true,
+    dryRun: options.dryRun === true,
   };
 }
 
-/** Shared sync action used by both bare command (outside IDE) and `sync` subcommand */
+/** Format the pre-sync plan block (Source/IDEs/Skills/Agents).
+ *
+ * Global-mode extension: after the standard block, lists the resolved
+ * user-level target dirs per IDE. Keeps the blast radius visible before the
+ * confirmation prompt — a must for `-g`, where writes land in `~/.claude/`,
+ * `~/.agents/skills/`, etc.
+ *
+ * Pure string builder — easy to snapshot in tests; `runSync` prints the
+ * result via `console.log`. */
+export function formatSyncPlan(
+  config: FlowConfig,
+  ctx: { scope: SyncScope; home: string },
+): string {
+  const lines: string[] = [];
+  lines.push("Sync plan:");
+
+  if (config.source?.ref) {
+    const url = config.source.git ?? DEFAULT_GIT_URL;
+    lines.push(`  Source: git (${url}@${config.source.ref})`);
+  } else if (config.source?.path) {
+    lines.push(`  Source: local (${config.source.path})`);
+  } else {
+    lines.push("  Source: bundled");
+  }
+
+  lines.push(`  IDEs: ${config.ides.join(", ") || "(auto-detect)"}`);
+
+  if (config.skills.include.length > 0) {
+    lines.push(`  Skills (include): ${config.skills.include.join(", ")}`);
+  } else if (config.skills.exclude.length > 0) {
+    lines.push(`  Skills (exclude): ${config.skills.exclude.join(", ")}`);
+  } else {
+    lines.push("  Skills: all");
+  }
+
+  if (config.agents.include.length > 0) {
+    lines.push(`  Agents (include): ${config.agents.include.join(", ")}`);
+  } else if (config.agents.exclude.length > 0) {
+    lines.push(`  Agents (exclude): ${config.agents.exclude.join(", ")}`);
+  } else {
+    lines.push("  Agents: all");
+  }
+
+  // Global-mode path preview. Codex splits into skills + agents dirs, so we
+  // surface both — the broken-symlink on `~/.agents/skills` scenario that
+  // motivated this preview lives here.
+  if (ctx.scope === "global") {
+    const targets = new Set<string>();
+    for (const ideName of config.ides) {
+      if (!KNOWN_IDES[ideName]) continue;
+      targets.add(
+        resolveIdeBaseDir(ideName, "global", "", ctx.home, "default"),
+      );
+      if (ideName === "codex") {
+        targets.add(
+          resolveIdeBaseDir(ideName, "global", "", ctx.home, "skills"),
+        );
+      }
+    }
+    if (targets.size > 0) {
+      lines.push("  Target dirs:");
+      for (const t of [...targets].sort()) lines.push(`    - ${t}`);
+    }
+  }
+
+  return lines.join("\n");
+}
+
+/** Shared sync action used by both bare command (outside IDE) and `sync` subcommand.
+ *
+ * Returns exit code (0 = success, 1 = errors). Caller invokes `Deno.exit`. */
 async function runSync(options: {
   yes: boolean;
   skipUpdateCheck: boolean;
   global: boolean;
-}): Promise<void> {
+  dryRun: boolean;
+}): Promise<number> {
   const cwd = Deno.cwd();
   const fs = new DenoFsAdapter();
-  const { yes, skipUpdateCheck, global: isGlobal } = options;
+  const {
+    yes,
+    skipUpdateCheck,
+    global: isGlobal,
+    dryRun,
+  } = options;
   const scope: SyncScope = isGlobal ? "global" : "project";
   const home = isGlobal ? resolveHomeDir() : "";
 
-  // 0. Check for updates (before sync, fail-open)
-  if (await runSelfUpdate({ yes, skip: skipUpdateCheck })) return;
+  // 0. Check for updates (before sync, fail-open). Skip when dry-run so the
+  //    updater's own auto-relaunch doesn't run a real sync afterwards.
+  if (!dryRun && await runSelfUpdate({ yes, skip: skipUpdateCheck })) {
+    return 0;
+  }
 
-  // 1. Load or generate config (scope-aware path)
+  // 1. Load or generate config (scope-aware path). Dry-run must never write a
+  //    config either — if missing, print a hint and exit 0.
   let config = await loadConfig(cwd, fs, scope, home);
   const isNewConfig = !config;
 
   if (!config) {
+    if (dryRun) {
+      console.log(
+        "[DRY RUN] No .flowai.yaml found. Run without --dry-run to generate one interactively, or with -y for defaults.",
+      );
+      return 0;
+    }
     // Global-mode first-run notice: primitives go into IDE USER dirs for
     // every known IDE by default, which surprises users who typed --global
     // by mistake. Surface the blast radius before the non-interactive
@@ -91,90 +190,105 @@ async function runSync(options: {
       : await generateConfig(cwd, fs, undefined, scope, home);
   }
 
-  // 2. Show sync plan
-  console.log("Sync plan:");
-
-  // Log source type
-  if (config.source?.ref) {
-    const url = config.source.git ?? DEFAULT_GIT_URL;
-    console.log(`  Source: git (${url}@${config.source.ref})`);
-  } else if (config.source?.path) {
-    console.log(`  Source: local (${config.source.path})`);
-  } else {
-    console.log("  Source: bundled");
+  // 2. Show sync plan (includes Target dirs in global mode)
+  if (dryRun) {
+    console.log("[DRY RUN] Previewing sync — no files will be written.");
   }
+  console.log(formatSyncPlan(config, { scope, home }));
 
-  console.log(`  IDEs: ${config.ides.join(", ") || "(auto-detect)"}`);
-
-  if (config.skills.include.length > 0) {
-    console.log(`  Skills (include): ${config.skills.include.join(", ")}`);
-  } else if (config.skills.exclude.length > 0) {
-    console.log(`  Skills (exclude): ${config.skills.exclude.join(", ")}`);
-  } else {
-    console.log("  Skills: all");
-  }
-
-  if (config.agents.include.length > 0) {
-    console.log(`  Agents (include): ${config.agents.include.join(", ")}`);
-  } else if (config.agents.exclude.length > 0) {
-    console.log(`  Agents (exclude): ${config.agents.exclude.join(", ")}`);
-  } else {
-    console.log("  Agents: all");
-  }
-
-  // Confirm only for newly generated configs
-  if (isNewConfig && !yes) {
+  // Confirm only for newly generated configs (skipped under dry-run since
+  // dry-run has no side effects to confirm).
+  if (isNewConfig && !yes && !dryRun) {
     const proceed = await Confirm.prompt({
       message: "Proceed with sync?",
       default: true,
     });
     if (!proceed) {
       console.log("Aborted.");
-      return;
+      return 0;
     }
   }
 
-  // 3. Execute sync
-  const spinner = wait({ text: "Syncing...", color: "cyan" });
-  spinner.start();
+  // 3. Execute sync. Dry-run skips the spinner (animation is pointless when
+  //    no writes happen and the run completes instantly).
+  const spinner = dryRun ? null : wait({ text: "Syncing...", color: "cyan" });
+  spinner?.start();
 
   const syncOptions: SyncOptions = {
     yes,
     scope,
     home,
+    dryRun,
     onProgress: (msg) => {
-      spinner.text = msg;
+      if (spinner) spinner.text = msg;
     },
-    promptConflicts: yes ? undefined : async (conflicts: PlanItem[]) => {
-      spinner.stop();
-      console.log("\nLocally modified files detected:");
-      for (const c of conflicts) {
-        console.log(`  - ${c.targetPath}`);
-      }
-      const overwrite = await Confirm.prompt({
-        message: "Overwrite all?",
-        default: true,
-      });
-      spinner.start();
-      return overwrite ? conflicts.map((_, i) => i) : [];
-    },
+    promptConflicts: (yes || dryRun)
+      ? undefined
+      : async (conflicts: PlanItem[]) => {
+        spinner?.stop();
+        console.log("\nLocally modified files detected:");
+        for (const c of conflicts) {
+          console.log(`  - ${c.targetPath}`);
+        }
+        const overwrite = await Confirm.prompt({
+          message: "Overwrite all?",
+          default: true,
+        });
+        spinner?.start();
+        return overwrite ? conflicts.map((_, i) => i) : [];
+      },
   };
 
   try {
     const result = await sync(cwd, config, fs, syncOptions);
-    spinner.stop();
+    spinner?.stop();
 
     // 4. Render instruction-oriented output
     renderSyncOutput(result);
+
+    // 5. Exit code: 1 if any writes failed (real run only; dry-run can't fail).
+    return (!dryRun && result.errors.length > 0) ? 1 : 0;
   } catch (e) {
-    spinner.stop();
+    spinner?.stop();
     throw e;
   }
 }
 
-/** Render instruction-oriented sync output */
-export function renderSyncOutput(result: SyncResult): void {
-  console.log("\nflowai sync complete.");
+/** Options for renderSyncOutput. `color` overrides auto-detection (NO_COLOR
+ * + stdout.isTerminal); undefined means auto-detect. */
+export interface RenderOptions {
+  color?: boolean;
+}
+
+/** Render instruction-oriented sync output.
+ *
+ * Layout:
+ *   1. Truthful header — "flowai sync complete." (success) or
+ *      "flowai sync FAILED: N error(s)." (red).
+ *   2. ACTIONS REQUIRED — numbered list of resource changes. Failed items
+ *      are excluded here and counters show `written/planned` when they differ.
+ *   3. NO ACTIONS REQUIRED summary (unchanged resource counts).
+ *   4. ERRORS block (red) — failed writes, at the very end so they're the
+ *      last thing the user sees. */
+export function renderSyncOutput(
+  result: SyncResult,
+  options: RenderOptions = {},
+): void {
+  const color = options.color ?? detectColor();
+  const hasErrors = result.errors.length > 0;
+  const dryPrefix = result.dryRun ? "[DRY RUN] " : "";
+
+  if (hasErrors) {
+    console.log(
+      "\n" +
+        red(
+          `${dryPrefix}flowai sync FAILED: ${result.errors.length} error(s).`,
+          color,
+        ),
+    );
+  } else {
+    console.log(`\n${dryPrefix}flowai sync complete.`);
+  }
 
   const actions: string[] = [];
   let actionNum = 0;
@@ -252,10 +366,18 @@ export function renderSyncOutput(result: SyncResult): void {
     ) {
       const list = grouped[action];
       if (list.length === 0) continue;
+      // Failed items are excluded from the visible list and subtracted from
+      // the written count so CREATED (N) reports reality, not intent.
+      const written = list.filter((r) => !r.failed);
+      const planned = list.length;
+      if (written.length === 0) continue; // every item failed — skip section
       const verb = action === "create" && label === "HOOKS"
         ? "INSTALLED"
         : action.toUpperCase() + "D";
-      const lines = list.map((r) => {
+      const countStr = written.length === planned
+        ? `${planned}`
+        : `${written.length}/${planned}`;
+      const lines = written.map((r) => {
         const suffix = artifactLabel && r.scaffolds.length > 0
           ? ` (${artifactLabel}: ${r.scaffolds.join(", ")})`
           : "";
@@ -263,19 +385,13 @@ export function renderSyncOutput(result: SyncResult): void {
       });
       const hint = hints[action];
       push(
-        `${label} ${verb} (${list.length}):\n` + lines.join("\n") +
+        `${label} ${verb} (${countStr}):\n` + lines.join("\n") +
           (hint ? "\n   " + hint : ""),
       );
     }
   }
 
-  // Errors
-  if (result.errors.length > 0) {
-    const lines = result.errors.map((e) => `   - ${e.path}: ${e.error}`);
-    push(`ERRORS (${result.errors.length}):\n` + lines.join("\n"));
-  }
-
-  // Render
+  // Render ACTIONS REQUIRED block (without errors — they get their own)
   if (actions.length > 0) {
     console.log("\n>>> ACTIONS REQUIRED:\n");
     console.log(actions.join("\n\n"));
@@ -290,13 +406,22 @@ export function renderSyncOutput(result: SyncResult): void {
     }
   }
 
-  if (actions.length === 0) {
+  if (actions.length === 0 && !hasErrors) {
     console.log("\n>>> NO ACTIONS REQUIRED.");
     if (noActionParts.length > 0) {
       console.log(`${noActionParts.join(", ")}.`);
     }
   } else if (noActionParts.length > 0) {
     console.log(`\n>>> NO ACTIONS REQUIRED:\n${noActionParts.join(", ")}.`);
+  }
+
+  // ERRORS block — final section, after ACTIONS and NO ACTIONS, so it's the
+  // last thing the user sees in the scrollback. Red when colored.
+  if (hasErrors) {
+    console.log("\n" + red(`>>> ERRORS (${result.errors.length}):`, color));
+    for (const e of result.errors) {
+      console.log(red(`   - ${e.path}: ${e.error}`, color));
+    }
   }
 
   // Symlinks (informational)
@@ -337,7 +462,10 @@ export async function main(args: string[]): Promise<void> {
       ),
     // deno-lint-ignore no-explicit-any
   ).action(async (options: any) => {
-    await runSync(extractSyncOptions(options as Record<string, unknown>));
+    const code = await runSync(
+      extractSyncOptions(options as Record<string, unknown>),
+    );
+    if (code !== 0) Deno.exit(code);
   });
 
   const command = withSyncOptions(
@@ -375,7 +503,8 @@ export async function main(args: string[]): Promise<void> {
         return;
       }
 
-      await runSync(opts);
+      const code = await runSync(opts);
+      if (code !== 0) Deno.exit(code);
     })
     .command("sync", syncSubcommand)
     .command(

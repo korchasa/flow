@@ -149,6 +149,7 @@ All 41 skills have at least one benchmark scenario. Coverage is the source of tr
 - **Scenario A2 (no config, non-interactive):** `flowai -y` without `.flowai.yaml` → auto-detect IDEs, select all packs → generates `.flowai.yaml` with defaults → syncs.
 - **Scenario B (with config):** `flowai` with `.flowai.yaml` → disclaimer → sync. Bundled files compared with local. Unchanged silently, locally modified → prompt.
 - **Scenario C (global):** `flowai sync --global` → loads/creates `~/.flowai.yaml`, installs primitives into user-level IDE dirs, skips scaffolds and artifact diffs.
+- **Scenario D (dry-run):** `flowai --dry-run` (or `-n`) prints the sync plan (including `Target dirs:` in global mode) but performs no writes; exits 0 regardless of plan size. No `.flowai.yaml` auto-generation under dry-run — user is told to rerun without the flag.
 - **Acceptance:**
   - [x] Without `.flowai.yaml` → interactive config generation → sync.
   - [x] With `.flowai.yaml` → disclaimer → sync.
@@ -160,6 +161,18 @@ All 41 skills have at least one benchmark scenario. Coverage is the source of tr
   - [x] `-y` without config → non-interactive config generation (auto-detect IDEs, all packs).
   - [x] Core-level assets (`framework/<pack>/assets/`) synced to `{ide_dir}/assets/`. Asset changes reported as `ASSETS UPDATED` in sync output with mapped project artifact paths (from `pack.yaml` `assets:` field).
   - [x] `--global` / `-g` flag switches scope to global; scope-aware filter excludes `scope: project-only` primitives in global mode and `scope: global-only` in project mode.
+  - [x] `--dry-run` / `-n` flag skips all writes; plan still produced and rendered.
+    Evidence: `cli/src/sync_test.ts::sync - dry-run does not write files but produces plan actions` + `::sync - dry-run global mode does not touch user dirs`.
+  - [x] Exit code: `0` on success (no errors, or any dry-run), `1` when at least one write failed.
+    Evidence: `cli/src/cli.ts` `runSync` returns `number`; command handlers call `Deno.exit(code)` when non-zero.
+  - [x] Truthful header: `flowai sync complete.` on success; `flowai sync FAILED: N error(s).` on errors (red when color enabled).
+    Evidence: `cli/src/cli_test.ts::renderSyncOutput - header says FAILED when errors present` + `::renderSyncOutput - header says complete when no errors`.
+  - [x] ERRORS rendered as final block (after ACTIONS REQUIRED / NO ACTIONS REQUIRED), not interleaved with success sections. Red when color enabled, plain otherwise (respects `NO_COLOR` and `Deno.stdout.isTerminal()`).
+    Evidence: `cli/src/cli_test.ts::renderSyncOutput - errors rendered as final block, not inside ACTIONS REQUIRED` + `::renderSyncOutput - ANSI red for header and errors when color=true` + `::renderSyncOutput - no ANSI codes when color=false`.
+  - [x] CREATED/UPDATED counters show `written/planned` when a subset of writes failed; failed items move to the ERRORS block and are hidden from the success list.
+    Evidence: `cli/src/cli_test.ts::renderSyncOutput - partial write shows written/planned counter`.
+  - [x] Global-mode plan preview includes `Target dirs:` listing resolved user-level base dirs (including Codex's `~/.agents/skills` split) before the confirmation prompt.
+    Evidence: `cli/src/cli_test.ts::formatSyncPlan - global mode lists resolved Target dirs` + `::formatSyncPlan - project mode does NOT list global Target dirs block`.
 
 #### FR-DIST.CONFIG Config Generation
 - **Desc:** Interactive `.flowai.yaml` creation when config missing. Path depends on scope: `<cwd>/.flowai.yaml` (project) or `~/.flowai.yaml` (global). Both files may coexist; project scope wins when both are present and no flag is passed.

@@ -99,6 +99,9 @@ export interface ResourceAction {
   action: "create" | "update" | "delete" | "ok";
   /** Scaffolded artifact paths (only for skills with scaffolds) */
   scaffolds: string[];
+  /** True when write for this resource failed (renderer moves to ERRORS block
+   * and subtracts from CREATED/UPDATED count shown as `written/planned`). */
+  failed?: boolean;
 }
 
 /** Known IDE definitions */

@@ -57,6 +57,7 @@ import {
   buildScaffoldsIndex,
   extractResourceActions,
   filterNames,
+  markFailedActions,
 } from "./resource_index.ts";
 import { writeHookConfig } from "./hook_writer.ts";
 import { syncCodexAgents } from "./codex_sync.ts";
@@ -112,6 +113,10 @@ export interface SyncOptions {
   scope?: SyncScope;
   /** Home directory override (for testing). Default: resolved from env. */
   home?: string;
+  /** FR-DIST.SYNC — dry-run: compute plan but skip all writes.
+   * Implemented by wrapping the FsAdapter at the top of `sync()` so every
+   * downstream write site is a no-op automatically. */
+  dryRun?: boolean;
 }
 
 /** Sync result */
@@ -120,7 +125,12 @@ export interface SyncResult {
   totalSkipped: number;
   totalDeleted: number;
   totalConflicts: number;
-  errors: Array<{ path: string; error: string }>;
+  errors: Array<{
+    path: string;
+    error: string;
+    name?: string;
+    type?: PlanItemType;
+  }>;
   symlinkResult?: { created: string[]; skipped: string[]; updated: string[] };
   /** Config was auto-migrated */
   configMigrated?: { from: string; to: string; packs: string[] };
@@ -132,6 +142,28 @@ export interface SyncResult {
   hookActions: ResourceAction[];
   /** Per-asset action breakdown (template changes with project artifact mappings) */
   assetActions: ResourceAction[];
+  /** True when sync ran in dry-run mode (no writes performed). */
+  dryRun?: boolean;
+}
+
+/** FR-DIST.SYNC — Wrap any FsAdapter into a read-through no-write adapter
+ * for `--dry-run`. All reads pass through to the inner adapter; all mutations
+ * (writeFile / mkdir / symlink / remove) become no-ops.
+ *
+ * Separated so `sync()` needs no dry-run awareness — each write site sees a
+ * normal FsAdapter interface. */
+function wrapDryRun(inner: FsAdapter): FsAdapter {
+  return {
+    readFile: (p) => inner.readFile(p),
+    exists: (p) => inner.exists(p),
+    readDir: (p) => inner.readDir(p),
+    stat: (p) => inner.stat(p),
+    readLink: (p) => inner.readLink(p),
+    writeFile: (_p, _c) => Promise.resolve(),
+    mkdir: (_p) => Promise.resolve(),
+    symlink: (_t, _p) => Promise.resolve(),
+    remove: (_p) => Promise.resolve(),
+  };
 }
 
 /** Resolve which skills, commands, agents, hooks, and scripts to sync based on
@@ -232,12 +264,15 @@ export function resolvePackResources(
 export async function sync(
   cwd: string,
   config: FlowConfig,
-  fs: FsAdapter,
+  realFs: FsAdapter,
   options: SyncOptions,
 ): Promise<SyncResult> {
   const log = options.onProgress ?? console.log;
   const scope: SyncScope = options.scope ?? "project";
   const home = options.home ?? (scope === "global" ? resolveHomeDir() : "");
+  // FR-DIST.SYNC — dry-run wraps the adapter so no write site below needs
+  // to know about dry-run. Reads pass through.
+  const fs: FsAdapter = options.dryRun ? wrapDryRun(realFs) : realFs;
   const result: SyncResult = {
     totalWritten: 0,
     totalSkipped: 0,
@@ -248,6 +283,7 @@ export async function sync(
     agentActions: [],
     hookActions: [],
     assetActions: [],
+    dryRun: options.dryRun === true ? true : undefined,
   };
 
   // 1. Resolve IDEs
@@ -761,6 +797,15 @@ export async function sync(
     }
   }
 
+  // FR-DIST.SYNC — post-process: mark ResourceActions whose writes failed so
+  // the renderer can move them to the ERRORS block and shrink CREATED counts.
+  // Commands install alongside skills (same `.{ide}/skills/` dir), so command
+  // failures must also mark the corresponding skillActions entry.
+  markFailedActions(result.skillActions, result.errors, ["skill", "command"]);
+  markFailedActions(result.agentActions, result.errors, "agent");
+  markFailedActions(result.hookActions, result.errors, "hook");
+  markFailedActions(result.assetActions, result.errors, "asset");
+
   return result;
 }
 
@@ -806,6 +851,11 @@ export async function processPlan(
     // --yes mode: overwrite all
     result.totalConflicts += conflicts.length;
   }
+
+  // FR-DIST.SYNC — dry-run: skip writes entirely so totalWritten stays at 0
+  // and the renderer's "complete" vs "FAILED" header reflects a non-write run
+  // truthfully. Plan-derived ResourceActions are populated upstream.
+  if (options.dryRun) return;
 
   const writeResult = await writeFiles(plan, fs);
   result.totalWritten += writeResult.written;

@@ -1,12 +1,22 @@
 import type { FsAdapter } from "./adapters/fs.ts";
-import type { PlanItem } from "./types.ts";
+import type { PlanItem, PlanItemType } from "./types.ts";
+
+/** Error entry emitted by writeFiles — carries the source primitive identity
+ * (name + type) so the renderer can mark the matching ResourceAction as
+ * `failed` and keep the CREATED/UPDATED counter truthful. */
+interface WriteError {
+  path: string;
+  error: string;
+  name: string;
+  type: PlanItemType;
+}
 
 /** Result of write operation */
 interface WriteResult {
   written: number;
   skipped: number;
   deleted: number;
-  errors: Array<{ path: string; error: string }>;
+  errors: WriteError[];
 }
 
 /** Write files according to plan */
@@ -35,6 +45,8 @@ export async function writeFiles(
         result.errors.push({
           path: item.targetPath,
           error: (e as Error).message,
+          name: item.name,
+          type: item.type,
         });
       }
       continue;
@@ -47,6 +59,8 @@ export async function writeFiles(
       result.errors.push({
         path: item.targetPath,
         error: (e as Error).message,
+        name: item.name,
+        type: item.type,
       });
     }
   }

@@ -1,6 +1,7 @@
-import { assert, assertStringIncludes } from "@std/assert";
-import { renderSyncOutput } from "./cli.ts";
+import { assert, assertEquals, assertStringIncludes } from "@std/assert";
+import { formatSyncPlan, renderSyncOutput } from "./cli.ts";
 import type { SyncResult } from "./sync.ts";
+import type { FlowConfig } from "./types.ts";
 
 /** Capture console.log output during a function call */
 function captureOutput(fn: () => void): string {
@@ -179,4 +180,145 @@ Deno.test("renderSyncOutput - shows created assets", () => {
   const output = captureOutput(() => renderSyncOutput(result));
   assertStringIncludes(output, "ASSETS CREATED (1)");
   assertStringIncludes(output, "NEW.template.md (artifacts: NEW.md)");
+});
+
+// --- UX improvements: errors, header, counters, color ---
+
+Deno.test("renderSyncOutput - errors rendered as final block, not inside ACTIONS REQUIRED", () => {
+  const result = baseSyncResult();
+  result.skillActions = [
+    { name: "good", action: "create", scaffolds: [] },
+  ];
+  result.errors = [
+    { path: "/ide/skills/bad/SKILL.md", error: "EEXIST" },
+  ];
+
+  const output = captureOutput(() =>
+    renderSyncOutput(result, { color: false })
+  );
+
+  const actionsIdx = output.indexOf(">>> ACTIONS REQUIRED:");
+  const errorsIdx = output.indexOf(">>> ERRORS (");
+  assert(actionsIdx >= 0, "ACTIONS REQUIRED block must be present");
+  assert(errorsIdx > actionsIdx, "ERRORS block must appear after ACTIONS");
+  assertEquals(
+    output.match(/\d+\. ERRORS/g),
+    null,
+    "ERRORS must NOT appear as numbered item in ACTIONS list",
+  );
+  assertStringIncludes(output, ">>> ERRORS (1):");
+  assertStringIncludes(output, "/ide/skills/bad/SKILL.md: EEXIST");
+});
+
+Deno.test("renderSyncOutput - header says FAILED when errors present", () => {
+  const result = baseSyncResult();
+  result.errors = [{ path: "/x", error: "bad" }];
+
+  const output = captureOutput(() =>
+    renderSyncOutput(result, { color: false })
+  );
+  assertStringIncludes(output, "flowai sync FAILED: 1 error(s).");
+  assert(
+    !output.includes("flowai sync complete."),
+    "must not print 'complete' when errors present",
+  );
+});
+
+Deno.test("renderSyncOutput - header says complete when no errors", () => {
+  const result = baseSyncResult();
+  result.skillActions = [
+    { name: "ok-skill", action: "ok", scaffolds: [] },
+  ];
+  const output = captureOutput(() =>
+    renderSyncOutput(result, { color: false })
+  );
+  assertStringIncludes(output, "flowai sync complete.");
+});
+
+Deno.test("renderSyncOutput - partial write shows written/planned counter", () => {
+  const result = baseSyncResult();
+  result.skillActions = [
+    { name: "good1", action: "create", scaffolds: [] },
+    { name: "good2", action: "create", scaffolds: [] },
+    { name: "bad1", action: "create", scaffolds: [], failed: true },
+  ];
+  result.errors = [
+    { path: "/skills/bad1/SKILL.md", error: "EEXIST" },
+  ];
+
+  const output = captureOutput(() =>
+    renderSyncOutput(result, { color: false })
+  );
+  assertStringIncludes(output, "SKILLS CREATED (2/3):");
+  assertStringIncludes(output, "good1");
+  assertStringIncludes(output, "good2");
+
+  // failed item must not appear in the CREATED list (above ERRORS)
+  const createdIdx = output.indexOf("SKILLS CREATED");
+  const errorsIdx = output.indexOf(">>> ERRORS");
+  assert(createdIdx >= 0 && errorsIdx > createdIdx);
+  const createdBlock = output.substring(createdIdx, errorsIdx);
+  assert(
+    !createdBlock.includes("bad1"),
+    "failed item must NOT appear in CREATED list",
+  );
+  assertStringIncludes(output, "/skills/bad1/SKILL.md: EEXIST");
+});
+
+Deno.test("renderSyncOutput - ANSI red for header and errors when color=true", () => {
+  const result = baseSyncResult();
+  result.errors = [{ path: "/x", error: "bad" }];
+
+  const output = captureOutput(() => renderSyncOutput(result, { color: true }));
+  assertStringIncludes(output, "\x1b[31m");
+  assertStringIncludes(output, "\x1b[0m");
+});
+
+Deno.test("renderSyncOutput - no ANSI codes when color=false", () => {
+  const result = baseSyncResult();
+  result.errors = [{ path: "/x", error: "bad" }];
+  result.skillActions = [{ name: "s", action: "create", scaffolds: [] }];
+
+  const output = captureOutput(() =>
+    renderSyncOutput(result, { color: false })
+  );
+  assert(!output.includes("\x1b["), "must not contain ANSI escapes");
+});
+
+// --- formatSyncPlan: project vs global preview ---
+
+function baseConfig(overrides: Partial<FlowConfig> = {}): FlowConfig {
+  return {
+    version: "1.1",
+    ides: ["claude", "cursor"],
+    packs: ["core"],
+    skills: { include: [], exclude: [] },
+    agents: { include: [], exclude: [] },
+    commands: { include: [], exclude: [] },
+    ...overrides,
+  };
+}
+
+Deno.test("formatSyncPlan - global mode lists resolved Target dirs", () => {
+  const config = baseConfig({
+    ides: ["claude", "cursor", "opencode", "codex"],
+  });
+  const text = formatSyncPlan(config, { scope: "global", home: "/home/u" });
+  assertStringIncludes(text, "Target dirs:");
+  assertStringIncludes(text, "/home/u/.claude");
+  assertStringIncludes(text, "/home/u/.cursor");
+  assertStringIncludes(text, "/home/u/.config/opencode");
+  // Codex in global mode splits skills + agents
+  assertStringIncludes(text, "/home/u/.codex");
+  assertStringIncludes(text, "/home/u/.agents");
+});
+
+Deno.test("formatSyncPlan - project mode does NOT list global Target dirs block", () => {
+  const config = baseConfig({ ides: ["claude", "cursor"] });
+  const text = formatSyncPlan(config, { scope: "project", home: "" });
+  assert(
+    !text.includes("Target dirs:"),
+    "project mode omits Target dirs block",
+  );
+  assertStringIncludes(text, "IDEs: claude, cursor");
 });

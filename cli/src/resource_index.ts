@@ -1,6 +1,11 @@
 // FR-DIST.SYNC — resource indexing and filtering
 /** Build pack indexes (scaffolds, assets), extract per-resource actions, filter by include/exclude */
-import type { PackDefinition, PlanItem, ResourceAction } from "./types.ts";
+import type {
+  PackDefinition,
+  PlanItem,
+  PlanItemType,
+  ResourceAction,
+} from "./types.ts";
 
 /** Build a flat scaffolds index: skill-name → artifact paths */
 export function buildScaffoldsIndex(
@@ -67,6 +72,29 @@ function actionPriority(action: string): number {
       return 1;
     default:
       return 0;
+  }
+}
+
+/** Mark ResourceAction items as `failed` when writeFiles reported an error
+ * for that (type, name) pair. Renderer uses `failed` to relocate the entry
+ * to the ERRORS block and shrink the CREATED/UPDATED counter.
+ *
+ * `sectionType`: the PlanItemType that `actions` corresponds to. `asset` lines
+ * come from plan items of type `asset`, etc. This avoids cross-matching a
+ * `failedNames` collision (e.g., a skill and an agent sharing a name). */
+export function markFailedActions(
+  actions: ResourceAction[],
+  errors: Array<{ name?: string; type?: PlanItemType }>,
+  sectionType: PlanItemType | PlanItemType[],
+): void {
+  const types = Array.isArray(sectionType) ? sectionType : [sectionType];
+  const failedNames = new Set<string>();
+  for (const e of errors) {
+    if (!e.name || !e.type) continue;
+    if (types.includes(e.type)) failedNames.add(e.name);
+  }
+  for (const a of actions) {
+    if (failedNames.has(a.name)) a.failed = true;
   }
 }
 
