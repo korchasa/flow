@@ -74,10 +74,12 @@ Copy and paste the following prompt into your AI IDE (Claude Code, Cursor, OpenC
 
 Run `/flowai-update` in your AI IDE. It handles the full update cycle:
 
-1. Updates the `flowai` CLI to the latest version
+1. Updates the `flowai` CLI to the latest version (wraps `flowai update`)
 2. Syncs skills and agents into IDE config directories
 3. Detects convention changes in framework templates
 4. Proposes per-file migrations for scaffolded artifacts (AGENTS.md, devcontainer, deno.json tasks) — with diffs and confirmation for each file
+
+To self-update the CLI binary only (no sync, no migration), run `flowai update` directly. `flowai` and `flowai sync` only notify when a new version is available and never install it.
 
 ## How It Works
 
@@ -111,13 +113,18 @@ Base commands for development workflows (commit, plan, review, init, etc.).
 - `flowai-init` — project initialization (AGENTS.md, docs scaffolding, dev commands)
 - `flowai-plan` — task planning (GODS format)
 - `flowai-commit` — atomic commits with QA and self-reflection
+- `flowai-commit-beta` — streamlined commit (targeted doc sync, inline grouping)
 - `flowai-review` — QA + code review of current changes
 - `flowai-review-and-commit` — review quality, then commit if approved
-- `flowai-reflect` — self-analysis of recent work
+- `flowai-review-and-commit-beta` — streamlined review + commit (reuses diff across phases)
+- `flowai-reflect` — self-analysis of the current session
+- `flowai-reflect-by-history` — cross-session analysis of past IDE transcripts
 - `flowai-maintenance` — project health check
 - `flowai-investigate` — deep bug investigation
 - `flowai-epic` — structured feature specification
 - `flowai-update` — update flowai framework (sync skills/agents, migrate artifacts)
+- `flowai-adapt` — adapt installed skills/agents/hooks/assets to project specifics (standalone)
+- `flowai-adapt-instructions` — re-adapt root AGENTS.md after upstream template change
 
 **Setup:**
 - `flowai-skill-setup-ai-ide-devcontainer` — AI IDE devcontainer setup
@@ -126,7 +133,8 @@ Base commands for development workflows (commit, plan, review, init, etc.).
 **Agents:**
 - `flowai-console-expert` — complex console tasks and command execution
 - `flowai-diff-specialist` — git diff analysis and atomic commit preparation
-- `flowai-skill-adapter` — adapts skills to project specifics after upstream update
+- `flowai-skill-adapter` — adapts a single skill to project specifics after upstream update
+- `flowai-agent-adapter` — adapts a single agent to project specifics after upstream update
 
 ### engineering
 
@@ -203,6 +211,21 @@ source:
 source:
   path: /path/to/flowai/framework
 ```
+
+`flowai sync` only notifies when a newer CLI is published (`Update available: X → Y. Run \`flowai update\` to install.`). It never installs — the sole install entry point is `flowai update`. Suppress the check with `--skip-update-check`; preview a run without writes via `-n` / `--dry-run`.
+
+### `flowai update`
+
+Self-update the CLI binary. Checks JSR for a newer version; installs via `deno install -g -A -f jsr:@korchasa/flowai@<version>`. In `-y` (non-interactive) mode prints the update command instead of running it. Fail-open on network errors.
+
+```sh
+flowai update           # interactive prompt
+flowai update -y        # print command only
+```
+
+### `flowai migrate <from> <to>`
+
+One-way migration of installed primitives (skills, agents, commands) from one IDE config dir to another — e.g. `flowai migrate claude cursor`. Use when switching primary IDE. `--dry-run` previews without writing; `-y` overwrites conflicts non-interactively.
 
 ### `flowai loop <prompt>`
 
