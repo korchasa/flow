@@ -10,16 +10,6 @@
           }
         ],
         "matcher": "Write|Edit"
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "deno run -A .claude/scripts/flowai-mermaid-validate/run.ts",
-            "timeout": 30
-          }
-        ],
-        "matcher": "Write|Edit"
       }
     ]
   }

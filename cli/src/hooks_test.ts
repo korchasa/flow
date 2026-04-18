@@ -366,21 +366,12 @@ Deno.test("buildManifest: creates manifest from hook defs", () => {
         description: "Auto-lint",
       } as HookDefinition,
     },
-    {
-      name: "flowai-mermaid-validate",
-      hook: {
-        event: "PostToolUse",
-        matcher: "Write|Edit",
-        description: "Validate Mermaid",
-      } as HookDefinition,
-    },
   ];
   const m = buildManifest(hookDefs);
   assertEquals(m.version, 1);
-  assertEquals(Object.keys(m.hooks).length, 2);
+  assertEquals(Object.keys(m.hooks).length, 1);
   assertEquals(m.hooks["flowai-test-hook"].event, "PostToolUse");
   assertEquals(m.hooks["flowai-test-hook"].matcher, "Write|Edit");
-  assertEquals(m.hooks["flowai-mermaid-validate"].event, "PostToolUse");
 });
 
 // --- FR-DIST.GLOBAL — hook writer uses scope-aware base dir ---

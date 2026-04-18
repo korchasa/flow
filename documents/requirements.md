@@ -636,7 +636,7 @@ All 41 skills have at least one benchmark scenario. Coverage is the source of tr
   - [x] `hook.yaml` fields: `event`, `matcher` (optional), `description`, `timeout` (optional, default 30/600).
   - [x] Supported events: PostToolUse, PreToolUse, SessionStart. Event/tool name mapping per IDE.
   - [x] `run.ts` uses stdin JSON contract (Claude Code canonical format). Cursor/OpenCode wrappers normalize format. SessionStart hooks output `hookSpecificOutput.additionalContext`.
-  - [x] 2 framework hooks: `flowai-skill-structure-validate` (devtools), `flowai-mermaid-validate` (engineering).
+  - [x] 1 framework hook: `flowai-skill-structure-validate` (devtools).
 
 #### FR-HOOK-RESOURCES.INSTALL IDE-Specific Installation
 
