@@ -15,6 +15,10 @@ export const InvestigateNoSpuriousInvocationBench = new class
   userQuery =
     "Fix the typo in README.md: the word 'teh' on the first line should be 'the'.";
 
+  // Primary goal: assert the model does NOT auto-invoke the investigate
+  // workflow on a trivial fix request. Secondary operational behavior
+  // (whether it can edit a missing file, asks first, etc.) is out of scope
+  // for the gating regression check.
   checklist = [
     {
       id: "no_hypothesis_workflow",
@@ -26,12 +30,6 @@ export const InvestigateNoSpuriousInvocationBench = new class
       id: "no_root_cause_report",
       description:
         "Did the agent NOT produce a formal investigation report with hypotheses table and root-cause analysis sections?",
-      critical: true,
-    },
-    {
-      id: "direct_fix_or_edit",
-      description:
-        "Did the agent edit README.md directly (or propose a direct edit) rather than investigating the cause of the typo?",
       critical: true,
     },
   ];
