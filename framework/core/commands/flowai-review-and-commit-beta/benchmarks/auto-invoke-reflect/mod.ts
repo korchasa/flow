@@ -4,7 +4,8 @@ import { runGit } from "@bench/utils.ts";
 export const ReviewAndCommitBetaAutoInvokeReflectBench = new class
   extends BenchmarkSkillScenario {
   id = "flowai-review-and-commit-beta-auto-invoke-reflect";
-  name = "Auto-invoke /flowai-reflect after complex review+commit session";
+  name =
+    "Auto-invoke /flowai-skill-reflect after complex review+commit session";
   skill = "flowai-review-and-commit-beta";
   maxSteps = 30;
   stepTimeoutMs = 420_000;
@@ -21,7 +22,7 @@ export const ReviewAndCommitBetaAutoInvokeReflectBench = new class
     }],
     untracked: ["utils.ts"],
     expectedOutcome:
-      "Agent reviews untracked utils.ts, approves, commits, detects session complexity, and auto-invokes /flowai-reflect (actually executes the reflect workflow)",
+      "Agent reviews untracked utils.ts, approves, commits, detects session complexity, and auto-invokes /flowai-skill-reflect (actually executes the reflect workflow)",
   };
 
   override async setup(sandboxPath: string) {
@@ -65,13 +66,13 @@ Keep answers brief and affirmative.`;
     {
       id: "reflect_auto_invoked",
       description:
-        "Did the agent AUTO-INVOKE /flowai-reflect after committing — meaning it actually started executing the reflect workflow (creating a reflection plan, analyzing the session for behavioral/technical/context issues, listing concrete findings or proposed improvements)? Merely printing a one-line suggestion like 'Consider running /flowai-reflect' is NOT sufficient — the agent must have actually run the reflect workflow.",
+        "Did the agent AUTO-INVOKE /flowai-skill-reflect after committing — meaning it actually started executing the reflect workflow (creating a reflection plan, analyzing the session for behavioral/technical/context issues, listing concrete findings or proposed improvements)? Merely printing a one-line suggestion like 'Consider running /flowai-skill-reflect' is NOT sufficient — the agent must have actually run the reflect workflow.",
       critical: true,
     },
     {
       id: "reflect_not_asking_permission",
       description:
-        "Did the agent proceed autonomously (without asking the user 'should I run /flowai-reflect?' or waiting for confirmation) once it detected session-complexity signals?",
+        "Did the agent proceed autonomously (without asking the user 'should I run /flowai-skill-reflect?' or waiting for confirmation) once it detected session-complexity signals?",
       critical: false,
     },
   ];

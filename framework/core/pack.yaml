@@ -1,6 +1,6 @@
 name: core
 version: "1.0.0"
-description: Base commands for development workflows (commit, plan, review, init, etc.)
+description: Base commands and skills for development workflows (commit, plan, review, init, etc.)
 assets:
   AGENTS.template.md: AGENTS.md
 scaffolds:

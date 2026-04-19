@@ -63,7 +63,7 @@ Assumes users will follow the defined workflows and keep documentation up-to-dat
 
 All workflows are implemented as **Skills** according to the [agentskills.io](https://agentskills.io/home) standard (folders with `SKILL.md`). At the framework source level they are split into two sibling directories per pack, which is the **primary classifier**:
 
-- **Commands** — `framework/<pack>/commands/<name>/SKILL.md`. User-only workflows. Invoked by the user (e.g. `/flowai-commit`); the agent does not auto-discover them. Names: `flowai-*`, `flowai-setup-*` (e.g. `flowai-commit`, `flowai-setup-agent-code-style-ts-deno`). Source SKILL.md MUST NOT declare `disable-model-invocation` — the CLI writer injects `disable-model-invocation: true` at sync time based on directory placement.
+- **Commands** — `framework/<pack>/commands/<name>/SKILL.md`. User-only workflows. Invoked by the user (e.g. `/flowai-commit`); the agent does not auto-discover them. Name: `flowai-*` but NOT `flowai-skill-*` (e.g. `flowai-commit`, `flowai-review-and-commit`, `flowai-update`). Source SKILL.md MUST NOT declare `disable-model-invocation` — the CLI writer injects `disable-model-invocation: true` at sync time based on directory placement.
 - **Skills** — `framework/<pack>/skills/<name>/SKILL.md`. Agent-invocable capabilities (e.g. `flowai-skill-draw-mermaid-diagrams`). Name: `flowai-skill-*`. Source SKILL.md MUST NOT declare `disable-model-invocation`.
 
 ### Two meanings of "command" — don't confuse them
@@ -200,7 +200,7 @@ Your memory resets between sessions. Documentation is the only link to past deci
 
 When a task creates a new framework primitive, decide the subdir FIRST:
 
-- **User-invoked via `/<name>`** (no model auto-discovery) → `framework/<pack>/commands/` with `flowai-*` or `flowai-setup-*` prefix. Examples: `/flowai-commit`, `/flowai-update`, `/flowai-adapt-instructions`.
+- **User-invoked via `/<name>`** (no model auto-discovery) → `framework/<pack>/commands/` with `flowai-*` prefix (but NOT `flowai-skill-*`). Examples: `/flowai-commit`, `/flowai-update`, `/flowai-review-and-commit`.
 - **Model auto-invocable** (skill activation by description match) → `framework/<pack>/skills/` with `flowai-skill-*` prefix. Examples: `flowai-skill-fix-tests`, `flowai-skill-deep-research`.
 
 Picking the wrong subdir fails `check-naming-prefix.ts` (NP-3) and requires a file move + SRS/SDS location edits. The CLI writer injects `disable-model-invocation: true` automatically for `commands/` — do NOT set it in source.

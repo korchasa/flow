@@ -93,7 +93,7 @@ To self-update the CLI binary only (no sync, no migration), run `flowai update` 
 
 flowai is a set of **Commands**, **Skills**, and **Agents** — markdown instruction files that AI coding assistants (Cursor, Claude Code, OpenCode, OpenAI Codex, etc.) load into context to follow structured workflows.
 
-- **Commands** (`framework/<pack>/commands/<name>/SKILL.md`) — user-invoked workflows (e.g. `/flowai-commit`, `/flowai-plan`). The agent does not auto-discover them.
+- **Commands** (`framework/<pack>/commands/<name>/SKILL.md`) — user-invoked workflows (e.g. `/flowai-commit`). The agent does not auto-discover them.
 - **Skills** (`framework/<pack>/skills/<name>/SKILL.md`) — agent-invocable capabilities. The agent picks them up automatically when relevant.
 - **Agents** (`framework/<pack>/agents/<name>/SUBAGENT.md`) — role definitions with specialized capabilities.
 - **Documentation** (`documents/`) — persistent project memory across sessions.
@@ -119,22 +119,22 @@ Base commands for development workflows (commit, plan, review, init, etc.).
 
 **Commands:**
 - `flowai-init` — project initialization (AGENTS.md, docs scaffolding, dev commands)
-- `flowai-plan` — task planning (GODS format)
 - `flowai-commit` — atomic commits with QA and self-reflection
 - `flowai-commit-beta` — streamlined commit (targeted doc sync, inline grouping)
-- `flowai-review` — QA + code review of current changes
 - `flowai-review-and-commit` — review quality, then commit if approved
 - `flowai-review-and-commit-beta` — streamlined review + commit (reuses diff across phases)
-- `flowai-reflect` — self-analysis of the current session
-- `flowai-reflect-by-history` — cross-session analysis of past IDE transcripts
-- `flowai-maintenance` — project health check
-- `flowai-investigate` — deep bug investigation
-- `flowai-epic` — structured feature specification
 - `flowai-update` — update flowai framework (sync skills/agents, migrate artifacts)
 - `flowai-adapt` — adapt installed skills/agents/hooks/assets to project specifics (standalone)
-- `flowai-adapt-instructions` — re-adapt root AGENTS.md after upstream template change
 
-**Setup:**
+**Skills:**
+- `flowai-skill-plan` — task planning (GODS format)
+- `flowai-skill-epic` — structured feature specification for multi-session features
+- `flowai-skill-review` — QA + code review of current changes
+- `flowai-skill-reflect` — self-analysis of the current session
+- `flowai-skill-reflect-by-history` — cross-session analysis of past IDE transcripts
+- `flowai-skill-investigate` — deep bug investigation via hypothesis-driven experiments
+- `flowai-skill-maintenance` — project health audit (8-category scan + interactive resolution)
+- `flowai-skill-adapt-instructions` — re-adapt root AGENTS.md after upstream template change
 - `flowai-skill-setup-ai-ide-devcontainer` — AI IDE devcontainer setup
 - `flowai-skill-configure-deno-commands` — configure Deno tasks
 
@@ -152,6 +152,7 @@ Procedural engineering knowledge (research, diagrams, writing, testing, etc.).
 - `flowai-skill-deep-research` — multi-source web research with sub-agents
 - `flowai-skill-draw-mermaid-diagrams` — Mermaid diagrams
 - `flowai-skill-fix-tests` — fix failing tests
+- `flowai-skill-jit-review` — JIT review: synthesize ephemeral tests that pass on parent and fail on diff
 - `flowai-skill-write-prd` — Product Requirements Documents
 - `flowai-skill-write-dep` — Development Enhancement Proposals
 - `flowai-skill-write-gods-tasks` — GODS-format tasks
@@ -191,9 +192,9 @@ Deno-specific skills.
 
 TypeScript-specific setup skills.
 
-**Setup:**
-- `flowai-setup-agent-code-style-ts-deno` — Deno/TS code style
-- `flowai-setup-agent-code-style-ts-strict` — strict TypeScript
+**Skills:**
+- `flowai-skill-setup-agent-code-style-ts-deno` — Deno/TS code style
+- `flowai-skill-setup-agent-code-style-ts-strict` — strict TypeScript
 
 ## CLI Commands
 
@@ -250,7 +251,7 @@ flowai loop "/flowai-skill-analyze-context"
 flowai loop --yolo --agent console-expert "list all TODO comments"
 
 # Repeated execution with pause
-flowai loop --yolo --interval 5m --max-iterations 10 "/flowai-maintenance"
+flowai loop --yolo --interval 5m --max-iterations 10 "/flowai-skill-maintenance"
 ```
 
 Options: `--agent`, `--model`, `--cwd`, `--yolo`, `--timeout`, `--interval`, `--max-iterations`. Run `flowai loop --help` for details.
@@ -269,15 +270,15 @@ Initialize the project structure and documentation:
 Every task follows the same supervised loop:
 
 1. **Task** — describe what needs to be done
-2. **Plan** (`flowai-plan`) — AI proposes a plan in GODS format. You review, adjust, approve
+2. **Plan** (`flowai-skill-plan`) — AI proposes a plan in GODS format. You review, adjust, approve
 3. **Execute** — AI implements the approved plan. You watch the diffs
 4. **Verify** — `deno task check` (or your project's equivalent) must pass. No exceptions
 5. **Review & Commit** (`flowai-review-and-commit`) — AI reviews changes, then prepares atomic commits. You review before push
 
 ### 3. Maintenance
 
-- `flowai-maintenance` — project health audit
-- `flowai-investigate` — root cause analysis for complex bugs
+- `flowai-skill-maintenance` — project health audit
+- `flowai-skill-investigate` — root cause analysis for complex bugs
 
 ## Key Principles
 

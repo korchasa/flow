@@ -50,7 +50,7 @@ Note: FR-DIST.MAPPING defines cross-IDE resource mapping; open questions need us
 ### FR-RULES: Rule Enforcement
 
 - **Description:** The system must automatically apply development rules and coding standards (code style, TDD, documentation).
-- **Acceptance verified by benchmarks:** `flowai-setup-agent-code-style-ts-deno-basic`, `flowai-setup-agent-code-style-ts-strict-basic`
+- **Acceptance verified by benchmarks:** `flowai-skill-setup-agent-code-style-ts-deno-basic`, `flowai-skill-setup-agent-code-style-ts-strict-basic`
 
 ### FR-DOCS: Documentation Management
 
@@ -258,25 +258,25 @@ All 41 skills have at least one benchmark scenario. Coverage is the source of tr
 - **Usage:**
   - `scope: project-only` on `flowai-update` — requires project context (CLI+sync+artifact migration).
   - `scope: global-only` reserved for future primitives that make no sense per-project.
-  - Absent on `flowai-adapt-instructions` and others — installable in both modes.
+  - Absent on `flowai-skill-adapt-instructions` and others — installable in both modes.
 - **Acceptance:**
   - [x] `scripts/resource-types.ts` Zod schema accepts `scope: "project-only" | "global-only"` (optional).
     Evidence: `scripts/check-skills_test.ts::validateScopeField`.
   - [x] CLI filter in `cli/src/sync.ts::resolvePackResources` excludes `scope: project-only` primitives when scope=global, excludes `scope: global-only` when scope=project.
     Evidence: `cli/src/sync_test.ts::scope filter respects global mode` + `cli/src/sync_test.ts::scope filter respects project mode`.
 
-#### FR-ADAPT-INSTRUCTIONS Standalone AGENTS.md Re-Adaptation — `flowai-adapt-instructions`
+#### FR-ADAPT-INSTRUCTIONS Standalone AGENTS.md Re-Adaptation — `flowai-skill-adapt-instructions`
 
 - **Desc:** Standalone skill that re-adapts the project's AGENTS.md when the upstream template changes significantly. Reads the installed template from `{ide}/assets/AGENTS.template.md` (path resolved per scope), diffs it against `<cwd>/AGENTS.md`, proposes a merge preserving project-specific sections, shows the diff, and writes on user approval. Installable in both scopes (no `scope:` field).
-- **Scenario:** User updates flowai → new template lands in `~/.claude/assets/AGENTS.template.md` (global) or `.claude/assets/AGENTS.template.md` (project). User invokes `/flowai-adapt-instructions` → agent reads template, diffs with project AGENTS.md, shows merged proposal, asks confirmation, writes on approval.
-- **Acceptance verified by benchmark:** `flowai-adapt-instructions-basic`.
+- **Scenario:** User updates flowai → new template lands in `~/.claude/assets/AGENTS.template.md` (global) or `.claude/assets/AGENTS.template.md` (project). User invokes `/flowai-skill-adapt-instructions` → agent reads template, diffs with project AGENTS.md, shows merged proposal, asks confirmation, writes on approval.
+- **Acceptance verified by benchmark:** `flowai-skill-adapt-instructions-basic`.
 - **Acceptance criteria:**
-  - [x] Skill lives at `framework/core/commands/flowai-adapt-instructions/SKILL.md` (user-invoked, `flowai-*` prefix per FR-PACKS.STRUCT naming).
+  - [x] Skill lives at `framework/core/skills/flowai-skill-adapt-instructions/SKILL.md` (agent-auto-invocable, `flowai-skill-*` prefix per FR-PACKS.STRUCT naming).
     Evidence: file existence.
   - [x] SKILL.md body references `{ide}/assets/AGENTS.template.md` (no template duplication inside the skill).
-    Evidence: `grep -n "AGENTS.template.md" framework/core/commands/flowai-adapt-instructions/SKILL.md`.
-  - [x] Benchmark `flowai-adapt-instructions-basic` verifies the read-template → diff → merge → confirm flow.
-    Evidence: `framework/core/commands/flowai-adapt-instructions/benchmarks/basic/mod.ts`.
+    Evidence: `grep -n "AGENTS.template.md" framework/core/skills/flowai-skill-adapt-instructions/SKILL.md`.
+  - [x] Benchmark `flowai-skill-adapt-instructions-basic` verifies the read-template → diff → merge → confirm flow.
+    Evidence: `framework/core/skills/flowai-skill-adapt-instructions/benchmarks/basic/mod.ts`.
 
 #### FR-DIST.FILTER Selective Sync
 - **Desc:** `.flowai.yaml` controls which skills/agents to sync.
@@ -713,8 +713,8 @@ All 41 skills have at least one benchmark scenario. Coverage is the source of tr
 
 ### FR-REFLECT: Reflection with Session History Search and Self-Criticism
 
-- **Description:** Reflection skills (`flowai-reflect`, `flowai-reflect-by-history`) must search session history for similar errors/mistakes, identify patterns, and include findings in output. Before presenting the final report, the agent must perform self-criticism — validate findings, check for false positives and blind spots, evaluate proportionality of proposed fixes, and revise the report accordingly.
-- **Acceptance verified by benchmarks:** `flowai-reflect-session-history-pattern`, `flowai-reflect-context-inefficiency`, `flowai-reflect-process-loop`, `flowai-reflect-self-criticism`, `flowai-reflect-by-history-self-criticism`
+- **Description:** Reflection skills (`flowai-skill-reflect`, `flowai-skill-reflect-by-history`) must search session history for similar errors/mistakes, identify patterns, and include findings in output. Before presenting the final report, the agent must perform self-criticism — validate findings, check for false positives and blind spots, evaluate proportionality of proposed fixes, and revise the report accordingly.
+- **Acceptance verified by benchmarks:** `flowai-skill-reflect-session-history-pattern`, `flowai-skill-reflect-context-inefficiency`, `flowai-skill-reflect-process-loop`, `flowai-skill-reflect-self-criticism`, `flowai-skill-reflect-by-history-self-criticism`
 
 ### FR-CICD: CI/CD Pipeline Security
 
@@ -733,11 +733,33 @@ All 41 skills have at least one benchmark scenario. Coverage is the source of tr
 
 ### FR-REVIEW-SPLIT: Responsibility Separation: Review vs Commit
 
-- **Description:** Clear separation of concerns between `flowai-review` and `flowai-commit`:
+- **Description:** Clear separation of concerns between `flowai-skill-review` and `flowai-commit`:
   - Review owns: project checks (lint/test), hygiene scan, code quality verdict
   - Commit owns: documentation audit, atomic grouping, commit execution, task file cleanup
   - Review MUST NOT do atomic commit grouping (SA3). Commit MUST NOT run project checks.
-- **Acceptance verified by benchmarks:** `flowai-commit-no-checks`, `flowai-review-no-grouping`
+- **Acceptance verified by benchmarks:** `flowai-commit-no-checks`, `flowai-skill-review-no-grouping`
+
+### FR-JIT-REVIEW: JIT Review Skill — `flowai-skill-jit-review`
+
+- **Description:** Agent-invocable skill that, given a diff (staged, unstaged, or commit-range), synthesizes ephemeral **Catching JiTTests** — temporary tests that pass on the parent revision and fail on the diff revision. Adapts Meta's Intent-Aware JiTTests pipeline (FSE 2026) to flowai's language-agnostic `test`-command interface declared in AGENTS.md.
+- **Scope:** Lives under `framework/engineering/skills/flowai-skill-jit-review/`. Model-invocable (no `disable-model-invocation`). Triggered by user queries such as "check my staged changes for hidden bugs", "do a JIT review of this commit", "insure against regression".
+- **Scenario:** Developer prepares a diff (staged or unstaged). They ask the agent for a JIT review. The agent:
+  1. Collects the diff target (staged / unstaged / range) and resolves the parent revision via `git worktree add`.
+  2. Runs the declared `test` command on parent; aborts if parent baseline is red.
+  3. Infers ≤5 intents per diff and ≤3 risks per intent.
+  4. Synthesizes one mutant per risk (≤15 mutants total); skips on pure code deletion.
+  5. Writes catching-test candidates into an ephemeral directory (outside the main test tree, not under git, stable within session).
+  6. Dual-runs tests on parent and diff; optionally mutant-probes unless the time-budget degradation is active (>30s per test run).
+  7. Filters flaky / duplicate / zero-kill tests.
+  8. Reports the top-5 catching tests, uncovered risks, and degradation notes.
+  9. Interactively asks the user to `save` (move to main test tree) or `discard` (delete scratch dir).
+- **Constraints:**
+  - Language-agnostic: MUST use the `test`-command declared in AGENTS.md "Development Commands"; MUST NOT hardcode stack-specific runners (deno/npm/pytest/etc.).
+  - Fail-fast: if AGENTS.md declares no `test`- or `check`-command, skill aborts with a clear error and does not guess.
+  - MUST NOT modify production code; MUST NOT write tests into the main test tree without explicit user consent.
+  - Diff > ~10 files or > ~500 LOC → warn the user and suggest splitting.
+  - Mutant budget: ≤5 intents × ≤3 risks × 1 mutant = ≤15 mutants. Report top-5 catching tests by severity × uniqueness.
+- **Acceptance verified by benchmarks:** `flowai-skill-jit-review-catch-regression`, `flowai-skill-jit-review-no-change-no-alarm`
 
 ### FR-LOOP: Non-Interactive Runner — `flowai loop`
 

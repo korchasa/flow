@@ -16,9 +16,12 @@ Deno.test("validateNamingPrefix: command name flowai-* passes", () => {
   assertEquals(validateNamingPrefix("flowai-commit", "command"), []);
 });
 
-Deno.test("validateNamingPrefix: command name flowai-setup-* passes", () => {
+Deno.test("validateNamingPrefix: skill name flowai-skill-setup-* passes", () => {
   assertEquals(
-    validateNamingPrefix("flowai-setup-agent-code-style-ts-deno", "command"),
+    validateNamingPrefix(
+      "flowai-skill-setup-agent-code-style-ts-deno",
+      "skill",
+    ),
     [],
   );
 });

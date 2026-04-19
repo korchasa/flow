@@ -114,7 +114,7 @@ The project follows Conventional Commits 1.0.0 and uses a structured documentati
      - User corrected the agent's approach or output.
      - Workarounds or non-obvious solutions were applied.
    - If **any** of these signals are detected, suggest:
-     "This session had [errors/retries/corrections/workarounds]. Consider running `/flowai-reflect` to capture improvements for project instructions."
+     "This session had [errors/retries/corrections/workarounds]. Consider running `/flowai-skill-reflect` to capture improvements for project instructions."
    - If none detected, skip silently.
 </step_by_step>
 
@@ -127,5 +127,5 @@ The project follows Conventional Commits 1.0.0 and uses a structured documentati
 - [ ] Commits executed automatically without user prompt.
 - [ ] Conventional Commits format used.
 - [ ] Task file cleanup: completed task files deleted, partial task files confirmed with user.
-- [ ] Session complexity check performed; `/flowai-reflect` suggested if signals detected.
+- [ ] Session complexity check performed; `/flowai-skill-reflect` suggested if signals detected.
 </verification>

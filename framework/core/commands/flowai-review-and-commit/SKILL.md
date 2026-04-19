@@ -1,6 +1,6 @@
 ---
 name: flowai-review-and-commit
-description: "Composite command: review changes then commit only if approved. Inlines flowai-review and flowai-commit with a verdict gate between them."
+description: "Composite command: review changes then commit only if approved. Inlines flowai-skill-review and flowai-commit with a verdict gate between them."
 ---
 
 # Task: Review and Commit
@@ -16,14 +16,14 @@ get committed.
 <context>
 The user has completed a coding task and wants a single command to review and
 commit. This command inlines both workflows:
-1. **Phase 1 — Review** (from `flowai-review`): QA + code review, produces verdict
+1. **Phase 1 — Review** (from `flowai-skill-review`): QA + code review, produces verdict
 2. **Phase 2 — Commit** (from `flowai-commit`): documentation audit, verification,
    atomic grouping, commit
 
 The gate logic prevents committing code that has critical issues.
 
 NOTE: The step_by_step sections of Phase 1 and Phase 2 are kept in sync with
-flowai-review/SKILL.md and flowai-commit/SKILL.md respectively. The sync check
+flowai-skill-review/SKILL.md and flowai-commit/SKILL.md respectively. The sync check
 script (scripts/check-skill-sync.ts) verifies this — if you change one, update
 the other.
 </context>
@@ -282,7 +282,7 @@ After completing the review report above:
      - User corrected the agent's approach or output.
      - Workarounds or non-obvious solutions were applied.
    - If **any** of these signals are detected, suggest:
-     "This session had [errors/retries/corrections/workarounds]. Consider running `/flowai-reflect` to capture improvements for project instructions."
+     "This session had [errors/retries/corrections/workarounds]. Consider running `/flowai-skill-reflect` to capture improvements for project instructions."
    - If none detected, skip silently.
 </step_by_step>
 
@@ -303,6 +303,6 @@ Output a combined summary:
 [ ] Changes grouped by logical purpose.
 [ ] Commits executed with Conventional Commits format.
 [ ] Task file cleanup: completed task files deleted, partial task files confirmed with user.
-[ ] Session complexity check performed; `/flowai-reflect` suggested if signals detected.
+[ ] Session complexity check performed; `/flowai-skill-reflect` suggested if signals detected.
 [ ] Both review and commit results reported to user.
 </verification>

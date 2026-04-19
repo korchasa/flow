@@ -3,7 +3,7 @@ import { findCrossPackRefs } from "./check-pack-refs.ts";
 
 const primitiveMap = new Map([
   ["flowai-commit", "core"],
-  ["flowai-plan", "core"],
+  ["flowai-skill-plan", "core"],
   ["flowai-skill-fix-tests", "engineering"],
   ["flowai-skill-deep-research", "engineering"],
   ["flowai-skill-engineer-skill", "devtools"],
@@ -92,7 +92,7 @@ Deno.test("pack-refs: no references means no errors", () => {
 });
 
 Deno.test("pack-refs: core referencing core is OK", () => {
-  const content = "See `flowai-plan` for planning.";
+  const content = "See `flowai-skill-plan` for planning.";
   const errors = findCrossPackRefs(
     content,
     "core",

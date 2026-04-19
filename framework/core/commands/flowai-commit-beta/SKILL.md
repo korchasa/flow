@@ -113,8 +113,8 @@ The project follows Conventional Commits 1.0.0 and uses a structured documentati
      - User corrected the agent's approach or output.
      - Workarounds or non-obvious solutions were applied.
    - If **any** of these signals are detected:
-     a. Announce briefly which signals fired (one line, e.g., "Detected retries and user correction — running /flowai-reflect").
-     b. Invoke the `flowai-reflect` skill directly (via the Skill tool, native slash-command execution, or inline execution of its `SKILL.md` instructions — whichever the host IDE supports).
+     a. Announce briefly which signals fired (one line, e.g., "Detected retries and user correction — running /flowai-skill-reflect").
+     b. Invoke the `flowai-skill-reflect` skill directly (via the Skill tool, native slash-command execution, or inline execution of its `SKILL.md` instructions — whichever the host IDE supports).
      c. Do NOT ask the user for confirmation; proceed autonomously.
    - If none detected, skip silently.
 </step_by_step>
@@ -128,5 +128,5 @@ The project follows Conventional Commits 1.0.0 and uses a structured documentati
 - [ ] Commits executed automatically without user prompt.
 - [ ] Conventional Commits format used.
 - [ ] Task file cleanup: completed task files deleted, partial task files confirmed with user.
-- [ ] Session complexity check performed; `/flowai-reflect` auto-invoked if signals detected.
+- [ ] Session complexity check performed; `/flowai-skill-reflect` auto-invoked if signals detected.
 </verification>

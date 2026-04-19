@@ -57,9 +57,8 @@
 - **No inter-pack dependencies:** Each pack is self-contained. Enforced by `check-pack-refs.ts` (core→non-core and non-core-A→non-core-B references are errors; any→core and intra-pack are OK).
 - **Naming:** Directory names inside packs are the full installed names (e.g., `flowai-commit/`, `flowai-skill-write-dep/`). flowai copies them as-is — no name transformation at install time.
 - **Categories (by installed prefix):**
-  - `flowai-*`: Command-like skills (e.g., `flowai-commit`, `flowai-plan`).
-  - `flowai-skill-*`: Practical guides (e.g., `flowai-skill-fix-tests`).
-  - `flowai-setup-*`: One-time setup skills (e.g., `flowai-setup-code-style-ts-deno`).
+  - `flowai-*` (not `flowai-skill-*`): User-only commands (e.g., `flowai-commit`, `flowai-review-and-commit`, `flowai-update`).
+  - `flowai-skill-*`: Agent-auto-invocable skills (e.g., `flowai-skill-plan`, `flowai-skill-fix-tests`, `flowai-skill-setup-agent-code-style-ts-deno`).
 - **Composition**: Skills can delegate to other skills (e.g., `flowai-init` delegates development command configuration to `flowai-skill-configure-*-commands`).
 - **Script independence:** Scripts in pack `scripts/` are installed into user projects without a shared `deno.json`. They MUST be runnable standalone:
   - Use `jsr:` specifiers for Deno std imports (e.g., `jsr:@std/path`), NOT bare specifiers (`@std/path`).
@@ -241,13 +240,13 @@ graph TD
 - **Distribution:** JSR via `deno publish`. `bundled.json` generated at publish time from `framework/*/`. No build step for TS.
 - **Scope + global mode (FR-DIST.GLOBAL):** `SyncScope = "project" | "global"` threaded via `cli/src/scope.ts`. CLI exposes three mutually exclusive flags on `flowai` / `flowai sync`: `--global` / `-g` (force global), `--local` / `-l` (force project), `--auto` (default). **Resolution in `--auto`** (via `resolveAutoScope(cwd, home, fs)` in `scope.ts`): (1) `<cwd>/.flowai.yaml` exists → `"project"`; (2) else `~/.flowai.yaml` exists → `"global"` (CLI logs `Using global config at ~/.flowai.yaml`); (3) both missing → `null` (caller prompts interactively, or defaults to global in `-y` mode). **Explicit flags** skip the ladder: `--global` loads/creates `~/.flowai.yaml`, `--local` loads/creates `<cwd>/.flowai.yaml`; conflicting flags (`--global` + `--local`) exit non-zero. **`migrate` subcommand** requires explicit `--global`/`--local`; no auto-resolution. **IDE guard** (`isInsideIDE()`) fires only when resolved scope is `"project"`; global scope bypasses the guard. Project mode: targets `<cwd>/.{ide}/`, scaffolds + artifact sync enabled, hooks merged into `<cwd>/.claude/settings.json`. Global mode: targets per IDE native user dir (see Components bullet for `scope.ts`), scaffolds + artifact sync SKIPPED (templates still install), hooks merged into `~/.claude/settings.json` (same manifest-based logic). `resolvePackResources()` filters by the `scope:` frontmatter field: `project-only` primitives skipped in global mode, `global-only` primitives skipped in project mode, absent = both (FR-PACKS.SCOPE).
 
-### 3.5.1 AGENTS.md Re-Adaptation Skill — `flowai-adapt-instructions`
+### 3.5.1 AGENTS.md Re-Adaptation Skill — `flowai-skill-adapt-instructions`
 
 - **Purpose:** Standalone skill (installable in both scopes) that re-adapts the project's AGENTS.md when the upstream template changes significantly. Reads the installed template (`{ide}/assets/AGENTS.template.md`, path resolved per scope), diffs against `<cwd>/AGENTS.md`, proposes a merge preserving project-specific sections, writes on user approval.
-- **Location:** `framework/core/commands/flowai-adapt-instructions/SKILL.md` + `benchmarks/basic/mod.ts` (user-invoked, so placed under `commands/` per FR-PACKS.STRUCT naming).
+- **Location:** `framework/core/skills/flowai-skill-adapt-instructions/SKILL.md` + `benchmarks/basic/mod.ts` (agent-auto-invocable, placed under `skills/` with `flowai-skill-*` prefix per FR-PACKS.STRUCT naming).
 - **No template duplication:** The skill does NOT carry its own copy of the AGENTS.md template. It relies on the pack-level asset installed by `flowai sync` into `{ide}/assets/`.
-- **Relation to `flowai-update`:** `flowai-update` (scope: `project-only`) delegates the AGENTS.md migration step to `/flowai-adapt-instructions` rather than re-implementing template diffing.
-- **Behavioral requirements:** See benchmark `flowai-adapt-instructions-basic`.
+- **Relation to `flowai-update`:** `flowai-update` (scope: `project-only`) delegates the AGENTS.md migration step to `/flowai-skill-adapt-instructions` rather than re-implementing template diffing.
+- **Behavioral requirements:** See benchmark `flowai-skill-adapt-instructions-basic`.
 
 ### 3.6 Migrate Command — FR-DIST.MIGRATE (`cli/src/migrate.ts`)
 
@@ -324,6 +323,32 @@ graph TD
 - **Git tracking:** Adaptation state tracked through git history. Working tree = current version; `git show HEAD:<path>` = previous adapted version. No extra metadata fields.
 - **Relation to flowai-update:** `flowai-update` ties adaptation to the sync cycle. `flowai-adapt` runs standalone — after first install, stack change, or selectively.
 - **Behavioral requirements:** See benchmarks `flowai-adapt-skills-basic`, `flowai-adapt-agents-basic`.
+
+### 3.13 JIT Review Skill — `flowai-skill-jit-review`
+
+- **Purpose:** Diff-centric risk hunter. Generates ephemeral "Catching JiTTests" — tests that pass on parent and fail on diff — to catch regressions the author missed, without polluting the static test suite. Implements FR-JIT-REVIEW.
+- **Location:** `framework/engineering/skills/flowai-skill-jit-review/SKILL.md`. Model-invocable (no `disable-model-invocation`).
+- **Dependencies:**
+  - `git` (worktree, diff, log, show) for diff collection and parent reconstruction.
+  - `test` / `check` command declared in the project's AGENTS.md "Development Commands" section — the only stack integration point.
+  - `gh pr view` (optional) for PR-body intent hints; falls back to commit message if unavailable.
+- **Interface:** Triggered by user queries matching descriptions like "check diff for hidden bugs", "JIT review this commit", "insure against regression". Takes optional diff scope hint (staged / unstaged / `<sha>..<sha>`). Returns a markdown report with catching tests, uncovered risks, and next-step prompt (save / discard).
+- **Pipeline (Intent-Aware, adapted from Meta JiTTests):**
+  1. **Scope & diff collection** — select staged / unstaged / commit-range; collect parent sources via `git worktree add <session-scoped-name>` (fallback: `git show HEAD:<path>`); gather intent hints from commit message + optional PR body.
+  2. **Parent baseline** — run the AGENTS.md `test` command in the worktree; abort if parent is red.
+  3. **Intent inference** — ≤5 intents per diff: "what the author tried to do" + "what invariants should hold".
+  4. **Risk modeling** — ≤3 hypotheses per intent: targeted failure modes tied to that intent (not generic code smells).
+  5. **Mutant synthesis** — one mutant patch per risk modeling a specific failure (swapped comparator, removed guard, inverted return, skipped branch). Empty list allowed for pure-deletion diffs.
+  6. **Test synthesis** — one test per mutant, written to an agent-chosen ephemeral directory (outside main test tree, not under git, session-stable).
+  7. **Dual-run verification** — (a) parent: must pass; (b) diff: failures = catching tests; (c) mutants: kill-rate probe. Sub-stage (c) is **skipped under time-budget degradation** (single `test`-run > 30 s) while preserving the catching invariant.
+  8. **Filter ensemble** — drop flaky (inconsistent across repeats), assertion-duplicates, and zero-kill tests (if 7c ran).
+  9. **Report** — top-5 catching tests by severity × uniqueness, uncovered risks, explicit degradation notes. Diff > ~10 files or > ~500 LOC → warn and suggest splitting.
+  10. **Ephemeral dispose** — interactive prompt: `save` moves a test into the main test tree (agent proposes a path); `discard` deletes the scratch directory.
+- **Test-catalogue criterion:** A test `T` is *catching* for diff `D` iff `T` passes on `parent(D)` and fails on `D`. This is the only objective signal; other metrics (mutant kill-rate, LOC coverage) are auxiliary.
+- **Ephemeral-directory rules:** (a) outside main test tree; (b) not in git (under `.gitignore` or system temp); (c) stable path within the session so the skill can relocate tests if the user says `save`; (d) deleted on `discard`. Agent picks the concrete path from context.
+- **Budget:** ≤5 intents × ≤3 risks × 1 mutant = ≤15 mutants. After dedup / filter, typically 5–10 tests; user sees the top 5.
+- **Fail-fast:** If AGENTS.md declares no `test`- or `check`-command, the skill aborts with an explicit error — no guessing (`npm test`, `pytest`, etc.).
+- **Behavioral requirements:** See benchmarks `flowai-skill-jit-review-catch-regression`, `flowai-skill-jit-review-no-change-no-alarm`.
 
 ## 4. Data and Storage
 

@@ -178,17 +178,17 @@ Deno.test("extractPackCommandNames - extracts commands within a pack", () => {
     "framework/core/pack.yaml",
     "framework/core/commands/flowai-commit/SKILL.md",
     "framework/core/commands/flowai-commit/scripts/helper.ts",
-    "framework/core/commands/flowai-plan/SKILL.md",
+    "framework/core/commands/flowai-review-and-commit/SKILL.md",
     "framework/core/skills/flowai-skill-foo/SKILL.md",
-    "framework/typescript/commands/flowai-setup-agent-code-style-ts-deno/SKILL.md",
+    "framework/typescript/commands/flowai-bar/SKILL.md",
   ];
   assertEquals(
     extractPackCommandNames(paths, "core"),
-    ["flowai-commit", "flowai-plan"],
+    ["flowai-commit", "flowai-review-and-commit"],
   );
   assertEquals(
     extractPackCommandNames(paths, "typescript"),
-    ["flowai-setup-agent-code-style-ts-deno"],
+    ["flowai-bar"],
   );
   assertEquals(extractPackCommandNames(paths, "nonexistent"), []);
 });
@@ -205,10 +205,13 @@ Deno.test("extractCommandNames - extracts unique command names (legacy flat)", (
   const paths = [
     "framework/commands/flowai-commit/SKILL.md",
     "framework/commands/flowai-commit/refs/a.md",
-    "framework/commands/flowai-plan/SKILL.md",
+    "framework/commands/flowai-skill-plan/SKILL.md",
     "framework/skills/flowai-skill-foo/SKILL.md",
   ];
-  assertEquals(extractCommandNames(paths), ["flowai-commit", "flowai-plan"]);
+  assertEquals(extractCommandNames(paths), [
+    "flowai-commit",
+    "flowai-skill-plan",
+  ]);
 });
 
 Deno.test("extractPackAgentNames - extracts agents within a pack", () => {

@@ -17,7 +17,7 @@ doc sync, inline commit grouping.
 <context>
 The user has completed a coding task and wants a single command to review and
 commit. This command inlines both workflows:
-1. **Phase 1 — Review** (from `flowai-review`): QA + code review, produces verdict
+1. **Phase 1 — Review** (from `flowai-skill-review`): QA + code review, produces verdict
 2. **Phase 2 — Commit** (from `flowai-commit-beta`): targeted doc sync, inline
    grouping, commit
 
@@ -277,8 +277,8 @@ After completing the review report above:
      - User corrected the agent's approach or output.
      - Workarounds or non-obvious solutions were applied.
    - If **any** of these signals are detected:
-     a. Announce briefly which signals fired (one line, e.g., "Detected retries and user correction — running /flowai-reflect").
-     b. Invoke the `flowai-reflect` skill directly (via the Skill tool, native slash-command execution, or inline execution of its `SKILL.md` instructions — whichever the host IDE supports).
+     a. Announce briefly which signals fired (one line, e.g., "Detected retries and user correction — running /flowai-skill-reflect").
+     b. Invoke the `flowai-skill-reflect` skill directly (via the Skill tool, native slash-command execution, or inline execution of its `SKILL.md` instructions — whichever the host IDE supports).
      c. Do NOT ask the user for confirmation; proceed autonomously.
    - If none detected, skip silently.
 </step_by_step>
@@ -300,6 +300,6 @@ Output a combined summary:
 [ ] Changes grouped by logical purpose.
 [ ] Commits executed with Conventional Commits format.
 [ ] Task file cleanup: completed task files deleted, partial task files confirmed with user.
-[ ] Session complexity check performed; `/flowai-reflect` auto-invoked if signals detected.
+[ ] Session complexity check performed; `/flowai-skill-reflect` auto-invoked if signals detected.
 [ ] Both review and commit results reported to user.
 </verification>

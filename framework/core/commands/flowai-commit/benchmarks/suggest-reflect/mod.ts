@@ -4,7 +4,7 @@ import { BenchmarkSkillScenario } from "@bench/types.ts";
 export const CommitSuggestReflectBench = new class
   extends BenchmarkSkillScenario {
   id = "flowai-commit-suggest-reflect";
-  name = "Suggest /flowai-reflect after error-prone session";
+  name = "Suggest /flowai-skill-reflect after error-prone session";
   skill = "flowai-commit";
   stepTimeoutMs = 300_000;
   agentsTemplateVars = {
@@ -16,7 +16,7 @@ export const CommitSuggestReflectBench = new class
     commits: [],
     modified: ["utils.ts"],
     expectedOutcome:
-      "Agent commits utils.ts and suggests running /flowai-reflect",
+      "Agent commits utils.ts and suggests running /flowai-skill-reflect",
   };
 
   override async setup(sandboxPath: string) {
@@ -52,7 +52,7 @@ export const CommitSuggestReflectBench = new class
     {
       id: "suggest_reflect",
       description:
-        "Does the agent suggest running `/flowai-reflect` (or mention reflect) after committing, based on the session having errors/retries/workarounds?",
+        "Does the agent suggest running `/flowai-skill-reflect` (or mention reflect) after committing, based on the session having errors/retries/workarounds?",
       critical: true,
     },
   ];

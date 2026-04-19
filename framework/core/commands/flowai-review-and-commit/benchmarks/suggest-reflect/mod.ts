@@ -20,7 +20,7 @@ export const SuggestReflectBench = new class extends BenchmarkSkillScenario {
     }],
     untracked: ["utils.ts"],
     expectedOutcome:
-      "Agent reviews untracked utils.ts, approves, commits, and suggests /flowai-reflect due to complex session",
+      "Agent reviews untracked utils.ts, approves, commits, and suggests /flowai-skill-reflect due to complex session",
   };
 
   override async setup(sandboxPath: string) {
@@ -66,7 +66,7 @@ Keep answers brief and affirmative.`;
     {
       id: "suggest_reflect",
       description:
-        "Did the agent suggest running `/flowai-reflect` (or mention flowai-reflect) after committing, citing session complexity signals like errors, retries, or user corrections?",
+        "Did the agent suggest running `/flowai-skill-reflect` (or mention flowai-skill-reflect) after committing, citing session complexity signals like errors, retries, or user corrections?",
       critical: true,
     },
   ];

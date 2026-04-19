@@ -39,7 +39,7 @@ Deno.test("filterNames - include takes precedence (exclude ignored if include se
 const PACK_PATHS = [
   "framework/core/pack.yaml",
   "framework/core/commands/flowai-commit/SKILL.md",
-  "framework/core/commands/flowai-plan/SKILL.md",
+  "framework/core/skills/flowai-skill-plan/SKILL.md",
   "framework/core/agents/flowai-console-expert.md",
   "framework/deno/pack.yaml",
   "framework/deno/skills/flowai-skill-deno-cli/SKILL.md",
@@ -59,34 +59,38 @@ function makeConfig(overrides: Partial<FlowConfig> = {}): FlowConfig {
 Deno.test("resolvePackResources - selects resources from specified packs", () => {
   const config = makeConfig({ packs: ["core"] });
   const result = resolvePackResources(PACK_PATHS, config);
-  assertEquals(result.skillNames, []);
-  assertEquals(result.commandNames, ["flowai-commit", "flowai-plan"]);
+  assertEquals(result.commandNames, ["flowai-commit"]);
+  assertEquals(result.skillNames, ["flowai-skill-plan"]);
   assertEquals(result.agentNames, ["flowai-console-expert"]);
 });
 
 Deno.test("resolvePackResources - packs: [] defaults to core only", () => {
   const config = makeConfig({ packs: [] });
   const result = resolvePackResources(PACK_PATHS, config);
-  assertEquals(result.commandNames, ["flowai-commit", "flowai-plan"]);
-  assertEquals(result.skillNames, []);
+  assertEquals(result.commandNames, ["flowai-commit"]);
+  assertEquals(result.skillNames, ["flowai-skill-plan"]);
   assertEquals(result.agentNames, ["flowai-console-expert"]);
 });
 
 Deno.test("resolvePackResources - packs: undefined (v1 legacy) selects all", () => {
   const config = makeConfig({ packs: undefined });
   const result = resolvePackResources(PACK_PATHS, config);
-  assertEquals(result.commandNames, ["flowai-commit", "flowai-plan"]);
-  assertEquals(result.skillNames, ["flowai-skill-deno-cli"]);
+  assertEquals(result.commandNames, ["flowai-commit"]);
+  assertEquals(result.skillNames, [
+    "flowai-skill-deno-cli",
+    "flowai-skill-plan",
+  ]);
   assertEquals(result.agentNames, ["flowai-console-expert"]);
 });
 
 Deno.test("resolvePackResources - applies commands.exclude after pack expansion", () => {
   const config = makeConfig({
     packs: ["core"],
-    commands: { include: [], exclude: ["flowai-plan"] },
+    commands: { include: [], exclude: ["flowai-commit"] },
   });
   const result = resolvePackResources(PACK_PATHS, config);
-  assertEquals(result.commandNames, ["flowai-commit"]);
+  assertEquals(result.commandNames, []);
+  assertEquals(result.skillNames, ["flowai-skill-plan"]);
 });
 
 Deno.test("resolvePackResources - applies skills.include after pack expansion", () => {
@@ -364,29 +368,35 @@ Deno.test("resolvePackResources - returns commandNames alongside skillNames", ()
   const paths = [
     "framework/core/pack.yaml",
     "framework/core/commands/flowai-commit/SKILL.md",
-    "framework/core/commands/flowai-plan/SKILL.md",
+    "framework/core/commands/flowai-review-and-commit/SKILL.md",
     "framework/core/skills/flowai-skill-foo/SKILL.md",
   ];
   const config = makeConfig({ packs: ["core"] });
   const result = resolvePackResources(paths, config);
   assertEquals(result.skillNames, ["flowai-skill-foo"]);
-  assertEquals(result.commandNames, ["flowai-commit", "flowai-plan"]);
-  assertEquals(result.allCommandNames, ["flowai-commit", "flowai-plan"]);
+  assertEquals(result.commandNames, [
+    "flowai-commit",
+    "flowai-review-and-commit",
+  ]);
+  assertEquals(
+    result.allCommandNames,
+    ["flowai-commit", "flowai-review-and-commit"],
+  );
 });
 
 Deno.test("resolvePackResources - applies commands.exclude after pack expansion", () => {
   const paths = [
     "framework/core/pack.yaml",
     "framework/core/commands/flowai-commit/SKILL.md",
-    "framework/core/commands/flowai-plan/SKILL.md",
+    "framework/core/commands/flowai-skill-plan/SKILL.md",
   ];
   const config = makeConfig({
     packs: ["core"],
-    commands: { include: [], exclude: ["flowai-plan"] },
+    commands: { include: [], exclude: ["flowai-skill-plan"] },
   });
   const result = resolvePackResources(paths, config);
   assertEquals(result.commandNames, ["flowai-commit"]);
-  assertEquals(result.allCommandNames, ["flowai-commit", "flowai-plan"]);
+  assertEquals(result.allCommandNames, ["flowai-commit", "flowai-skill-plan"]);
 });
 
 // --- Pack asset sync tests ---
