@@ -1,0 +1,33 @@
+{
+  "schema": 1,
+  "key": "9efcde3d19ace4ffe5fe6375fcb9a223f41a5d45fa7f053587286060740be243",
+  "scenarioId": "flowai-init-claude-md-symlinks",
+  "ide": "claude",
+  "agentModel": "claude-sonnet-4-6",
+  "recordedAt": "2026-04-19T23:34:43.207Z",
+  "result": {
+    "success": true,
+    "score": 100,
+    "errorsCount": 0,
+    "warningsCount": 0,
+    "durationMs": 306512.50633400003,
+    "tokensUsed": 0,
+    "totalCost": 0,
+    "toolCallsCount": 0,
+    "model": "claude-sonnet-4-6",
+    "checklistResults": {
+      "agents_md_created": {
+        "pass": true,
+        "reason": "AGENTS.md exists in the root directory. It was initially created in the setup commit and the agent populated it with architecture, key decisions, documentation map, and detected commands sections dur…"
+      },
+      "claude_md_root_symlink": {
+        "pass": true,
+        "reason": "CLAUDE.md exists in the root directory as a symlink pointing to AGENTS.md. This was established in the initial setup commit (git log shows 'CLAUDE.md | 1 +' with a symlink). The agent detected it was…"
+      },
+      "no_hallucinations": {
+        "pass": true,
+        "reason": "AGENTS.md accurately reflects only what exists in the project: Deno runtime (confirmed by deno.json), TypeScript (src/main.ts), single CLI script entry at src/main.ts (confirmed by file read showing …"
+      }
+    }
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "schema": 1,
+  "key": "aeb0c78b1220d3fe8f5955c89e75977dd84ba2daafdfebaacc7d9fc71ea390da",
+  "scenarioId": "flowai-init-vision-integration",
+  "ide": "claude",
+  "agentModel": "claude-sonnet-4-6",
+  "recordedAt": "2026-04-19T23:34:43.208Z",
+  "result": {
+    "success": true,
+    "score": 100,
+    "errorsCount": 0,
+    "warningsCount": 0,
+    "durationMs": 213483.84308300028,
+    "tokensUsed": 0,
+    "totalCost": 0,
+    "toolCallsCount": 0,
+    "model": "claude-sonnet-4-6",
+    "checklistResults": {
+      "agents_md_created": {
+        "pass": true,
+        "reason": "AGENTS.md exists and was modified by the agent. The git status shows 'modified: AGENTS.md' and the full file content is provided in the diffs, confirming it exists with content populated from intervi…"
+      },
+      "vision_in_agents_md": {
+        "pass": true,
+        "reason": "The AGENTS.md diff clearly shows the Vision section was populated with SuperApp details: '## Project Information - Project Name: SuperApp', '## Project Vision' with '### Vision Statement: A super app…"
+      },
+      "no_vision_md": {
+        "pass": true,
+        "reason": "The generated files list only shows documents/requirements.md and documents/design.md. There is no documents/vision.md in the file diffs, git status, or any generated file listing. The agent did not …"
+      }
+    }
+  }
+}

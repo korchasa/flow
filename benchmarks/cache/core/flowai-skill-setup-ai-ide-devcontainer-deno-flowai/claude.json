@@ -1,0 +1,61 @@
+{
+  "schema": 1,
+  "key": "1b06942ec06d3329c313afa36ae6f2f783463b7de23c0ddd3a4d232714ae2193",
+  "scenarioId": "flowai-skill-setup-ai-ide-devcontainer-deno-flowai",
+  "ide": "claude",
+  "agentModel": "claude-sonnet-4-6",
+  "recordedAt": "2026-04-19T23:34:43.207Z",
+  "result": {
+    "success": true,
+    "score": 100,
+    "errorsCount": 0,
+    "warningsCount": 0,
+    "durationMs": 82138.42883300001,
+    "tokensUsed": 0,
+    "totalCost": 0,
+    "toolCallsCount": 0,
+    "model": "claude-sonnet-4-6",
+    "checklistResults": {
+      "devcontainer_json_created": {
+        "pass": true,
+        "reason": "The agent created `.devcontainer/devcontainer.json` and the file content shown in the diff is well-formed JSON (no syntax errors, all braces/brackets matched properly)."
+      },
+      "deno_support": {
+        "pass": true,
+        "reason": "The config uses `mcr.microsoft.com/devcontainers/base:ubuntu` as the base image and includes `ghcr.io/devcontainers-extra/features/deno:latest` in the features block, satisfying the Deno runtime requ…"
+      },
+      "deno_extension": {
+        "pass": true,
+        "reason": "The extensions list in `customizations.vscode.extensions` explicitly includes `\"denoland.vscode-deno\"`."
+      },
+      "flowai_install_in_post_create": {
+        "pass": true,
+        "reason": "The `postCreateCommand` contains `\"flowai-cli\": \"deno install -g -A -f jsr:@korchasa/flowai\"`, which matches the required install command exactly."
+      },
+      "no_flowai_config_volume": {
+        "pass": true,
+        "reason": "The three mounts in the config are: a named volume for `.claude`, a read-only bind of the host `.claude`, and a named volume for bash history (`/commandhistory`). None target flowai config paths (`~/…"
+      },
+      "auth_policy_compliance": {
+        "pass": true,
+        "reason": "All auth policy conditions are met: (a) no `remoteEnv` block with auth vars; (b) no `secrets` block; (c) no `initializeCommand`; (d) no `gh auth login` or `claude login` automation in postCreateComma…"
+      },
+      "stable_volume_names_if_any": {
+        "pass": true,
+        "reason": "Both named volumes use `${localWorkspaceFolderBasename}` as the prefix: `${localWorkspaceFolderBasename}-claude-config` and `${localWorkspaceFolderBasename}-bashhistory`. The unstable `${devcontainer…"
+      },
+      "no_hardcoded_secrets": {
+        "pass": true,
+        "reason": "Neither `devcontainer.json` nor `setup-container.sh` contain any hardcoded API keys, tokens, or credentials. All references to external services are via installation commands, not embedded secrets."
+      },
+      "remote_user_set": {
+        "pass": true,
+        "reason": "`\"remoteUser\": \"vscode\"` is explicitly set. This is the correct non-root user for the `mcr.microsoft.com/devcontainers/base:ubuntu` base image."
+      },
+      "no_dockerfile": {
+        "pass": true,
+        "reason": "The agent only created `.devcontainer/devcontainer.json` and `.devcontainer/setup-container.sh`. No Dockerfile was generated anywhere in the workspace."
+      }
+    }
+  }
+}

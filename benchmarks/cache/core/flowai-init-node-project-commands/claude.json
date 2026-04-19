@@ -1,0 +1,41 @@
+{
+  "schema": 1,
+  "key": "17552075cc9f0a8763d71e9ca087e7723f2969b9b5b44ce21a27197a239cb161",
+  "scenarioId": "flowai-init-node-project-commands",
+  "ide": "claude",
+  "agentModel": "claude-sonnet-4-6",
+  "recordedAt": "2026-04-19T23:34:43.207Z",
+  "result": {
+    "success": true,
+    "score": 100,
+    "errorsCount": 0,
+    "warningsCount": 0,
+    "durationMs": 157271.06520800013,
+    "tokensUsed": 0,
+    "totalCost": 0,
+    "toolCallsCount": 0,
+    "model": "claude-sonnet-4-6",
+    "checklistResults": {
+      "agents_md_created": {
+        "pass": true,
+        "reason": "AGENTS.md existed as a template from the initial commit, and the agent properly populated it with project-specific content: Vision, Architecture, Key Decisions, Documentation Map, and Detected Comman…"
+      },
+      "commands_use_package_json": {
+        "pass": true,
+        "reason": "The agent added 'check' (npm run lint && npm test) and 'dev' (node --watch src/index.js) scripts to package.json. The final package.json clearly shows all commands configured as npm scripts: check, t…"
+      },
+      "no_deno_json_created": {
+        "pass": true,
+        "reason": "The git status shows only 'deno.lock' as an untracked file (a side effect of running the existing .claude/skills analysis script with deno), but no 'deno.json' was created. The modified/untracked fil…"
+      },
+      "no_forced_scripts_dir": {
+        "pass": true,
+        "reason": "The agent did not create any scripts/ directory or .ts check scripts. The only files created/modified were AGENTS.md, package.json, documents/requirements.md, and documents/design.md. The deno.lock s…"
+      },
+      "detected_node_stack": {
+        "pass": true,
+        "reason": "The agent explicitly identified this as a Node.js/Express project from package.json. In the logs: 'Stack: Node.js/Express (JavaScript)' and noted a mismatch with the template's TypeScript claim. The …"
+      }
+    }
+  }
+}

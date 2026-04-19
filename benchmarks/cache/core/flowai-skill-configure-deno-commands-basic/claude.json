@@ -1,0 +1,81 @@
+{
+  "schema": 1,
+  "key": "ebb212ea9022370888015e21ea931f2d8230e685f097ba2f318598489967cc34",
+  "scenarioId": "flowai-skill-configure-deno-commands-basic",
+  "ide": "claude",
+  "agentModel": "claude-sonnet-4-6",
+  "recordedAt": "2026-04-19T23:34:43.207Z",
+  "result": {
+    "success": true,
+    "score": 100,
+    "errorsCount": 0,
+    "warningsCount": 0,
+    "durationMs": 80924.92125000001,
+    "tokensUsed": 0,
+    "totalCost": 0,
+    "toolCallsCount": 0,
+    "model": "claude-sonnet-4-6",
+    "checklistResults": {
+      "deno_json_has_check_task": {
+        "pass": true,
+        "reason": "deno.json contains 'check': 'deno run -A scripts/check.ts' which delegates to a script that runs fmt --check, lint, and test — comprehensive verification."
+      },
+      "deno_json_has_test_task": {
+        "pass": true,
+        "reason": "deno.json contains 'test': 'deno test -A' — runs the full test suite."
+      },
+      "deno_json_has_dev_task": {
+        "pass": true,
+        "reason": "deno.json contains 'dev': 'deno run --watch -A src/main.ts' — includes the --watch flag for watch mode."
+      },
+      "deno_json_has_prod_task": {
+        "pass": true,
+        "reason": "deno.json contains 'prod': 'deno run -A src/main.ts' — runs production mode without watch."
+      },
+      "check_script_created": {
+        "pass": true,
+        "reason": "scripts/check.ts was created and contains logic for: run('deno fmt --check', ...), run('deno lint', ...), run('deno test', ...) — all three verification steps are present."
+      },
+      "check_script_exits_on_failure": {
+        "pass": true,
+        "reason": "The script ends with 'if (f > 0) Deno.exit(1);' where f is the count of failed checks — exits with code 1 on any failure."
+      },
+      "existing_config_preserved": {
+        "pass": true,
+        "reason": "The original deno.json had 'compilerOptions': {'strict': true} and 'imports': {'@std/assert': 'jsr:@std/assert@^1.0.0'}. Both are present verbatim in the final deno.json alongside the newly added tas…"
+      },
+      "tasks_reference_scripts": {
+        "pass": true,
+        "reason": "The 'check' task (the complex one) references 'deno run -A scripts/check.ts'. The other tasks (test, dev, prod) are simple single-command invocations, not complex inline logic, so delegating them to …"
+      },
+      "check_runs_parallel": {
+        "pass": true,
+        "reason": "checks.ts creates all three run() promises in an array and passes them to Promise.all(checks) — all three checks start concurrently before any awaiting happens."
+      },
+      "check_buffers_output": {
+        "pass": true,
+        "reason": "Each Deno.Command is created with stdout: 'piped' and stderr: 'piped', and output is decoded only after proc.output() resolves — no inherited streams, no interleaving possible."
+      },
+      "check_failed_last": {
+        "pass": true,
+        "reason": "After Promise.all resolves, results are split into 'passed' and 'failed' arrays. The output loop iterates '[...passed, ...failed]' — passed check outputs are printed first, then all failed check outp…"
+      },
+      "check_no_external_deps": {
+        "pass": true,
+        "reason": "scripts/check.ts uses only Deno built-ins: Deno.Command, Deno.env, Deno.exit, TextDecoder. No import statements referencing external packages or npm/JSR dependencies."
+      },
+      "check_sequential_prerequisites": {
+        "pass": true,
+        "reason": "The project (src/main.ts is 'console.log(...)' only) has no build or codegen steps, so the condition 'if the project has build/codegen steps' does not apply. The script's structure would support inse…"
+      },
+      "check_realtime_progress": {
+        "pass": true,
+        "reason": "The run() function logs '>>> ${name} started' immediately when called (before awaiting), and logs the PASS/FAIL label immediately after proc.output() resolves — giving per-command start and finish st…"
+      },
+      "check_no_output_loss": {
+        "pass": true,
+        "reason": "Combined output is collected as TextDecoder(stdout) + TextDecoder(stderr) for every command. The output loop covers both passed and failed entries ([...passed, ...failed]), and the only skip conditio…"
+      }
+    }
+  }
+}
