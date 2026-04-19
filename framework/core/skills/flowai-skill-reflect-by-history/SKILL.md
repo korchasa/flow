@@ -11,13 +11,14 @@ Unlike `flowai-skill-reflect` (which analyzes the current session), this skill w
 
 ## Session History Locations
 
+Session history for all three IDEs is stored **only at user level** (home directory). None of them create project-local session stores — do not look for `.claude/projects/`, `.cursor/projects/`, or `.opencode/` inside the project root; those paths do not exist.
+
 ### Claude Code
 
-Session history is stored as JSONL files:
+JSONL files at user level:
 
-- **Project-local**: `.claude/projects/` relative to project root (if present)
-- **User-level**: `~/.claude/projects/{project-path-with-dashes}/` — each `.jsonl` file is one session
-- **Global index**: `~/.claude/history.jsonl` (prompt text, timestamp, project path, session ID per line)
+- **Sessions**: `~/.claude/projects/{project-path-with-dashes}/*.jsonl` — each file is one session. The dir name is the absolute project path with `/` replaced by `-` (e.g. `/Users/alice/www/foo` → `-Users-alice-www-foo`).
+- **Global index**: `~/.claude/history.jsonl` (one line per prompt: text, timestamp, project path, session ID).
 
 JSONL format — each line is a JSON object with `type` field:
 - `type: "user"` — user messages (`message.content` has the text)
@@ -29,35 +30,35 @@ JSONL format — each line is a JSON object with `type` field:
 
 ### Cursor
 
-- **Agent transcripts**: `~/.cursor/projects/{project_name}/agent-transcripts/`
-- **SQLite**: `~/Library/Application Support/Cursor/User/workspaceStorage/<hash>/state.vscdb` (macOS)
+- **SQLite (primary)**: `~/Library/Application Support/Cursor/User/workspaceStorage/<hash>/state.vscdb` (macOS). The `<hash>` dir corresponds to one workspace; the chat/agent history is inside the `ItemTable` rows keyed by `workbench.panel.aichat.view.aichat.chatdata` (and similar).
 
 ### OpenCode
 
 - **SQLite**: `~/.local/share/opencode/opencode.db`
+- **Session artifacts**: `~/.local/share/opencode/storage/`, `~/.local/share/opencode/tool-output/`
 
 ## Discovery Strategy
 
-1. Determine current IDE by checking project markers (`.claude/`, `.cursor/`, `.opencode/`)
-2. **Project-local first**: check `.claude/projects/` (or `.cursor/projects/`, `.opencode/`) within the project root. List all subdirectories and `.jsonl` files. If session files are found here, use them.
-3. **User-level fallback**: only if no project-local history found, check `~/.claude/projects/`, `~/.cursor/projects/`, etc.
+0. **Explicit path override**: If the user's request names a concrete directory or file path for session history (e.g., "analyze sessions in `./foo/bar/`", "look at `<path>`", "use the history at `<dir>`"), use **that path verbatim** and skip IDE detection. An explicit user-supplied path wins over every default location — do not fall back to `~/.claude/projects/` "just in case". Report which path you used.
+1. Determine current IDE by checking project markers (`.claude/`, `.cursor/`, `.opencode/`) and/or environment (`CLAUDECODE=1`).
+2. Compute the per-IDE session path from the project's absolute path (Claude Code: replace `/` with `-`; Cursor: look up the workspaceStorage hash).
+3. List session files under that user-level path and sort by mtime (newest first).
 4. **Filter out current session**: exclude the JSONL file for the currently running session (it is still being written and is not "previous" history). If only the current session is found, report "No previous session history found" and stop.
-5. **No history**: if no session files are found at all, clearly report "No session history found" and suggest where the user can check. Do not fabricate or hallucinate analysis results.
-6. List available sessions, sort by date (newest first)
+5. **No history**: if no session files are found at all, clearly report "No session history found" and tell the user the exact path checked. Do not fabricate or hallucinate analysis results.
 
 ## Scope Determination
 
-Decide how many sessions to analyze based on the user's request:
+Pick **exactly one** scope bucket from the table below based on the user's request. Use the listed exact session count — do **not** inflate the scope because "the volume is small" or because more sessions "are available". If the history has fewer files than the target, take all of them; never exceed the target.
 
-| User Request | Scope | Sessions |
+| User Request phrasing | Scope | Exact session count |
 |---|---|---|
-| "Find recurring issues" / "patterns" | Deep | All available or last 10-20 |
-| "What went wrong recently?" | Recent | Last 3-5 sessions |
-| "Review last session" | Single | Last 1 |
-| "How has X improved?" | Trend | All sessions mentioning X |
-| Unspecified | Default | Last 5-10 sessions |
+| "Find recurring issues" / "patterns" / "deep analysis" | Deep | **Last 20** (or all if fewer) |
+| "recently" / "last few" / "what went wrong" | Recent | **Last 5** |
+| "last session" / "previous session" / "review latest" | Single | **Last 1** |
+| "How has X improved?" / "trend of X" | Trend | All sessions mentioning X |
+| Unspecified — no phrasing cue | Default | **Last 10** |
 
-If more than 20 sessions available, analyze the most recent 10-20 unless user specifies otherwise. Explain the scope chosen and why.
+State the chosen bucket, the exact count, and the user phrasing that triggered it. Example: *"Scope: Recent — last 5 sessions (user said 'last few')"*.
 
 ## Analysis Focus
 

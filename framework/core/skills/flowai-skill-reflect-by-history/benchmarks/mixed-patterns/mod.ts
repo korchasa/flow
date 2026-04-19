@@ -12,13 +12,14 @@ export const ReflectByHistoryMixedBench = new class
   };
 
   userQuery =
-    "Use flowai-skill-reflect-by-history to find all recurring patterns across my sessions and prioritize them.";
+    "Use flowai-skill-reflect-by-history to find all recurring patterns across my sessions and prioritize them. For this task, the session history is NOT in the default `~/.claude/projects/` location — read the JSONL files from `.claude/projects/-sandbox/` (path relative to the current working directory). Treat this path as the explicit override per the skill's Discovery Strategy.";
 
+  // JUDGE CONTEXT: The user explicitly overrode the default history path. The skill's Path override step instructs the agent to use the user-supplied path verbatim. Therefore, reading sessions from `.claude/projects/-sandbox/` — and NOT from `~/.claude/projects/` — is the correct behavior. Do not mark an item as failing solely because the agent skipped the default location.
   checklist = [
     {
       id: "locate_and_read_history",
       description:
-        "Did the agent find and read session history JSONL files from .claude/projects/-sandbox/?",
+        "Did the agent read session history JSONL files from the user-specified override path `.claude/projects/-sandbox/`?",
       critical: true,
     },
     {

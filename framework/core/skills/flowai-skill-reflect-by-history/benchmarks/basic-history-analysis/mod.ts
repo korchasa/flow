@@ -12,19 +12,20 @@ export const ReflectByHistoryBasicBench = new class
   };
 
   userQuery =
-    "Use flowai-skill-reflect-by-history to analyze my previous sessions and find recurring issues. Suggest what project primitives to add or change.";
+    "Use flowai-skill-reflect-by-history to analyze my previous sessions and find recurring issues. Suggest what project primitives to add or change. For this task, the session history is NOT in the default `~/.claude/projects/` location — read the JSONL files from `.claude/projects/-sandbox/` (path relative to the current working directory). Treat this path as the explicit override per the skill's Discovery Strategy.";
 
+  // JUDGE CONTEXT: The user explicitly overrode the default history path. The skill's Path override step instructs the agent to use the user-supplied path verbatim. Therefore, reading sessions from `.claude/projects/-sandbox/` — and NOT from `~/.claude/projects/` — is the correct behavior. Do not mark an item as failing solely because the agent skipped the default location.
   checklist = [
     {
       id: "locate_history",
       description:
-        "Did the agent autonomously find session history JSONL files by searching the project's .claude/projects/ directory without being told the exact path?",
+        "Did the agent use the user-specified override path `.claude/projects/-sandbox/` for session history (rather than falling back to the default `~/.claude/projects/`)?",
       critical: true,
     },
     {
       id: "read_history_files",
       description:
-        "Did the agent read at least 3 of the 4 session JSONL files from .claude/projects/-sandbox/?",
+        "Did the agent read at least 3 of the 4 session JSONL files from the user-specified override path `.claude/projects/-sandbox/`?",
       critical: true,
     },
     {
@@ -48,7 +49,7 @@ export const ReflectByHistoryBasicBench = new class
     {
       id: "cite_evidence_across_sessions",
       description:
-        "Did the agent cite evidence from multiple sessions (not just one) to support the pattern claim?",
+        "Did the agent cite evidence from multiple sessions in the `.claude/projects/-sandbox/` directory (not just one) to support the pattern claim?",
       critical: false,
     },
     {
