@@ -2,6 +2,62 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.11.0](https://github.com/korchasa/flowai/compare/v0.10.0...v0.11.0) (2026-04-19)
+
+
+### ⚠ BREAKING CHANGES
+
+* **cli:** `flowai` / `flowai sync` in a cwd without
+`<cwd>/.flowai.yaml` but with `~/.flowai.yaml` now uses the global
+config instead of creating a new project-local config. Opting a
+project into local install requires creating `<cwd>/.flowai.yaml`
+(e.g. via `flowai --local`). In `-y` mode with no configs on disk,
+the CLI now generates a global config (was: project). `flowai
+migrate` now refuses to run without an explicit scope flag.
+
+Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
+* **cli:** `flowai` and `flowai sync` no longer prompt to install
+newer CLI versions. They print `Update available: X → Y. Run
+`flowai update` to install.` and proceed. `flowai update` remains the
+sole entry point that spawns `deno install`. Silent when up to date,
+network-failing, or skipped via `--skip-update-check`.
+
+Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
+* **engineering:** remove flowai-mermaid-validate hook
+
+### Features
+
+* **bench:** benchmark result cache (FR-BENCH-CACHE) ([97208d8](https://github.com/korchasa/flowai/commit/97208d854bc6c47097d73c7f03e46de7699497f7))
+* **cli:** notify-only update check in `flowai` / `flowai sync` ([424b9d1](https://github.com/korchasa/flowai/commit/424b9d113b26ee509b5800332ed1c9beb29abcac))
+* **cli:** three-mode scope flags (--global/--local/--auto) ([f263efe](https://github.com/korchasa/flowai/commit/f263efec26e8c93a57df08f8c53c1bf9393eedf8))
+
+
+### Bug Fixes
+
+* **core:** session scope honors explicit user ask ([db4d3b5](https://github.com/korchasa/flowai/commit/db4d3b5f349b46dbc6956fb95095fb7797d795e2))
+
+
+### Tests
+
+* **core:** add doc-sync-gate regression benchmark for flowai-commit-beta ([d35f223](https://github.com/korchasa/flowai/commit/d35f223646378a1473652f86b85edb8279288c82))
+
+
+### Agent Changes
+
+* populate Documentation Map in AGENTS.md ([8d1c1ae](https://github.com/korchasa/flowai/commit/8d1c1aeb3743b5c0213dc0c8df61bd058ac6f558))
+
+
+### Documentation
+
+* **agents:** note Deno crypto.subtle.digest BufferSource quirk ([3004785](https://github.com/korchasa/flowai/commit/3004785de90f9899d8554fe6285d3c5351626471))
+* **readme:** sync with current framework and CLI surface ([14f5cf4](https://github.com/korchasa/flowai/commit/14f5cf4638ef04351cef9e08ec88b1f5be6384f4))
+
+
+### Chores
+
+* **engineering:** remove flowai-mermaid-validate hook ([479a1d7](https://github.com/korchasa/flowai/commit/479a1d76a6a1f8bb493a0dae9c711c5ea4e10106))
+* maintenance sweep — cleanup orphans, fix doc drift, align vision ([69bf892](https://github.com/korchasa/flowai/commit/69bf892114079e686ca6d743e88799d22824cfa0))
+
 ## [0.10.0](https://github.com/korchasa/flowai/compare/v0.9.0...v0.10.0) (2026-04-18)
 
 
