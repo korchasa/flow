@@ -20,6 +20,7 @@
 - This is a universal framework for multiple IDEs (Cursor, Claude Code, OpenCode). Do not use tool names specific to a single IDE — write generically and provide examples for various IDEs. For example, instead of `use todo_write`, use `add to todo list (by todo_write, todowrite, etc.)`.
 - Use relative paths in commands when possible — absolute paths only when required by the tool or context.
 - Be precise in wording. Use a scientific approach — accompany highly specialized terms and abbreviations with short hints in parentheses.
+- Deno's `crypto.subtle.digest` rejects `Uint8Array` views backed by `ArrayBufferLike` (TS2345 on `BufferSource`). Pass a fresh `ArrayBuffer` instead: `const buf = new ArrayBuffer(bytes.byteLength); new Uint8Array(buf).set(bytes); await crypto.subtle.digest("SHA-256", buf);`.
 
 ## Project Information
 - Project Name: flowai
