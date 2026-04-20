@@ -162,6 +162,46 @@ If a benchmark fails, check the **Trace**:
 3. **Did the Simulated User confuse the Agent?** Check the conversation log.
 4. **Did the Judge hallucinate?** Check the Judge's reasoning against the actual evidence.
 
+### Before editing the skill under test — verify the infrastructure
+
+When a scenario fails, especially a `verbatim_relay` / `mock-reached-agent`
+check, do NOT jump straight to rewriting SKILL.md. The test infrastructure
+itself is the most common culprit and the silent-failure mode is real
+(see the flowai bench history: `PreToolUse` key camelCase typo silenced
+all Claude-adapter mocks for months, and "passing" scenarios were passing
+on pattern-matching, not hook interception).
+
+Run this checklist first:
+
+1. **Hook script installed?** `ls <sandbox>/.claude/hooks/` should show
+   `mock-<tool>.sh`. Absence → adapter didn't call `setupMocks`, or
+   sandbox was overwritten.
+2. **Settings file correct?** `cat <sandbox>/.claude/settings.local.json`
+   — the top-level event key MUST be PascalCase (`PreToolUse`,
+   `PostToolUse`). Claude Code silently ignores camelCase; no warning.
+3. **Matcher matches your command shape?** If the skill under test uses
+   env-prefixed commands (e.g. `CLAUDECODE="" claude -p …`), a naive
+   `Bash(<tool>:*)` matcher will NOT fire — first token is the env
+   assignment. The flowai adapter uses a broad `Bash` matcher plus
+   in-script filtering; replicate that pattern if you add a new adapter.
+4. **Sentinel in mock text?** Mock strings MUST contain a unique token
+   (e.g. `[benchmock-<6-hex>]`) that is **guaranteed absent** from the
+   skill's own SKILL.md and examples. Then grep the judge output for
+   the sentinel: present → hook fired and agent quoted it;
+   absent → synthesis or pattern-match, NOT relay. This is the only
+   robust signal that a mock actually reached the agent.
+5. **No test-fitting.** Never write a skill rule that demands preserving
+   a bench-only artifact (e.g. "keep the `MOCK:` prefix"). Mock-prefix
+   scaffolding is not something real CLIs emit; teaching the agent to
+   preserve it corrupts real-world behaviour. Design the mock so its
+   **distinctive content** is what proves the relay — not the framing.
+
+Only after steps 1–5 pass is it safe to conclude the skill itself is at
+fault and edit SKILL.md. Skipping this checklist and iterating on the
+skill text wastes bench cycles and frequently introduces regressions
+(e.g. "mandatory capture-to-file" rules that don't help because hooks
+block before the shell redirect executes).
+
 ## 7. Universal Result Schema
 
 To ensure cross-platform compatibility, benchmark results must follow a standard JSON schema.

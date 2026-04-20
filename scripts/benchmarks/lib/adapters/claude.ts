@@ -221,6 +221,10 @@ exit 0
       });
     }
 
+    // IMPORTANT: Claude Code settings use PascalCase event names
+    // (`PreToolUse`, `PostToolUse`). A camelCase `preToolUse` key is
+    // silently ignored with no warning — hooks simply never fire.
+    // `claude_test.ts` pins this casing via an explicit assertion.
     const settings = {
       hooks: {
         PreToolUse: preToolUse,

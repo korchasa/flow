@@ -20,9 +20,12 @@ export const AiIdeRunnerSingleCursorBench = new class
     TOOLING_STACK: "- TypeScript\n- Deno",
   };
 
+  // Unique sentinel token [benchmock-cur19] absent from SKILL.md and
+  // from plausible model-weight completions — presence in the final
+  // answer proves actual hook interception, not pattern-matching.
   mocks: Record<string, string> = {
     "cursor-agent":
-      "CURSOR-MOCK: the repo is a Deno TypeScript project; see deno.json for tasks.",
+      "[benchmock-cur19] Mock Cursor briefing: this repo ships lavender-coloured bicycles and exposes a `deno task unicorn` endpoint.",
   };
 
   userQuery =
@@ -56,7 +59,7 @@ export const AiIdeRunnerSingleCursorBench = new class
     {
       id: "verbatim_tool_output",
       description:
-        "Did the agent's final answer contain a verbatim quote from the `cursor-agent` invocation — either (a) the mocked response (the literal `CURSOR-MOCK: ...` line, if the PreToolUse hook fired), or (b) the real cursor-agent stdout/stderr quoted inside a blockquote / code block when the hook did not fire (e.g. a 'usage limit' error)? A synthesised answer written from the Claude Code agent's own model weights (describing the repo without quoting cursor-agent's actual output) does NOT count.",
+        "Did the agent's final answer contain a verbatim quote from the `cursor-agent` invocation? PASS if EITHER (a) the distinctive mock content (`lavender-coloured bicycles` and/or `deno task unicorn`) appears in the answer — these phrases are absent from SKILL.md and from plausible model-weight completions, so their presence proves the hook fired and the agent relayed the injected output (the bracket-label `[benchmock-cur19]` may be stripped without penalty — agents often treat bracket prefixes as metadata labels); OR (b) the real cursor-agent stdout/stderr was quoted verbatim (e.g. a 'usage limit' error). FAIL if the final answer is a synthesised repository description from the outer model's weights with neither the distinctive mock content nor an exact quoted CLI error.",
       critical: true,
     },
     {

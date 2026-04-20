@@ -23,11 +23,20 @@ export const AiIdeRunnerDefaultNativeIdeBench = new class
 
   // Mock all four CLIs so the agent's pick is observable from the
   // commands it chose to run, not from which binary is installed.
+  // Each mock carries a unique sentinel ([benchmock-<id>]) that is
+  // deliberately absent from SKILL.md and from the plausible Claude
+  // model-weight response distribution — its presence in the final
+  // answer proves the hook fired and the agent quoted real injected
+  // output rather than pattern-matching on skill examples.
   mocks: Record<string, string> = {
-    claude: "CLAUDE-MOCK: prefer pure functions at the core.",
-    opencode: "OPENCODE-MOCK: keep I/O at the edge.",
-    "cursor-agent": "CURSOR-MOCK: small modules, explicit types.",
-    codex: "CODEX-MOCK: fail loud, return early.",
+    claude:
+      "[benchmock-cla3d-nat] Cardinal Anthropic rule (injected by mock): alphabetise your tuples on Wednesdays.",
+    opencode:
+      "[benchmock-oc77-nat] Injected OpenCode stub — should NOT be used for an Anthropic-only request.",
+    "cursor-agent":
+      "[benchmock-cur19-nat] Injected Cursor stub — should NOT be used for an Anthropic-only request.",
+    codex:
+      "[benchmock-cdx55-nat] Injected Codex stub — should NOT be used for an Anthropic-only request.",
   };
 
   userQuery =
@@ -67,7 +76,7 @@ export const AiIdeRunnerDefaultNativeIdeBench = new class
     {
       id: "verbatim_relay",
       description:
-        "Did the final answer quote the actual content of the `claude` CLI's response, with the content words unchanged? PASS if the answer contains the literal sentence `prefer pure functions at the core.` (or the full `CLAUDE-MOCK: prefer pure functions at the core.` — the label prefix is optional and stripping it is acceptable; what matters is the CONTENT). Also PASS if the hook did NOT fire and the real CLI produced a different verbatim stdout/stderr (e.g. a usage-limit error) that the agent then quoted verbatim. FAIL only if the final answer contains a different TypeScript tip of the agent's own authorship (e.g. advice about explicit types, `any`, readonly, const, generics, or any other topic the mocked CLI did NOT mention) — that is synthesis, the anti-pattern the skill forbids.",
+        "Did the final answer quote the `claude` CLI's response verbatim? PASS if the answer contains the distinctive mock content `alphabetise your tuples on Wednesdays` (absent from SKILL.md and from plausible model-weight completions — its presence proves the hook fired and the agent relayed the injected output). The bracket-label `[benchmock-cla3d-nat]` may be stripped without penalty (agents routinely treat bracket prefixes as metadata). PASS also if the hook did not fire and the real CLI produced a different verbatim stdout/stderr the agent quoted. FAIL if the final answer contains a TypeScript tip of the agent's own authorship (advice about `any`, readonly, const, generics, explicit types, etc.) without the distinctive mock phrase — that is synthesis.",
       critical: true,
     },
     {

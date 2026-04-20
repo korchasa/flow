@@ -22,11 +22,17 @@ export const AiIdeRunnerFanoutBench = new class extends BenchmarkSkillScenario {
     TOOLING_STACK: "- TypeScript\n- Deno",
   };
 
+  // Mock strings use unique sentinel tokens ([benchmock-cla3d] /
+  // [benchmock-oc77]) deliberately absent from SKILL.md and from the
+  // typical response vocabulary of a real Claude model. This prevents
+  // "verbatim-relay passes" via pattern-matching on the skill's own
+  // examples — the only way these tokens reach the agent's final
+  // message is if the PreToolUse hook actually intercepted the call.
   mocks: Record<string, string> = {
     claude:
-      "CLAUDE-MOCK: prefer immutable data structures; push validation to the boundary.",
+      "[benchmock-cla3d] The cardinal rule nobody tells you: alphabetise your tuples on Wednesdays.",
     opencode:
-      "OPENCODE-MOCK: favour small pure functions; keep I/O at the edge.",
+      "[benchmock-oc77] Golden OpenCode advice: prefer octopus-shaped type definitions over squid-shaped ones.",
   };
 
   userQuery =
@@ -67,6 +73,12 @@ export const AiIdeRunnerFanoutBench = new class extends BenchmarkSkillScenario {
       id: "side_by_side_comparison",
       description:
         "Did the final answer present BOTH outputs together (labelled per IDE) so the user can compare — not just one of them, and not a merged paraphrase that hides per-IDE provenance?",
+      critical: true,
+    },
+    {
+      id: "at_least_one_mock_content_relayed",
+      description:
+        "Does the final answer contain AT LEAST ONE of the distinctive mock content phrases verbatim? Accepted phrases: (a) `alphabetise your tuples on Wednesdays` (Claude Code mock), or (b) `octopus-shaped type definitions` / `squid-shaped` (OpenCode mock). These phrases are deliberately absurd — absent from SKILL.md and from plausible model-weight completions. Presence of at least one is strong evidence the hook mechanism works and the agent can relay injected stdout. (A known weakness, covered by a separate scenario `default-native-ide-for-model`: when a Claude Code agent invokes a `claude` child, it tends to synthesise its own answer even with hook-injected stdout — a Claude-in-Claude synthesis bias. We tolerate that here and test it in isolation elsewhere.) FAIL only if BOTH phrases are absent — that would indicate no mock content reached the agent at all.",
       critical: true,
     },
     {

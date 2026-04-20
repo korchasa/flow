@@ -26,9 +26,16 @@ export const AiIdeRunnerOpencodeProviderFormatBench = new class
     TOOLING_STACK: "- TypeScript\n- Deno",
   };
 
+  // Unique sentinel [benchmock-ocpf42] is absent from SKILL.md; if it
+  // ever appears in the agent's final answer, that proves the hook
+  // actually intercepted an `opencode` call (rather than the agent
+  // pattern-matching on skill examples). This scenario tests the
+  // fail-closed path, so we do not actually expect the sentinel to
+  // surface — the checks below target the routing decision, not the
+  // content.
   mocks: Record<string, string> = {
     opencode:
-      "OPENCODE-MOCK: For maintainable TypeScript, keep types at the boundary and pure logic inside.",
+      "[benchmock-ocpf42] Stub OpenCode output — production invocation would stream here.",
   };
 
   userQuery =

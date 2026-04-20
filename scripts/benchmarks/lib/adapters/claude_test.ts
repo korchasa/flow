@@ -158,3 +158,106 @@ Deno.test("ClaudeAdapter - setupMocks with empty mocks does nothing", async () =
   assertEquals(existsSync(join(tmpDir, ".claude")), false);
   await Deno.remove(tmpDir, { recursive: true });
 });
+
+/**
+ * Integration-style check: run the generated hook script against
+ * realistic PreToolUse JSON payloads and verify the script blocks the
+ * call (non-empty stdout with `"decision": "block"`) only when the
+ * first bare command word matches the mocked tool. This binds the
+ * adapter's on-disk behaviour to the shapes Claude Code actually
+ * sends, catching regressions that a JSON-structure-only test (above)
+ * would miss — including the PascalCase casing bug that silenced
+ * hooks for months.
+ */
+Deno.test(
+  "ClaudeAdapter - setupMocks hook script matches env-prefixed and nested commands",
+  async () => {
+    const tmpDir = await Deno.makeTempDir();
+    await adapter.setupMocks(tmpDir, {
+      claude: "MOCK-CLAUDE-RESPONSE-0xdeadbeef",
+      opencode: "MOCK-OPENCODE-RESPONSE-0xcafe",
+    });
+
+    const hookPath = join(tmpDir, ".claude", "hooks", "mock-claude.sh");
+    assertEquals(existsSync(hookPath), true);
+
+    // Each case: (command, shouldBlock, label).
+    const cases: Array<[string, boolean, string]> = [
+      ["claude -p hi --model sonnet", true, "plain claude"],
+      [`CLAUDECODE="" claude -p hi`, true, "env-prefix"],
+      ["FOO=1 BAR=2 claude -p hi", true, "multi-env"],
+      [
+        `( CLAUDECODE="" claude -p hi > /tmp/out 2>&1 ) &`,
+        true,
+        "subshell+background",
+      ],
+      [`$( CLAUDECODE="" claude -p hi )`, true, "command-substitution"],
+      ["opencode run hi", false, "different tool"],
+      ["cat /tmp/out", false, "unrelated cmd"],
+      ["echo claude", false, "claude as arg, not command"],
+    ];
+
+    for (const [cmd, shouldBlock, label] of cases) {
+      const payload = JSON.stringify({
+        tool_name: "Bash",
+        tool_input: { command: cmd },
+      });
+      const child = new Deno.Command("bash", {
+        args: [hookPath],
+        stdin: "piped",
+        stdout: "piped",
+        stderr: "piped",
+      }).spawn();
+      const writer = child.stdin.getWriter();
+      await writer.write(new TextEncoder().encode(payload));
+      await writer.close();
+      const { stdout } = await child.output();
+      const out = new TextDecoder().decode(stdout);
+
+      const didBlock = out.includes(`"decision": "block"`) &&
+        out.includes("MOCK-CLAUDE-RESPONSE-0xdeadbeef");
+      assertEquals(
+        didBlock,
+        shouldBlock,
+        `[${label}] cmd=${cmd} expected block=${shouldBlock}, got stdout=${
+          JSON.stringify(
+            out,
+          )
+        }`,
+      );
+    }
+
+    await Deno.remove(tmpDir, { recursive: true });
+  },
+);
+
+/**
+ * Guards the PascalCase settings-key invariant. Claude Code silently
+ * ignores camelCase hook event names; this test pins the casing so a
+ * future refactor can't regress the mock mechanism without a failing
+ * test.
+ */
+Deno.test(
+  "ClaudeAdapter - setupMocks uses PascalCase PreToolUse key (not camelCase)",
+  async () => {
+    const tmpDir = await Deno.makeTempDir();
+    await adapter.setupMocks(tmpDir, { gh: "x" });
+    const settings = JSON.parse(
+      await Deno.readTextFile(
+        join(tmpDir, ".claude", "settings.local.json"),
+      ),
+    );
+    // Must use PascalCase; Claude Code does not read camelCase.
+    assertEquals(
+      "PreToolUse" in settings.hooks,
+      true,
+      "hooks must contain PascalCase PreToolUse key",
+    );
+    assertEquals(
+      "preToolUse" in settings.hooks,
+      false,
+      "hooks must NOT contain camelCase preToolUse key (silently ignored by Claude Code)",
+    );
+    await Deno.remove(tmpDir, { recursive: true });
+  },
+);

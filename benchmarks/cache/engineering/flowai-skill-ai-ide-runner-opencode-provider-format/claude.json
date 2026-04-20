@@ -1,16 +1,16 @@
 {
   "schema": 1,
-  "key": "445a39722b2749e50a1e7166e2e5eee05a59d8bd78d247b70826b934be2cc8d1",
+  "key": "296e5e6211a34e57184e300e9cd9c5fc4f272bddf6af8d41af69cb1fc717fbfd",
   "scenarioId": "flowai-skill-ai-ide-runner-opencode-provider-format",
   "ide": "claude",
   "agentModel": "claude-sonnet-4-6",
-  "recordedAt": "2026-04-20T18:40:41.603Z",
+  "recordedAt": "2026-04-20T21:03:00.216Z",
   "result": {
     "success": true,
     "score": 100,
     "errorsCount": 0,
     "warningsCount": 0,
-    "durationMs": 18250.71887499999,
+    "durationMs": 30345.471166000003,
     "tokensUsed": 0,
     "totalCost": 0,
     "toolCallsCount": 0,
@@ -18,31 +18,31 @@
     "checklistResults": {
       "no_silent_routed_fallback": {
         "pass": true,
-        "reason": "The agent's final invocation used `anthropic/claude-sonnet-4-5` — a native `anthropic/` provider. No `openrouter/...` or `opencode/...` routed variant was used at any point."
+        "reason": "The agent's only `opencode run` invocation used `anthropic/claude-sonnet-4.6`. No `openrouter/...` or `opencode/...` routed prefix was used at any point. The agent never fell back silently."
       },
       "attempted_anthropic_native": {
         "pass": true,
-        "reason": "The agent first ran `opencode models anthropic` for discovery, then directly invoked `opencode run -m anthropic/claude-sonnet-4-5`, which is a genuine attempt at the native `anthropic/` provider befo…"
+        "reason": "The agent ran `opencode models anthropic` for discovery and read the models.md reference file, then directly invoked `opencode run -m anthropic/claude-sonnet-4.6`. This constitutes a good-faith attem…"
       },
       "provider_model_format_when_invoked": {
         "pass": true,
-        "reason": "The invocation was `opencode run ... -m anthropic/claude-sonnet-4-5`, which conforms to the mandatory `<provider>/<model>` format."
+        "reason": "The invocation used `-m anthropic/claude-sonnet-4.6`, which follows the mandatory `<provider>/<model>` format exactly."
       },
       "no_bare_model_id": {
         "pass": true,
-        "reason": "The agent always used the fully-qualified `anthropic/claude-sonnet-4-5` form. No bare model name (e.g., `-m sonnet` or `-m claude-sonnet`) was ever passed."
+        "reason": "The agent always used the full `anthropic/claude-sonnet-4.6` identifier. No bare model name (e.g., `-m claude-sonnet-4.6` or `-m sonnet`) was passed in any invocation."
       },
       "no_invented_id": {
         "pass": true,
-        "reason": "The model ID `anthropic/claude-sonnet-4-5` corresponds to a real, published Claude Sonnet 4.5 model under the Anthropic provider. The agent attempted discovery first (`opencode models anthropic`) bef…"
+        "reason": "The agent explicitly stated it derived `anthropic/claude-sonnet-4.6` from the models.md catalog (\"Из каталога\"). The model ID is plausible for a Claude Sonnet native anthropic entry and was not fabri…"
       },
       "reported_outcome_to_user": {
         "pass": true,
-        "reason": "The final response explicitly states the exact model ID passed: `anthropic/claude-sonnet-4-5`, and also delivers the answer returned by the mock tool (`For maintainable TypeScript, keep types at the …"
+        "reason": "The final response clearly stated the exact model ID: \"Точный model ID, переданный в `opencode run`: **`anthropic/claude-sonnet-4.6`**\". It also explained that the mock hook intercepted the call and …"
       },
       "used_run_subcommand_when_invoked": {
         "pass": true,
-        "reason": "The agent used `opencode run` as the subcommand to execute the prompt. No alternative subcommands such as `exec`, `chat`, or bare `opencode` were used for prompt execution."
+        "reason": "The agent used `opencode run` as the subcommand when invoking the prompt. No alternative subcommands (exec, chat, or bare opencode) were used for the prompt execution step."
       }
     }
   }
