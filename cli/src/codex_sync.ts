@@ -1,4 +1,5 @@
 // FR-DIST.CODEX-AGENTS — Codex-specific agent sync
+// FR-DIST.CLEAN-PREFIX — prefix-based orphan cleanup (no manifest).
 // FR-DIST.GLOBAL — Codex agent sync resolves base dir via scope.
 /**
  * Sync framework agents to Codex subagent format.
@@ -11,9 +12,10 @@
  *
  * `<codex-base>` = `<cwd>/.codex/` in project mode, `~/.codex/` in global mode.
  *
- * Idempotent. Removing an agent from `.flowai.yaml` removes both the sidecar
- * and the `[agents.<name>]` block on next sync. User-hand-edited tables outside
- * the flowai manifest survive untouched.
+ * Idempotent. Removing or renaming an agent removes both the sidecar and the
+ * `[agents.<name>]` block on next sync via the `flowai-` prefix rule. User-
+ * authored `[agents.<name>]` tables without the `flowai-` prefix survive
+ * untouched.
  */
 import { type FsAdapter, join } from "./adapters/fs.ts";
 import type { FrameworkSource } from "./source.ts";
@@ -21,23 +23,26 @@ import {
   buildCodexAgentSidecar,
   type CodexAgentChange,
   mergeCodexConfig,
-  readCodexManifest,
-  writeCodexManifest,
 } from "./toml_merge.ts";
 import type { IDE, PlanAction, PlanItem } from "./types.ts";
 import { extractResourceActions } from "./resource_index.ts";
-import { processPlan, type SyncResult } from "./sync.ts";
+import {
+  computePrefixOrphansPlan,
+  processPlan,
+  type SyncResult,
+} from "./sync.ts";
 
 /**
- * Syncs framework agents into Codex IDE: writes each as `.codex/prompts/<name>.md` and
- * updates `.codex/config.toml` via `toml_merge`. `isFirstIde` controls whether the
- * TOML manifest is reset (only the first IDE in a sync run owns it).
+ * Syncs framework agents into Codex IDE: writes each as
+ * `<codex-base>/agents/<name>.toml` and updates `<codex-base>/config.toml`
+ * via `mergeCodexConfig`. `isFirstIde` controls which pass owns the per-IDE
+ * action accounting.
  */
 export async function syncCodexAgents(
   cwd: string,
   ide: IDE,
   agentNames: string[],
-  allAgentNames: string[],
+  _allAgentNames: string[],
   allPaths: string[],
   source: FrameworkSource,
   fs: FsAdapter,
@@ -83,23 +88,17 @@ export async function syncCodexAgents(
     });
   }
 
-  // 2. Compute sidecars to delete (agents excluded from current sync but
-  //    still present on disk under our manifest).
-  const includedSet = new Set(agentNames);
-  const deletionCandidates = allAgentNames.filter((n) => !includedSet.has(n));
-  for (const name of deletionCandidates) {
-    const sidecarPath = join(sidecarsDir, `${name}.toml`);
-    if (await fs.exists(sidecarPath)) {
-      sidecarPlan.push({
-        type: "agent",
-        name,
-        action: "delete",
-        sourcePath: "",
-        targetPath: sidecarPath,
-        content: "",
-      });
-    }
-  }
+  // 2. FR-DIST.CLEAN-PREFIX — delete any flowai-*.toml sidecar not in the
+  //    current agent set. Replaces the old manifest-based deletion that
+  //    missed renames.
+  const orphanPlan = await computePrefixOrphansPlan(
+    sidecarsDir,
+    new Set(agentNames),
+    fs,
+    "agent",
+    { ext: ".toml" },
+  );
+  sidecarPlan.push(...orphanPlan);
 
   if (isFirstIde) {
     result.agentActions = extractResourceActions(
@@ -112,25 +111,25 @@ export async function syncCodexAgents(
   // 3. Write sidecars via the shared writer (handles conflict prompts).
   await processPlan(sidecarPlan, fs, { yes: true }, result, log);
 
-  // 4. Read existing config.toml + manifest, merge, write.
+  // 4. Read existing config.toml, merge with changes (prefix rule strips
+  //    stale flowai-* tables), write.
   const configPath = join(base, "config.toml");
-  const manifestPath = join(base, "flowai-agents.json");
   const existingToml = await fs.exists(configPath)
     ? await fs.readFile(configPath)
     : "";
-  const existingManifest = readCodexManifest(
-    await fs.exists(manifestPath) ? await fs.readFile(manifestPath) : null,
-  );
 
-  const { content: newToml, manifest: newManifest } = mergeCodexConfig(
-    existingToml,
-    changes,
-    existingManifest,
-  );
+  const { content: newToml } = mergeCodexConfig(existingToml, changes);
 
   if (newToml !== existingToml) {
     await fs.writeFile(configPath, newToml);
     result.totalWritten++;
   }
-  await fs.writeFile(manifestPath, writeCodexManifest(newManifest));
+
+  // 5. One-shot migration: drop the legacy flowai-agents.json manifest left
+  //    by pre-CLEAN-PREFIX versions. No-op on fresh installs.
+  const legacyManifestPath = join(base, "flowai-agents.json");
+  if (await fs.exists(legacyManifestPath)) {
+    await fs.remove(legacyManifestPath);
+    result.totalDeleted++;
+  }
 }

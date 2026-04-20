@@ -430,16 +430,42 @@ All 41 skills have at least one benchmark scenario. Coverage is the source of tr
 
 #### FR-DIST.CODEX-AGENTS OpenAI Codex Subagent Sync
 
-- **Desc:** Sync universal agent files (`framework/<pack>/agents/*.md`) to OpenAI Codex subagent format. Codex uses TOML configuration (`~/.codex/config.toml` or `<repo>/.codex/config.toml`) with `[agents.<name>]` tables that reference sidecar agent files via `config_file`. Agent prompt body lives in `<repo>/.codex/agents/<name>.toml` as `developer_instructions` (TOML multi-line string). Flowai owns only `[agents.<name>]` tables listed in `.codex/flowai-agents.json` manifest; user-authored tables are preserved.
-- **Scenario:** `flowai sync` with `ides: [codex]` and a set of universal agents writes each agent body to `.codex/agents/<name>.toml` (with `name`/`description`/`developer_instructions`) and merges `[agents.<name>]` entries into `.codex/config.toml` via `mergeCodexConfig`. Removing an agent from the sync set removes its table and sidecar on next run. Malformed TOML in `.codex/config.toml` throws a clear error naming the file path — does NOT silently overwrite user config.
+- **Desc:** Sync universal agent files (`framework/<pack>/agents/*.md`) to OpenAI Codex subagent format. Codex uses TOML configuration (`~/.codex/config.toml` or `<repo>/.codex/config.toml`) with `[agents.<name>]` tables that reference sidecar agent files via `config_file`. Agent prompt body lives in `<repo>/.codex/agents/<name>.toml` as `developer_instructions` (TOML multi-line string). Flowai owns only `[agents.<name>]` tables whose key starts with `flowai-` (see FR-DIST.CLEAN-PREFIX); user-authored tables without that prefix are preserved.
+- **Scenario:** `flowai sync` with `ides: [codex]` and a set of universal agents writes each agent body to `.codex/agents/<name>.toml` (with `name`/`description`/`developer_instructions`) and merges `[agents.<name>]` entries into `.codex/config.toml` via `mergeCodexConfig`. Removing (or renaming) an agent removes its table and sidecar on next run via the prefix rule. Malformed TOML in `.codex/config.toml` throws a clear error naming the file path — does NOT silently overwrite user config.
 - **Acceptance:**
-  - [x] `mergeCodexConfig(tomlText, changes, manifest)` is pure (no FS) and only mutates `[agents.<name>]` tables listed in the manifest.
-  - [x] `writeCodexAgents(plan, fs, cwd)` in `cli/src/writer.ts` writes sidecars + TOML block + manifest atomically.
+  - [x] `mergeCodexConfig(tomlText, changes)` is pure (no FS). It upserts `[agents.<name>]` for each change and deletes any existing `[agents.<k>]` where `k.startsWith("flowai-")` and `k` is not in `changes`. Non-prefix tables are left untouched.
+    Evidence: `cli/src/toml_merge_test.ts::mergeCodexConfig - removes stale flowai- tables by prefix` + `::mergeCodexConfig - preserves user-authored tables`.
+  - [x] `writeCodexAgents(plan, fs, cwd)` in `cli/src/writer.ts` writes sidecars + TOML block atomically.
   - [x] Running `sync` twice is idempotent for Codex (no diff on second run). Evidence: `cli/src/sync_test.ts` Codex idempotency case.
-  - [x] Removing an agent from `.flowai.yaml` removes the `[agents.<name>]` block and `.codex/agents/<name>.toml` on next sync.
-  - [x] User-hand-edited `[agents.user-agent]` tables survive a sync round-trip.
+  - [x] Removing or renaming an agent in `.flowai.yaml` / framework removes the `[agents.<name>]` block and `.codex/agents/<name>.toml` on next sync via prefix-based orphan cleanup (see FR-DIST.CLEAN-PREFIX).
+  - [x] User-hand-edited `[agents.user-agent]` tables (no `flowai-` prefix) survive a sync round-trip.
   - [x] Malformed `.codex/config.toml` throws with file path + underlying parse error; file contents are preserved.
-  - [x] Manifest file `.codex/flowai-agents.json` tracks managed agent names (mirrors `flowai-hooks.json`).
+  - [x] Legacy `.codex/flowai-agents.json` manifest is deleted on next sync after upgrade (one-shot migration).
+    Evidence: `cli/src/sync_test.ts::sync - codex target: removes legacy flowai-agents.json manifest on upgrade`.
+
+#### FR-DIST.CLEAN-PREFIX Prefix-Based Orphan Cleanup
+
+- **Desc:** Framework sync owns only primitives whose installed name starts with `flowai-`. After writing the current set, flowai scans the managed target dirs and deletes any `flowai-*` entry that is not in the current keep-set. Supersedes the per-name `computeDeletePlan` comparison and the Codex `flowai-agents.json` manifest — both missed renames where the old name disappeared from the current bundle.
+- **Scenario A (skill/command rename):** Framework renames `flowai-plan` → `flowai-skill-plan`. On next `flowai sync`, `{ide}/skills/flowai-skill-plan/` is (re-)written and `{ide}/skills/flowai-plan/` is removed. User skill `my-skill` and third-party skill `paperclip` (no `flowai-` prefix) are untouched.
+- **Scenario B (agent rename):** `framework/core/agents/flowai-deep-research-worker.md` is removed from the bundle. On next sync, `{ide}/agents/flowai-deep-research-worker.md` (and `.toml` for Codex) is deleted. User agent `my-agent.md` untouched.
+- **Scenario C (symlink preservation):** `{ide}/skills/flowai-skill-plan` is a symlink (user-maintained). Sync does NOT remove it even if the target is missing from the bundle.
+- **Managed target dirs (per IDE, per scope via `resolveIdeBaseDir`):**
+  - `{ide}/skills/` — skills + commands share this dir; keep-set = union of installed `skillNames` and `commandNames`.
+  - `{ide}/agents/` — keep-set = `agentNames`. File extension `.md` (Claude/Cursor/OpenCode) or `.toml` (Codex sidecar) is stripped before matching.
+  - Codex `config.toml` `[agents.*]` tables — handled inside `mergeCodexConfig` by the same prefix rule.
+- **Not in scope:**
+  - `{ide}/commands/` (flat slash-command files) — owned by user and `runUserSync`.
+  - Files inside a `flowai-*` dir (sub-file orphans after internal renames) — deferred; no evidence of need (all 10 orphans observed on 2026-04-21 have only `SKILL.md`).
+  - Prefix other than `flowai-` — out of scope.
+- **Acceptance:**
+  - [x] `computePrefixOrphansPlan(targetDir, keepNames, fs, type, { prefix, ext })` in `cli/src/sync.ts` returns a delete plan covering the four invariants above (prefix match, keep-set, symlink skip, absent-target = empty plan).
+    Evidence: `cli/src/prefix_cleanup_test.ts::computePrefixOrphansPlan - removes renamed skill dir` + `- removes renamed agent file` + `- preserves non-flowai entries` + `- skips symlinks` + `- empty plan when no orphans` + `- empty plan when target dir missing`.
+  - [x] Framework sync invokes `computePrefixOrphansPlan` once per managed dir per IDE (skills-dir unified pass after skills+commands write; agents-dir pass).
+    Evidence: `cli/src/sync_test.ts::sync - removes orphan skill dir after framework rename`.
+  - [x] Codex `mergeCodexConfig` removes stale `flowai-*` tables without a manifest; `syncCodexAgents` removes orphan `flowai-*.toml` sidecars via prefix scan and deletes legacy `flowai-agents.json` if present.
+    Evidence: `cli/src/toml_merge_test.ts::mergeCodexConfig - removes stale flowai- tables by prefix` + `cli/src/sync_test.ts::sync - codex target: removes stale agent on second run when excluded` + `cli/src/sync_test.ts::sync - codex target: removes legacy flowai-agents.json manifest on upgrade`.
+  - [x] `runUserSync` is unaffected — no prefix cleanup there (framework entries already filtered out at scan stage).
+    Evidence: `cli/src/user_sync.ts` (`isFramework(name)` guard) + `cli/src/user_sync_test.ts::runUserSync - flowai-* agent not synced`.
 
 #### FR-DIST.CODEX-HOOKS OpenAI Codex Hook Sync (Experimental)
 

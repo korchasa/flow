@@ -348,7 +348,6 @@ export async function sync(
     const {
       allSkillNames,
       skillNames: skillNamesRaw,
-      allCommandNames,
       commandNames: commandNamesRaw,
       allAgentNames,
       agentNames,
@@ -475,27 +474,6 @@ export async function sync(
         await processPlan(skillPlan, fs, options, result, log);
       }
 
-      // Delete excluded skills
-      const skillDeletePlan = await computeDeletePlan(
-        allSkillNames,
-        skillNames,
-        skillTargetDir,
-        "skill",
-        fs,
-      );
-      if (skillDeletePlan.length > 0) {
-        if (isFirstIde) {
-          for (const item of skillDeletePlan) {
-            result.skillActions.push({
-              name: item.name,
-              action: "delete",
-              scaffolds: scaffoldsIndex.get(item.name) ?? [],
-            });
-          }
-        }
-        await processPlan(skillDeletePlan, fs, options, result, log);
-      }
-
       // Commands — user-only primitives sourced from framework/<pack>/commands/,
       // installed into the same .{ide}/skills/ target dir as skills, with
       // `disable-model-invocation: true` injected by readPackCommandFiles.
@@ -537,17 +515,21 @@ export async function sync(
         await processPlan(commandPlan, fs, options, result, log);
       }
 
-      // Delete excluded commands from the shared .{ide}/skills/ target dir.
-      const commandDeletePlan = await computeDeletePlan(
-        allCommandNames,
-        commandNames,
+      // FR-DIST.CLEAN-PREFIX — unified prefix-based orphan cleanup for the
+      // shared .{ide}/skills/ dir. Single pass after BOTH skills and commands
+      // have been written; keep-set = union of both. Catches renames
+      // (flowai-plan → flowai-skill-plan) that the old name-list comparison
+      // missed.
+      const skillCommandKeep = new Set([...skillNames, ...commandNames]);
+      const skillOrphansPlan = await computePrefixOrphansPlan(
         skillTargetDir,
-        "skill",
+        skillCommandKeep,
         fs,
+        "skill",
       );
-      if (commandDeletePlan.length > 0) {
+      if (skillOrphansPlan.length > 0) {
         if (isFirstIde) {
-          for (const item of commandDeletePlan) {
+          for (const item of skillOrphansPlan) {
             result.skillActions.push({
               name: item.name,
               action: "delete",
@@ -555,7 +537,7 @@ export async function sync(
             });
           }
         }
-        await processPlan(commandDeletePlan, fs, options, result, log);
+        await processPlan(skillOrphansPlan, fs, options, result, log);
       }
 
       // Agents (transform per IDE).
@@ -612,17 +594,17 @@ export async function sync(
           await processPlan(agentPlan, fs, options, result, log);
         }
 
-        // Delete excluded agents
-        const agentDeletePlan = await computeDeletePlan(
-          allAgentNames,
-          agentNames,
+        // FR-DIST.CLEAN-PREFIX — prefix-based orphan cleanup for agents.
+        const agentOrphansPlan = await computePrefixOrphansPlan(
           agentTargetDir,
-          "agent",
+          new Set(agentNames),
           fs,
+          "agent",
+          { ext: ".md" },
         );
-        if (agentDeletePlan.length > 0) {
+        if (agentOrphansPlan.length > 0) {
           if (isFirstIde) {
-            for (const item of agentDeletePlan) {
+            for (const item of agentOrphansPlan) {
               result.agentActions.push({
                 name: item.name,
                 action: "delete",
@@ -630,7 +612,7 @@ export async function sync(
               });
             }
           }
-          await processPlan(agentDeletePlan, fs, options, result, log);
+          await processPlan(agentOrphansPlan, fs, options, result, log);
         }
       }
 
@@ -864,33 +846,54 @@ export async function processPlan(
   result.errors.push(...writeResult.errors);
 }
 
-/** Compute delete plan for excluded framework resources that exist locally */
-export async function computeDeletePlan(
-  allFrameworkNames: string[],
-  includedNames: string[],
+/**
+ * FR-DIST.CLEAN-PREFIX — scan `targetDir` and emit a delete plan for any
+ * direct child whose name starts with `prefix` (default `flowai-`) and whose
+ * base name (stripped of optional `ext`) is not in `keepNames`.
+ *
+ * Symlinks are preserved (never deleted) — guards against user-maintained
+ * links that happen to share the prefix.
+ *
+ * Supersedes the old name-list-based `computeDeletePlan` which compared
+ * against the current bundle's names and therefore missed rename orphans
+ * (the old name no longer appears in the current bundle).
+ *
+ * @param targetDir directory to scan (e.g. `<ide>/skills` or `<ide>/agents`)
+ * @param keepNames set of base names to preserve (skills ∪ commands for
+ *   the skills dir; agents for the agents dir)
+ * @param fs filesystem adapter
+ * @param type PlanItem type attached to emitted delete items (`skill` or `agent`)
+ * @param options.prefix literal prefix to match (default `flowai-`)
+ * @param options.ext file extension to require AND strip before the
+ *   keep-set lookup (`.md` for markdown agents, `.toml` for Codex sidecars,
+ *   `""` for skill directories)
+ */
+export async function computePrefixOrphansPlan(
   targetDir: string,
-  type: "skill" | "agent",
+  keepNames: Set<string>,
   fs: FsAdapter,
+  type: PlanItemType,
+  options: { prefix?: string; ext?: string } = {},
 ): Promise<PlanItem[]> {
-  const includedSet = new Set(includedNames);
-  const excludedNames = allFrameworkNames.filter((n) => !includedSet.has(n));
+  if (!(await fs.exists(targetDir))) return [];
+  const prefix = options.prefix ?? "flowai-";
+  const ext = options.ext ?? "";
   const plan: PlanItem[] = [];
 
-  for (const name of excludedNames) {
-    const targetPath = type === "skill"
-      ? join(targetDir, name)
-      : join(targetDir, `${name}.md`);
-
-    if (await fs.exists(targetPath)) {
-      plan.push({
-        type: type as PlanItemType,
-        name,
-        action: "delete",
-        sourcePath: "",
-        targetPath,
-        content: "",
-      });
-    }
+  for await (const entry of fs.readDir(targetDir)) {
+    if (entry.isSymlink) continue;
+    if (!entry.name.startsWith(prefix)) continue;
+    if (ext && !entry.name.endsWith(ext)) continue;
+    const baseName = ext ? entry.name.slice(0, -ext.length) : entry.name;
+    if (keepNames.has(baseName)) continue;
+    plan.push({
+      type,
+      name: baseName,
+      action: "delete",
+      sourcePath: "",
+      targetPath: join(targetDir, entry.name),
+      content: "",
+    });
   }
 
   return plan;

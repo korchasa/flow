@@ -11,8 +11,6 @@ import {
   buildCodexAgentSidecar,
   type CodexAgentChange,
   mergeCodexConfig,
-  readCodexManifest,
-  writeCodexManifest,
 } from "./toml_merge.ts";
 
 /**
@@ -165,25 +163,22 @@ export async function migrateAgentsToCodex(
     changes.push(change);
   }
 
-  // Merge into config.toml.
+  // Merge into config.toml. FR-DIST.CLEAN-PREFIX: ownership by `flowai-`
+  // prefix, no manifest. Drop legacy flowai-agents.json if present.
   const configPath = join(toBase, "config.toml");
-  const manifestPath = join(toBase, "flowai-agents.json");
   const existingToml = await fs.exists(configPath)
     ? await fs.readFile(configPath)
     : "";
-  const existingManifest = readCodexManifest(
-    await fs.exists(manifestPath) ? await fs.readFile(manifestPath) : null,
-  );
-  const { content: newToml, manifest: newManifest } = mergeCodexConfig(
-    existingToml,
-    changes,
-    existingManifest,
-  );
+  const { content: newToml } = mergeCodexConfig(existingToml, changes);
   if (newToml !== existingToml) {
     await fs.writeFile(configPath, newToml);
     result.totalWritten++;
   }
-  await fs.writeFile(manifestPath, writeCodexManifest(newManifest));
+  const legacyManifestPath = join(toBase, "flowai-agents.json");
+  if (await fs.exists(legacyManifestPath)) {
+    await fs.remove(legacyManifestPath);
+    result.totalDeleted++;
+  }
 
   log(
     `  Agents (TOML sidecars): ${created} created, ${skipped} unchanged, 0 conflicts`,

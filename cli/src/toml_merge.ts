@@ -1,13 +1,14 @@
 // FR-DIST.CODEX-AGENTS — TOML merge utility for Codex config.toml
+// FR-DIST.CLEAN-PREFIX — ownership via `flowai-` key prefix (no manifest).
 /**
  * Merge flowai-managed `[agents.<name>]` tables into an existing Codex
  * `config.toml` without touching unrelated user sections.
  *
  * Contract:
  * - PURE. No FS. Callers pass in the current TOML text and receive the new text.
- * - OWNERSHIP boundary: flowai owns only the subset of `[agents.<name>]` tables
- *   listed in the manifest file (`.codex/flowai-agents.json`). User-authored
- *   entries outside that set are preserved byte-equivalent.
+ * - OWNERSHIP boundary: flowai owns only `[agents.<name>]` tables whose key
+ *   starts with `flowai-`. User-authored entries without that prefix are
+ *   preserved byte-equivalent (modulo @std/toml canonical formatting).
  * - FAIL FAST on malformed input TOML — throw with the underlying parse error
  *   so the caller can prompt the user. Never silently overwrite a user's config.
  *
@@ -21,6 +22,9 @@
 import { parse as parseToml, stringify as stringifyToml } from "@std/toml";
 import { parse as parseYaml } from "@std/yaml";
 
+/** Prefix marking `[agents.<name>]` tables owned by flowai. */
+const FLOWAI_PREFIX = "flowai-";
+
 /** Change for a single Codex subagent registration. */
 export interface CodexAgentChange {
   /** Unique agent name (TOML sub-table key). */
@@ -29,42 +33,6 @@ export interface CodexAgentChange {
   description: string;
   /** Path (relative to .codex/) to the sidecar TOML holding `developer_instructions`. */
   configFile: string;
-}
-
-/** Manifest file tracking agent names managed by flowai for Codex. */
-export interface CodexManifest {
-  version: number;
-  /** Sorted list of agent names owned by flowai. */
-  agents: string[];
-}
-
-/** Build an empty manifest. */
-export function emptyCodexManifest(): CodexManifest {
-  return { version: 1, agents: [] };
-}
-
-/** Parse a CodexManifest from JSON text. Null/empty/malformed → empty manifest. */
-export function readCodexManifest(jsonText: string | null): CodexManifest {
-  if (!jsonText) return emptyCodexManifest();
-  try {
-    const data = JSON.parse(jsonText) as Partial<CodexManifest>;
-    if (!Array.isArray(data.agents)) return emptyCodexManifest();
-    return {
-      version: typeof data.version === "number" ? data.version : 1,
-      agents: data.agents.map(String),
-    };
-  } catch {
-    return emptyCodexManifest();
-  }
-}
-
-/** Serialise a CodexManifest to JSON text (pretty-printed, stable ordering). */
-export function writeCodexManifest(manifest: CodexManifest): string {
-  const sorted: CodexManifest = {
-    version: manifest.version,
-    agents: [...manifest.agents].sort(),
-  };
-  return JSON.stringify(sorted, null, 2) + "\n";
 }
 
 /**
@@ -176,10 +144,9 @@ export function buildCodexAgentSidecar(
  *
  * Behaviour:
  * - For each change, upsert `[agents.<name>] description=... config_file=...`.
- * - Remove `[agents.<name>]` tables listed in the incoming manifest but absent
- *   from `changes` (stale flowai agents are cleaned up).
+ * - Delete any existing `[agents.<k>]` where `k.startsWith("flowai-")` and
+ *   `k` is not in `changes`. Non-prefix tables are preserved.
  * - Leave all other top-level keys and tables untouched.
- * - Refresh the manifest to reflect the post-merge managed agent set.
  *
  * @throws Error if `tomlText` cannot be parsed. Error message includes a
  *   `Failed to parse Codex config.toml` prefix plus the underlying parse error.
@@ -187,8 +154,7 @@ export function buildCodexAgentSidecar(
 export function mergeCodexConfig(
   tomlText: string,
   changes: CodexAgentChange[],
-  manifest: CodexManifest,
-): { content: string; manifest: CodexManifest } {
+): { content: string } {
   const trimmed = tomlText.trim();
   let parsed: Record<string, unknown> = {};
   if (trimmed.length > 0) {
@@ -209,11 +175,12 @@ export function mergeCodexConfig(
       ? { ...(agentsRaw as Record<string, Record<string, unknown>>) }
       : {};
 
-  // Remove stale managed agents (listed in manifest but not in new changes).
+  // FR-DIST.CLEAN-PREFIX — strip stale flowai-* tables not in the current
+  // change-set. Tables without the prefix are user-authored and preserved.
   const changeNames = new Set(changes.map((c) => c.name));
-  for (const name of manifest.agents) {
-    if (!changeNames.has(name)) {
-      delete agents[name];
+  for (const key of Object.keys(agents)) {
+    if (key.startsWith(FLOWAI_PREFIX) && !changeNames.has(key)) {
+      delete agents[key];
     }
   }
 
@@ -233,12 +200,7 @@ export function mergeCodexConfig(
     delete parsed.agents;
   }
 
-  const newManifest: CodexManifest = {
-    version: 1,
-    agents: [...changeNames].sort(),
-  };
-
   // @std/toml stringify produces canonical output.
   const out = stringifyToml(parsed);
-  return { content: out, manifest: newManifest };
+  return { content: out };
 }

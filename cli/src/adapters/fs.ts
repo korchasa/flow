@@ -135,6 +135,25 @@ export class InMemoryFsAdapter implements FsAdapter {
         }
       }
     }
+
+    // Symlinks that live directly under `path` — yielded with isSymlink:true
+    // so consumers (e.g. prefix-based orphan scanner) can distinguish them
+    // from real files/dirs. Mirrors Deno.readDir + Deno.lstat semantics.
+    for (const linkPath of this.symlinks.keys()) {
+      if (linkPath.startsWith(prefix)) {
+        const rest = linkPath.substring(prefix.length);
+        // Only direct children — skip nested paths under the symlink.
+        if (rest.includes("/")) continue;
+        if (seen.has(rest)) continue;
+        seen.add(rest);
+        yield {
+          name: rest,
+          isFile: false,
+          isDirectory: false,
+          isSymlink: true,
+        };
+      }
+    }
   }
 
   stat(path: string): Promise<Deno.FileInfo> {

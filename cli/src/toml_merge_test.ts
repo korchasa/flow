@@ -1,15 +1,12 @@
 // FR-DIST.CODEX-AGENTS — tests for mergeCodexConfig + buildCodexAgentSidecar
+// FR-DIST.CLEAN-PREFIX — ownership by `flowai-` key prefix (no manifest).
 import { assert, assertEquals, assertThrows } from "@std/assert";
 import {
   buildCodexAgentSidecar,
   type CodexAgentChange,
-  type CodexManifest,
-  emptyCodexManifest,
   mergeCodexConfig,
 } from "./toml_merge.ts";
 import { parse as parseToml } from "@std/toml";
-
-const EMPTY_MANIFEST: CodexManifest = emptyCodexManifest();
 
 Deno.test("mergeCodexConfig - adds new [agents.<name>] table to empty config", () => {
   const changes: CodexAgentChange[] = [{
@@ -17,18 +14,13 @@ Deno.test("mergeCodexConfig - adds new [agents.<name>] table to empty config", (
     description: "Console expert subagent",
     configFile: "./agents/flowai-console-expert.toml",
   }];
-  const { content, manifest } = mergeCodexConfig(
-    "",
-    changes,
-    EMPTY_MANIFEST,
-  );
+  const { content } = mergeCodexConfig("", changes);
   const parsed = parseToml(content) as Record<string, unknown>;
   const agents = parsed.agents as Record<string, unknown>;
   assert(agents, "agents table missing");
   const entry = agents["flowai-console-expert"] as Record<string, unknown>;
   assertEquals(entry.description, "Console expert subagent");
   assertEquals(entry.config_file, "./agents/flowai-console-expert.toml");
-  assertEquals(manifest.agents.includes("flowai-console-expert"), true);
 });
 
 Deno.test("mergeCodexConfig - preserves existing top-level config keys", () => {
@@ -39,11 +31,11 @@ model_reasoning_effort = "high"
 trust_level = "trusted"
 `;
   const changes: CodexAgentChange[] = [{
-    name: "banana",
+    name: "flowai-banana",
     description: "banana agent",
-    configFile: "./agents/banana.toml",
+    configFile: "./agents/flowai-banana.toml",
   }];
-  const { content } = mergeCodexConfig(existing, changes, EMPTY_MANIFEST);
+  const { content } = mergeCodexConfig(existing, changes);
   const parsed = parseToml(content) as Record<string, unknown>;
   assertEquals(parsed.model, "gpt-5.4");
   assertEquals(parsed.model_reasoning_effort, "high");
@@ -53,45 +45,41 @@ trust_level = "trusted"
   assertEquals(proj.trust_level, "trusted");
 });
 
-Deno.test("mergeCodexConfig - removes stale agents listed in manifest but not in changes", () => {
-  const existing = `[agents.alpha]
+Deno.test("mergeCodexConfig - removes stale flowai- tables by prefix", () => {
+  // Pre-existing state: two flowai agents + one user-authored table.
+  const existing = `[agents.flowai-alpha]
 description = "alpha"
-config_file = "./agents/alpha.toml"
+config_file = "./agents/flowai-alpha.toml"
 
-[agents.beta]
+[agents.flowai-beta]
 description = "beta"
-config_file = "./agents/beta.toml"
+config_file = "./agents/flowai-beta.toml"
 
 [agents.user-kept]
-description = "user-authored, not managed"
+description = "user-authored, not managed by flowai"
 config_file = "./agents/user-kept.toml"
 `;
-  const manifest: CodexManifest = {
-    version: 1,
-    agents: ["alpha", "beta"],
-  };
+  // Current changes keep alpha, drop beta (simulating a rename / removal).
   const changes: CodexAgentChange[] = [
     {
-      name: "alpha",
+      name: "flowai-alpha",
       description: "alpha",
-      configFile: "./agents/alpha.toml",
+      configFile: "./agents/flowai-alpha.toml",
     },
-    // beta dropped
   ];
-  const { content, manifest: newManifest } = mergeCodexConfig(
-    existing,
-    changes,
-    manifest,
-  );
+  const { content } = mergeCodexConfig(existing, changes);
   const parsed = parseToml(content) as Record<string, unknown>;
   const agents = parsed.agents as Record<string, unknown>;
-  assert(agents.alpha, "alpha should remain");
-  assertEquals(agents.beta, undefined, "beta should be removed");
-  assert(agents["user-kept"], "user-kept should NOT be removed");
-  assertEquals(newManifest.agents, ["alpha"]);
+  assert(agents["flowai-alpha"], "flowai-alpha should remain");
+  assertEquals(
+    agents["flowai-beta"],
+    undefined,
+    "flowai-beta should be removed by prefix rule",
+  );
+  assert(agents["user-kept"], "user-kept (no flowai- prefix) must survive");
 });
 
-Deno.test("mergeCodexConfig - user-hand-edited agent table survives round-trip", () => {
+Deno.test("mergeCodexConfig - preserves user-authored tables (no flowai- prefix)", () => {
   // Initial state: one flowai agent.
   const { content: afterFirstSync } = mergeCodexConfig(
     "",
@@ -100,7 +88,6 @@ Deno.test("mergeCodexConfig - user-hand-edited agent table survives round-trip",
       description: "Expert",
       configFile: "./agents/flowai-console-expert.toml",
     }],
-    EMPTY_MANIFEST,
   );
   // User adds their own agent by hand.
   const afterUserEdit = afterFirstSync + `
@@ -108,7 +95,7 @@ Deno.test("mergeCodexConfig - user-hand-edited agent table survives round-trip",
 description = "my custom agent"
 config_file = "./agents/my-custom.toml"
 `;
-  // Second sync: same flowai agent, user agent absent from changes.
+  // Second sync: same flowai agent — user table must survive.
   const { content: afterSecondSync } = mergeCodexConfig(
     afterUserEdit,
     [{
@@ -116,7 +103,6 @@ config_file = "./agents/my-custom.toml"
       description: "Expert",
       configFile: "./agents/flowai-console-expert.toml",
     }],
-    { version: 1, agents: ["flowai-console-expert"] },
   );
   const parsed = parseToml(afterSecondSync) as Record<string, unknown>;
   const agents = parsed.agents as Record<string, unknown>;
@@ -134,10 +120,10 @@ description = "missing close bracket"
   assertThrows(
     () =>
       mergeCodexConfig(malformed, [{
-        name: "x",
+        name: "flowai-x",
         description: "x",
         configFile: "./x.toml",
-      }], EMPTY_MANIFEST),
+      }]),
     Error,
     "Failed to parse",
   );
@@ -146,20 +132,19 @@ description = "missing close bracket"
 Deno.test("mergeCodexConfig - idempotent: same changes twice produce same content", () => {
   const changes: CodexAgentChange[] = [
     {
-      name: "a",
+      name: "flowai-a",
       description: "a-desc",
-      configFile: "./agents/a.toml",
+      configFile: "./agents/flowai-a.toml",
     },
     {
-      name: "b",
+      name: "flowai-b",
       description: "b-desc",
-      configFile: "./agents/b.toml",
+      configFile: "./agents/flowai-b.toml",
     },
   ];
-  const first = mergeCodexConfig("", changes, EMPTY_MANIFEST);
-  const second = mergeCodexConfig(first.content, changes, first.manifest);
+  const first = mergeCodexConfig("", changes);
+  const second = mergeCodexConfig(first.content, changes);
   assertEquals(first.content, second.content);
-  assertEquals(first.manifest.agents.sort(), second.manifest.agents.sort());
 });
 
 Deno.test("buildCodexAgentSidecar - extracts name/description + embeds body in triple-quoted literal", () => {
@@ -193,7 +178,7 @@ Do not modify files.
 
 Deno.test("buildCodexAgentSidecar - body with triple-single-quotes falls back to triple-double", () => {
   const raw = `---
-name: edge
+name: flowai-edge
 description: Body has triple quotes
 ---
 
@@ -210,7 +195,7 @@ Here's a literal: ''' (three singles).
 
 Deno.test("buildCodexAgentSidecar - body with double-quotes preserved in literal form", () => {
   const raw = `---
-name: quoter
+name: flowai-quoter
 description: Body with double quotes
 ---
 
@@ -247,17 +232,13 @@ Body.
   );
 });
 
-Deno.test("mergeCodexConfig - empty changes + empty manifest leaves content unchanged", () => {
+Deno.test("mergeCodexConfig - empty changes leaves user content unchanged", () => {
   const existing = `model = "gpt-5.4"
 
 [features]
 multi_agent = true
 `;
-  const { content } = mergeCodexConfig(
-    existing,
-    [],
-    EMPTY_MANIFEST,
-  );
+  const { content } = mergeCodexConfig(existing, []);
   // Normalise whitespace: @std/toml may re-stringify with minor formatting diffs.
   const parsedOriginal = parseToml(existing);
   const parsedResult = parseToml(content);

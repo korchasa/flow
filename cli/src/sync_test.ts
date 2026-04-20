@@ -540,7 +540,7 @@ function codexTestConfig(): FlowConfig {
   };
 }
 
-Deno.test("sync - codex target: writes sidecar TOML + [agents.<name>] block + manifest", async () => {
+Deno.test("sync - codex target: writes sidecar TOML + [agents.<name>] block", async () => {
   const fs = new InMemoryFsAdapter();
   fs.dirs.add("/project");
   fs.dirs.add("/project/.codex");
@@ -574,12 +574,36 @@ Deno.test("sync - codex target: writes sidecar TOML + [agents.<name>] block + ma
   const entry = agents["flowai-console-expert"] as Record<string, unknown>;
   assertEquals(entry.config_file, "./agents/flowai-console-expert.toml");
 
-  // Manifest written
-  const manifestText = await fs.readFile(
-    "/project/.codex/flowai-agents.json",
+  // FR-DIST.CLEAN-PREFIX — legacy manifest file must NOT be created by the
+  // new prefix-based flow.
+  assertEquals(
+    await fs.exists("/project/.codex/flowai-agents.json"),
+    false,
+    "legacy flowai-agents.json must not be created under the prefix scheme",
   );
-  const manifest = JSON.parse(manifestText);
-  assertEquals(manifest.agents, ["flowai-console-expert"]);
+});
+
+Deno.test("sync - codex target: removes legacy flowai-agents.json manifest on upgrade", async () => {
+  const fs = new InMemoryFsAdapter();
+  fs.dirs.add("/project");
+  fs.dirs.add("/project/.codex");
+  // Simulate an upgrade: a previous (pre-CLEAN-PREFIX) sync left a manifest.
+  await fs.writeFile(
+    "/project/.codex/flowai-agents.json",
+    `{ "version": 1, "agents": ["flowai-console-expert"] }\n`,
+  );
+
+  await sync("/project", codexTestConfig(), fs, {
+    yes: true,
+    source: codexTestSource(),
+    onProgress: () => {},
+  });
+
+  assertEquals(
+    await fs.exists("/project/.codex/flowai-agents.json"),
+    false,
+    "legacy manifest must be deleted on next sync after upgrade",
+  );
 });
 
 Deno.test("sync - codex target: idempotent across two runs", async () => {
@@ -1016,5 +1040,78 @@ Deno.test("sync - dry-run global mode does not touch user dirs", async () => {
   assertEquals(
     await fs.exists("/home/user/.claude/skills/flowai-skill-demo/SKILL.md"),
     false,
+  );
+});
+
+// --- FR-DIST.CLEAN-PREFIX — prefix-based orphan cleanup end-to-end ---
+
+Deno.test("sync - removes orphan skill dir after framework rename", async () => {
+  const fs = new InMemoryFsAdapter();
+  fs.dirs.add("/project");
+  fs.dirs.add("/project/.claude");
+
+  // Pre-existing installation: the old primitive dir from a previous sync
+  // (simulates pre-rename state). NOT in the current framework bundle.
+  await fs.writeFile(
+    "/project/.claude/skills/flowai-skill-old/SKILL.md",
+    "old body",
+  );
+  // A user-owned skill that must survive cleanup.
+  await fs.writeFile(
+    "/project/.claude/skills/my-custom/SKILL.md",
+    "user body",
+  );
+
+  // Current bundle only has the new name.
+  const source = new InMemoryFrameworkSource(
+    new Map([
+      [
+        "framework/core/pack.yaml",
+        "name: core\nversion: 1.0.0\ndescription: core\n",
+      ],
+      [
+        "framework/core/skills/flowai-skill-new/SKILL.md",
+        `---
+name: flowai-skill-new
+description: New name after rename
+---
+Body.
+`,
+      ],
+    ]),
+  );
+
+  const config: FlowConfig = {
+    version: "1.1",
+    ides: ["claude"],
+    packs: ["core"],
+    skills: { include: [], exclude: [] },
+    agents: { include: [], exclude: [] },
+    commands: { include: [], exclude: [] },
+  };
+
+  await sync("/project", config, fs, {
+    yes: true,
+    source,
+    onProgress: () => {},
+  });
+
+  // New name installed.
+  assertEquals(
+    await fs.exists("/project/.claude/skills/flowai-skill-new/SKILL.md"),
+    true,
+    "new name must be present after sync",
+  );
+  // Old flowai- dir must be removed by prefix-based cleanup.
+  assertEquals(
+    await fs.exists("/project/.claude/skills/flowai-skill-old"),
+    false,
+    "stale flowai-* dir must be removed by prefix cleanup",
+  );
+  // User-owned skill untouched.
+  assertEquals(
+    await fs.exists("/project/.claude/skills/my-custom/SKILL.md"),
+    true,
+    "user-owned skill must survive prefix cleanup",
   );
 });
