@@ -125,6 +125,7 @@ Your memory resets between sessions. Documentation is the only link to past deci
   2. **Non-code evidence** (benchmarks, URLs, config files without comment support, file/dir existence):
      Placed directly in SRS/SDS next to the criterion.
   Without evidence of either type, the criterion stays `[ ]`.
+- **Acceptance-as-gate**: Every FR in SRS MUST declare a runnable `**Acceptance:**` reference — a benchmark scenario ID (flowai's own idiom, matched by `check-fr-coverage.ts`), a test `path::name`, a verification command, or `manual — <reviewer>`. Prose-only acceptance is not sufficient. An FR stays `[ ]` until its acceptance reference exists and passes on the current commit. Enforced by `flowai-skill-plan` (DoD tuple), `flowai-skill-review` / `flowai-review-and-commit` (FR Coverage Audit — blocking), and `flowai-commit` / `flowai-review-and-commit` (FR Acceptance Gate on SRS edits).
 
 ### SRS Format (`documents/requirements.md`)
 
@@ -143,7 +144,9 @@ Your memory resets between sessions. Documentation is the only link to past deci
 ### 3.1 FR-CMD-EXEC
 - **Desc:**
 - **Scenario:**
-- **Acceptance:**
+- **Acceptance verified by benchmarks:** `scenario-id-1`, `scenario-id-2`
+  <!-- or: **Acceptance:** tests/foo_test.ts::test_bar | `deno task check-x` | manual — <reviewer> -->
+- **Status:** [ ] / [x]
 ---
 
 ## 4. Non-Functional
@@ -234,8 +237,14 @@ implements:
 
 ## Definition of Done
 
-- [ ] [Criteria 1]
-- [ ] [Criteria 2]
+Every DoD item MUST pair with an FR-ID and a runnable acceptance reference. Items without this tuple are wishes, not contracts.
+
+- [ ] FR-XXX: <observable behavior>
+  - Test: `<path/to/test>::<test_name>` (or `Benchmark: <scenario-id>`)
+  - Evidence: `<command that passes iff the item is done>`
+- [ ] FR-YYY: <observable behavior>
+  - Test: `...`
+  - Evidence: `...`
 
 ## Solution
 

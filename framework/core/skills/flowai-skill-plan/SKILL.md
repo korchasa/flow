@@ -28,7 +28,7 @@ You are autonomous and proactive. You exhaust all available resources (codebase,
 5. **Proactive Resolution**: Follow `Proactive Resolution` rule from `## Planning Rules` in AGENTS.md.
 6. **Stop-Analysis Protocol**: Follow Stop-Analysis rules from `# YOU MUST` in AGENTS.md.
 7. **AGENTS.md Planning Rules**: Follow all rules from `## Planning Rules` section in AGENTS.md (Environment Side-Effects, Verification Steps, Functionality Preservation, Data-First, Architectural Validation, Variant Analysis, User Decision Gate).
-8. **Traceability**: If task implements known FR-* requirements, add `implements:` YAML frontmatter with FR-* codes from SRS. Optional — omit if FR-* not yet defined.
+8. **Traceability & Acceptance Tuple**: If the task creates, modifies, or implements FR-* requirements, the `implements:` YAML frontmatter is REQUIRED with every affected FR-* code. Every item in `## Definition of Done` MUST pair with an FR-ID and a runnable acceptance reference — `Test: <path>::<name>` (or `Benchmark: <scenario-id>`) + `Evidence: <command>`. Exception — `manual — <reviewer>` — only when automation cost exceeds defect cost. DoD items without this tuple are not accepted and must be rewritten before the plan is finalized. The test does not need to exist yet — the develop phase creates it as RED — but the plan MUST fix WHERE it will live. If an FR is new (not yet in `documents/requirements.md`), the plan MUST also list "add FR-XXX section to SRS with `**Acceptance:**` field" as a DoD item, paired with the same tuple.
 </rules>
 
 ## Instructions
@@ -58,6 +58,11 @@ You are autonomous and proactive. You exhaust all available resources (codebase,
    - Overwrite the `Solution` section placeholder with concrete implementation steps for the selected variant (follow `### GODS Format` from AGENTS.md).
    - The Solution section MUST contain: files to create/modify, implementation approach, code structure, dependencies, error handling strategy (especially for async/callback conversions), and verification commands.
    - **CRITICAL**: You MUST write the updated content to the task file. Never leave Solution as a placeholder or comment.
+5a. **Acceptance Tuple Check** — execute immediately, no permission needed
+   - Walk every entry in `## Definition of Done`. For each, confirm the tuple `(FR-ID, Test path or Benchmark id, Evidence command)` is present and concrete (no placeholders like `<TBD>` or `TODO`). `manual — <reviewer>` is acceptable only with an explicit reviewer name.
+   - If any DoD item lacks the tuple, edit the task file to add it. Prefer reusing an existing FR (for bug fixes and small refactors) over coining a new one. Only introduce a new FR for user-visible or contract-level changes.
+   - If new FRs appear in `implements:` that are absent from `documents/requirements.md`, the task MUST contain an explicit DoD entry "add FR-XXX section to SRS with `**Acceptance:**` field filled".
+   - Do NOT create the test files themselves — that is the develop phase's RED step. This skill only FIXES the test location contract.
 6. **Critique** — execute immediately, no permission needed
    - Critically analyze the plan for risks, gaps, missing edge cases, over-engineering, and unclear steps. Present critique in chat as a numbered list.
 7. **Triage & Auto-Apply Refinements** — execute immediately, no permission needed

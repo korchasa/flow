@@ -82,6 +82,7 @@ The project follows Conventional Commits 1.0.0 and uses a structured documentati
      - Task file context: [used <filename> | none found]
      ```
    - **Gate**: If code changes exist but zero documents were updated, re-examine — new exports, functions, changed signatures, or new modules almost always require an update. Only proceed without updates if justified in the audit report.
+   - **FR Acceptance Gate** _(blocking — see Requirements Lifecycle in AGENTS.md)_: If the diff adds or modifies FR sections in `documents/requirements.md`, each new/modified FR MUST contain a filled `**Acceptance:**` field pointing to a runnable test, benchmark id, verification command, or `manual — <reviewer>`. If any FR lacks this, STOP and ask the user to fill it (or route the plan back through `flowai-skill-plan`). Do not commit SRS sections that violate the lifecycle contract.
 3. **Atomic Grouping Strategy (Subagent)**
    - Use the `flowai-diff-specialist` subagent to analyze changes and generate a commit plan.
    - Pass the following prompt to the subagent: "Analyze the current git changes. Default to ONE commit for all changes. Split into multiple commits ONLY if changes serve genuinely different, unrelated purposes. If the user explicitly requested a split, follow that request. Return a JSON structure with proposed commits."

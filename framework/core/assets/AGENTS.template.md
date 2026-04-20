@@ -63,6 +63,7 @@ Your memory resets between sessions. Documentation is the only link to past deci
   1. **Code-evidenced**: Source files contain `// FR-<ID>` (TS/JS) or `# FR-<ID>` (YAML/shell) comments near implementing logic. No paths in SRS — the code comment IS the evidence.
   2. **Non-code evidence** (benchmarks, URLs, config files without comment support, file/dir existence): Placed directly in SRS/SDS next to the criterion.
   Without evidence of either type, the criterion stays `[ ]`.
+- **Acceptance-as-gate**: Every FR in SRS MUST declare a runnable `**Acceptance:**` reference — a test path + test name, a benchmark scenario ID, or a verification command. Prose-only acceptance is not sufficient. An FR stays `[ ]` until its acceptance reference exists and passes on the current commit. Exception: when automation cost exceeds defect cost (pure visual design, external vendor dependency), mark `**Acceptance: manual — <reviewer> — <checklist path>**`. Manual is the exception, not the default.
 
 ### SRS Format (`documents/requirements.md`)
 ```markdown
@@ -77,7 +78,8 @@ Your memory resets between sessions. Documentation is the only link to past deci
 ### 3.1 FR-CMD-EXEC
 - **Desc:**
 - **Scenario:**
-- **Acceptance:**
+- **Acceptance:** <test-path::test-name | benchmark-id | `evidence-command` | `manual — <reviewer>`>
+- **Status:** [ ] / [x]
 ---
 
 ## 4. Non-Functional
@@ -159,8 +161,14 @@ implements:
 
 ## Definition of Done
 
-- [ ] [Criteria 1]
-- [ ] [Criteria 2]
+Every DoD item MUST pair with (a) an FR-ID and (b) a runnable acceptance reference. Items without this tuple are wishes, not contracts.
+
+- [ ] FR-XXX: <observable behavior>
+  - Test: `<path/to/test>::<test_name>` (or `Benchmark: <scenario-id>`)
+  - Evidence: `<command that passes iff the item is done>`
+- [ ] FR-YYY: <observable behavior>
+  - Test: `...`
+  - Evidence: `...`
 
 ## Solution
 
@@ -177,6 +185,17 @@ implements:
 - Abbreviate terms after first use — define once, abbreviate everywhere.
 - Use symbols and numbers to replace words where unambiguous (e.g., `→` instead of "leads to").
 
+## Requirements Lifecycle (Plan → Develop → Review → Commit)
+
+Requirements are only real when a machine can verify them. Each phase of the cycle has a concrete, non-skippable binding between FR and acceptance test.
+
+- **Plan** (`flowai-skill-plan` / `flowai-skill-epic`): a task plan is not accepted without (a) `implements:` frontmatter listing every FR it touches, (b) each DoD item paired with `(FR-ID, test-path-or-benchmark, evidence-command)`. If an FR is new, add its section to SRS with the `**Acceptance:**` field filled in the same pass.
+- **Develop** (TDD): RED = write the acceptance test first, using the path declared in the plan, and confirm it fails. GREEN = minimal code + `// FR-<ID>` comment next to the implementing logic. CHECK = the project's `check` command passes, including the new test.
+- **Review** (`flowai-skill-review` / `flowai-review-and-commit` / `flowai-skill-jit-review`): for every FR in scope, verify (a) SRS declares runnable acceptance, (b) the acceptance test exists and passes in the current diff, (c) source files carry `// FR-<ID>` markers. Any gap → `[critical]`, verdict cannot be `Approve`.
+- **Commit** (`flowai-commit` / `flowai-review-and-commit`): before committing, if the diff adds/modifies FR sections in SRS, each new/modified FR MUST have a filled `**Acceptance:**` field. If it touches implementing code, the paired acceptance test MUST pass. Missing either → block commit.
+
+Scope discipline prevents over-formalization: (1) pure bug fixes reuse an existing FR — add a regression test, no new FR; (2) refactors that preserve behavior cite the FR already covering the behavior; (3) only user-visible or contract-level changes introduce new FRs. The gate applies to new/changed FRs, not to every edit.
+
 ## Planning Rules
 
 - **Environment Side-Effects**: When changes touch infra, databases, or external services, the plan must include migration, sync, or deploy steps — otherwise the change works locally but breaks in production.
@@ -190,9 +209,9 @@ implements:
 
 ## TDD Flow
 
-1. **RED**: Write a failing test (`test <id>`) for new or changed logic.
-2. **GREEN**: Write minimal code to pass the test.
-3. **REFACTOR**: Improve code and tests without changing behavior. Re-run `test <id>`.
+1. **RED**: Write a failing test for new or changed logic. When the change maps to an FR (new or modified), the failing test is the **FR's acceptance test** at the path declared in the plan's DoD; it doubles as the gate for `Requirements Lifecycle`. Pure internal refactors may use narrower unit tests.
+2. **GREEN**: Write minimal code to pass the test. When implementing an FR, add a `// FR-<ID>` (TS/JS/Go/Rust) or `# FR-<ID>` (YAML/shell/Python) comment next to the implementing logic.
+3. **REFACTOR**: Improve code and tests without changing behavior. Re-run the test.
 4. **CHECK**: Run `fmt`, `lint`, and full test suite. You are NOT done after GREEN — skipping CHECK leaves formatting errors and regressions undetected. This step is mandatory.
 
 ### Test Rules

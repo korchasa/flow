@@ -128,6 +128,15 @@ the other.
      `[critical] Phantom completion`.
    - Check for regressions: do changed files break existing functionality?
 
+4a. **FR Coverage Audit** _(blocking gate — see Requirements Lifecycle in AGENTS.md)_
+   - **Identify FRs in scope**: (a) FR-* codes from the task file's `implements:` frontmatter; (b) any FR section added or modified in the diff to `documents/requirements.md`; (c) any `// FR-<ID>` / `# FR-<ID>` markers introduced or touched in the diff.
+   - **For each FR in scope**:
+     1. SRS section MUST contain `**Acceptance:**` with a runnable reference (test `path::name`, benchmark id, verification command, or `manual — <reviewer>`). Missing or placeholder (`<TBD>`, `TODO`) → `[critical] FR-<ID> has no acceptance reference`.
+     2. Run the evidence command (or `deno run -A scripts/check-fr-coverage.ts FR-<ID>` if the script exists). Non-zero exit, failing test, or `manual` without a reviewer name → `[critical] FR-<ID> acceptance fails`.
+     3. Grep the diff for `// FR-<ID>` / `# FR-<ID>` in implementing source files. FR claimed implemented in diff but no marker in changed source → `[critical] FR-<ID> missing code marker`.
+     4. Task DoD has `[x]` paired with this FR but no evidence-command run in this session and no cached pass → `[critical] Phantom completion on FR-<ID>`.
+   - **Gate**: findings here are blocking. Verdict cannot be `Approve` while any FR-gate issue remains, regardless of other findings.
+
 5. **QA: Hygiene** _(use SA2 result if available; otherwise run inline)_
    - If SA2 completed: review its findings, deduplicate with own Code Review
      findings, and merge into the report.
@@ -250,6 +259,7 @@ After completing the review report above:
      - Task file context: [used <filename> | none found]
      ```
    - **Gate**: If code changes exist but zero documents were updated, re-examine — new exports, functions, changed signatures, or new modules almost always require an update. Only proceed without updates if justified in the audit report.
+   - **FR Acceptance Gate** _(blocking — see Requirements Lifecycle in AGENTS.md)_: If the diff adds or modifies FR sections in `documents/requirements.md`, each new/modified FR MUST contain a filled `**Acceptance:**` field pointing to a runnable test, benchmark id, verification command, or `manual — <reviewer>`. If any FR lacks this, STOP and ask the user to fill it (or route the plan back through `flowai-skill-plan`). Do not commit SRS sections that violate the lifecycle contract.
 3. **Atomic Grouping Strategy (Subagent)**
    - Use the `flowai-diff-specialist` subagent to analyze changes and generate a commit plan.
    - Pass the following prompt to the subagent: "Analyze the current git changes. Default to ONE commit for all changes. Split into multiple commits ONLY if changes serve genuinely different, unrelated purposes. If the user explicitly requested a split, follow that request. Return a JSON structure with proposed commits."
