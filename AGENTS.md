@@ -270,7 +270,7 @@ Every DoD item MUST pair with an FR-ID and a runnable acceptance reference. Item
 - **Data-First**: When integrating with external APIs or processes, inspect the actual protocol and data formats before planning — assumptions about data shape are the #1 source of integration bugs.
 - **Reference-First**: When spec/task file lists reference files (existing implementations, examples, format specs) — READ THEM before writing code. Do not assume data formats — verify from reference source.
 - **Architectural Validation**: For complex logic changes, visualize the event sequence (sequence diagram or pseudocode) — it catches race conditions and missing edges that prose descriptions miss.
-- **Variant Analysis**: When the path is non-obvious, propose variants with Pros/Cons/Risks per variant and trade-offs across them. Quality over quantity — one well-reasoned variant is fine if the path is clear.
+- **Variant Analysis**: When the path is non-obvious, propose variants with Pros/Cons/Risks per variant and trade-offs across them. Quality over quantity — one well-reasoned variant is fine if the path is clear. When changing a workflow primitive (skill, command, agent) that has existing benchmark coverage, ALWAYS surface ≥2 variants before editing — the "obvious path" heuristic does not apply, since primitives have multiple valid attachment points (start, mid, end, separate phase) and each has different regression risk.
 - **User Decision Gate**: Do NOT detail implementation plan until user explicitly selects a variant.
 - **Plan Persistence**: After variant selection, save the detailed plan to `documents/tasks/<YYYY-MM-DD>-<slug>.md` using GODS format — chat-only plans are lost between sessions.
 - **Proactive Resolution**: Before asking the user, exhaust available resources (codebase, docs, web) to find the answer autonomously — unnecessary questions slow the workflow and signal lack of initiative.
@@ -324,9 +324,10 @@ Every DoD item MUST pair with an FR-ID and a runnable acceptance reference. Item
 The goal is to identify the root cause, not to suppress the symptom. A quick workaround that hides the root cause is worse than an unresolved issue with a correct diagnosis.
 
 1. Read the relevant code and error output before making any changes.
-2. Apply "5 WHY" analysis to find the root cause.
-3. Root cause is fixable — apply the fix, retry.
-4. Second fix attempt failed — STOP. Output "STOP-ANALYSIS REPORT" (state, expected, 5-why chain, root cause, hypotheses). Wait for user help.
+2. For benchmark behavioral failures (skill/command/agent scenario where exit code is fine but checklist score is low): READ `benchmarks/runs/latest/<scenario-id>/run-1/judge-evidence.md` BEFORE editing the SKILL.md. The trace shows the actual tool calls — text edits cannot fix execution paths the agent never takes (e.g., a composite skill delegating to a standalone skill via the Skill tool).
+3. Apply "5 WHY" analysis to find the root cause.
+4. Root cause is fixable — apply the fix, retry.
+5. Second fix attempt failed — STOP. Output "STOP-ANALYSIS REPORT" (state, expected, 5-why chain, root cause, hypotheses). Wait for user help.
 
 When the root cause is outside your control (missing API keys/URLs, missing generator scripts, unavailable external services, wrong environment configuration) — STOP immediately and ask the user for the correct values. Do not guess, do not invent replacements, do not create workarounds.
 
@@ -386,6 +387,9 @@ deno task bench -f <existing-scenario-id>
 If it finishes with 0 agent steps or "Unknown skill" — the benchmark runner has an infrastructure bug (e.g., `copyFrameworkToIdeDir` not copying the primitive). Fix the runner first; do not write new scenarios on broken infrastructure.
 
 The runner also pre-checks that `scenario.skill` is mounted in the sandbox before spawning the agent and warns on suspiciously short agent output (< 200 chars with exit 0).
+
+- The bench `-f` flag accepts ONE substring (last-wins on multiple). To run several scenarios: use a broader substring covering all of them, OR run sequential single-`-f` invocations. Multiple `-f` flags silently keep only the last value.
+- A bench run reporting "0 errors, 0 scenarios run" with exit 0 is a SETUP FAILURE, not success. Check stderr for "Error running scenario" lines. Common cause: missing `fixture/` directory referenced by the scenario's setup hook.
 
 ### Lint Exclude / Test Ignore Drift
 

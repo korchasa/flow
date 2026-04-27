@@ -59,7 +59,8 @@
 - **Categories (by installed prefix):**
   - `flowai-*` (not `flowai-skill-*`): User-only commands (e.g., `flowai-commit`, `flowai-review-and-commit`, `flowai-update`).
   - `flowai-skill-*`: Agent-auto-invocable skills (e.g., `flowai-skill-plan`, `flowai-skill-fix-tests`, `flowai-skill-setup-agent-code-style-ts-deno`).
-- **Composition**: Skills can delegate to other skills (e.g., `flowai-init` delegates development command configuration to `flowai-skill-configure-*-commands`).
+- **Composition**: Skills can delegate to other skills (e.g., `flowai-init` delegates development command configuration to `flowai-skill-configure-*-commands`). Composite skills (`flowai-review-and-commit{,-beta}`) inline source step_by_step blocks verbatim and must follow the rules in `framework/AGENTS.md` §Composite Skill Authoring (no delegation, no source-skill names in description, explicit verdict-gate success path) — sync enforced by `scripts/check-skill-sync.ts`.
+- **Beta commit variants:** `flowai-commit-beta` and `flowai-review-and-commit-beta` add a *Post-Reflect Cleanup Commit* step: when the auto-invoked `flowai-skill-reflect` leaves working-tree edits, the workflow stages and commits them as a separate `agent: apply reflect-suggested improvements` commit before exiting — eliminates the "second manual commit" friction of the non-beta variants.
 - **Script independence:** Scripts in pack `scripts/` are installed into user projects without a shared `deno.json`. They MUST be runnable standalone:
   - Use `jsr:` specifiers for Deno std imports (e.g., `jsr:@std/path`), NOT bare specifiers (`@std/path`).
   - Avoid dependencies requiring import maps or `deno.json` resolution.

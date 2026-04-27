@@ -29,3 +29,12 @@ Both `<pack>/commands/` and `<pack>/skills/` install into the **same** target di
 - Skills and commands follow [agentskills.io](https://agentskills.io/home) standard; the `commands/` vs `skills/` directory is the framework-level classifier for user-only vs agent-invocable intent.
 - Agent format is canonical (IDE-agnostic); flowai adds IDE-specific frontmatter during distribution.
 - Scaffolded artifact mapping declared in `pack.yaml` `scaffolds:` field (primitive-name → artifact paths; resolves the same whether the primitive lives under `commands/` or `skills/`).
+
+## Composite Skill Authoring
+
+A composite skill inlines step_by_step blocks from 2+ standalone skills (kept in sync by `scripts/check-skill-sync.ts`). Without the rules below, the agent invokes the source skills via the Skill tool and silently bypasses the composite's gate logic — fixed once in this project (commit history: no-delegation rule + verdict gate hardening).
+
+1. **No delegation**: SKILL.md MUST contain a `**No delegation**` rule in `<rules>`: "Phase N is FULLY INLINED below. Execute the steps directly. Do NOT invoke `<source-skill-name>` via the Skill tool — it would re-enter without the composite's gate logic."
+2. **No standalone-skill names in description**: Frontmatter `description:` MUST NOT name the source skills (e.g., write "two-phase review-and-commit workflow", not "combines flowai-skill-review and flowai-commit"). Naming source skills in the description prompts the model classifier to invoke them via Skill tool.
+3. **Self-contained marker**: Description MUST include the phrase "Self-contained — execute the inlined steps directly" so the agent reliably treats the composite as terminal.
+4. **Verdict Gate explicitness**: If the composite has a phase gate, the gate text MUST tell the agent what to do on EACH verdict, including the success case (e.g., "Approve → DO NOT commit yet. Phase 2 below is MANDATORY"). Implicit success paths get skipped under cognitive load.
