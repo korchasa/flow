@@ -1,6 +1,6 @@
 ---
 name: flowai-review-and-commit-beta
-description: "Streamlined composite: review then commit. Targeted doc sync, no subagent, no diff re-reading in Phase 2."
+description: "Streamlined two-phase workflow: review, then commit. Verdict gate between phases. Self-contained — execute the inlined steps directly, do NOT invoke other skills via the Skill tool."
 ---
 
 # Task: Review and Commit
@@ -23,24 +23,22 @@ commit. This command inlines both workflows:
 
 The gate logic prevents committing code that has critical issues.
 
-NOTE: Phase 2 steps 2-7 are kept in sync with flowai-commit-beta/SKILL.md.
-Step 1 intentionally diverges: Phase 2 reuses diff from Phase 1 instead of
-re-reading. The sync check script (scripts/check-skill-sync.ts) allows this
-divergence via allowedDivergentSteps.
+Maintainer note (NOT for runtime): Phase 2 steps 2-7 kept verbatim in sync with `flowai-commit-beta/SKILL.md` via `scripts/check-skill-sync.ts` (step 1 diverges intentionally). Source-of-truth bookkeeping only.
 </context>
 
 ## Rules & Constraints
 
 <rules>
-1. **Two Phases**: Execute Phase 1 (review) fully before considering Phase 2
+1. **No delegation**: Phase 1 and Phase 2 are FULLY INLINED below. Execute the steps directly. Do NOT invoke `flowai-skill-review`, `flowai-commit`, `flowai-commit-beta`, or any other skill via the Skill tool — they would re-enter without the composite's verdict gate and the workflow would silently exit after the review step.
+2. **Two Phases**: Execute Phase 1 (review) fully before considering Phase 2
    (commit). Never interleave.
-2. **Gate Logic**: After Phase 1, check the verdict. Only **Approve** proceeds
+3. **Gate Logic**: After Phase 1, check the verdict. Only **Approve** proceeds
    to Phase 2. **Request Changes** or **Needs Discussion** → output the review
    report and STOP. Do not commit.
-3. **No partial commit**: If Phase 1 itself fails (errors, crashes), STOP — do
+4. **No partial commit**: If Phase 1 itself fails (errors, crashes), STOP — do
    not proceed to Phase 2.
-4. **Transparency**: Output both review findings and commit results to the user.
-5. **Session Scope**: Compare current `git status` with the git status snapshot
+5. **Transparency**: Output both review findings and commit results to the user.
+6. **Session Scope**: Compare current `git status` with the git status snapshot
    from session start (available in system context). Files already
    modified/untracked at session start are outside the review and commit scope —
    note them but do not review or commit. Focus on changes made in the current
@@ -84,7 +82,7 @@ divergence via allowedDivergentSteps.
      review — failures will be included in the final report as `[critical]`.
 
 3. **Gather Context**
-   - If you don't know the content of `documents/requirements.md` (SRS) and `documents/design.md` (SDS) — read them now.
+   - **First**: check if `documents/requirements.md` (SRS) and `documents/design.md` (SDS) exist (`ls documents/` or equivalent). If they exist and their current content is not already in your context — read them before proceeding.
    - Create a review plan in the task management tool.
    - Collect the diff: `git diff` (unstaged), `git diff --cached` (staged),
      or `git log --oneline <base>..HEAD` + `git diff <base>..HEAD` for
@@ -215,11 +213,9 @@ divergence via allowedDivergentSteps.
 ### Verdict Gate
 
 After completing the review report above:
-- If verdict is `## Review: Approve` → proceed to Phase 2 below.
-- If verdict is `## Review: Request Changes` or `## Review: Needs Discussion`
-  → output the full review report to the user and **STOP**. Do NOT proceed.
-- If the review phase crashed or produced no verdict → report the error and
-  **STOP**.
+- `Approve` → **DO NOT commit yet**. Phase 2 below is MANDATORY: re-plan the todo list with Phase 2 steps and execute all of them in order. Committing before reaching Phase 2 step 6 (Reflect) is a workflow violation.
+- `Request Changes` or `Needs Discussion` → output the full report and **STOP**. Do NOT commit.
+- Phase 1 crashed or produced no verdict → report the error and **STOP**.
 
 ### Phase 2 — Commit
 
@@ -276,20 +272,24 @@ After completing the review report above:
      b. If **all** DoD items are satisfied by the committed code and documentation → delete the task file (`git rm`) and include the deletion in the commit (amend the last commit or create a separate `docs: remove completed task file` commit).
      c. If **any** DoD item is NOT satisfied → ask the user: "The task file has incomplete items: [list]. Delete it anyway or keep for next session?" Act on the user's answer.
    - If the task file has no DoD section → ask the user whether the planned work is complete and whether to delete the task file.
-6. **Verify Clean State**
-   - Run `git status` to confirm all changes are committed.
-   - If uncommitted changes remain, investigate and report to the user.
-7. **Session Complexity Check → Auto-Invoke Reflect**
+6. **Session Complexity Check → Auto-Invoke Reflect**
    - After all commits are done, analyze the current conversation for complexity signals:
      - Errors or failed attempts occurred (test failures, lint errors, build errors).
      - Agent retried the same action multiple times.
      - User corrected the agent's approach or output.
      - Workarounds or non-obvious solutions were applied.
+   - Also check the **user's invocation message** for explicit complexity descriptors: phrases like "rough session", "had to retry", "wrong approach", "failed", "had to correct you". These count as direct signals.
    - If **any** of these signals are detected:
      a. Announce briefly which signals fired (one line, e.g., "Detected retries and user correction — running /flowai-skill-reflect").
-     b. Invoke the `flowai-skill-reflect` skill directly (via the Skill tool, native slash-command execution, or inline execution of its `SKILL.md` instructions — whichever the host IDE supports).
-     c. Do NOT ask the user for confirmation; proceed autonomously.
+     b. **Pre-command signal check**: if the signals appear only in the invocation message (i.e., the problematic interactions predated this command and are not visible in the conversation history), output: "You mentioned a rough session — briefly describe what went wrong and what you corrected. This will be included as reflect context." Use the user's answer as additional context when invoking reflect.
+     c. Invoke the `flowai-skill-reflect` skill directly (via the Skill tool, native slash-command execution, or inline execution of its `SKILL.md` instructions — whichever the host IDE supports).
+     d. Do NOT ask the user for confirmation before invoking; proceed autonomously (the context question in step b is not a confirmation request — it gathers missing information).
    - If none detected, skip silently.
+7. **Post-Reflect Cleanup Commit** _(skip if reflect produced no edits)_
+   - Run `git status`. If reflect left working-tree edits (typically `AGENTS.md`, `**/CLAUDE.md`, `framework/**`, `.claude/**`, `documents/**`): stage them and commit as `agent: apply reflect-suggested improvements` (or narrower scope, e.g. `agent(flowai-commit-beta): tighten doc-audit gate`). Do NOT amend earlier commits — keep reflect-driven edits as a separate commit. If `git status` is clean, skip.
+8. **Verify Clean State**
+   - Run `git status` to confirm all changes are committed.
+   - If uncommitted changes remain, investigate and report to the user.
 </step_by_step>
 
 ### Final Combined Report
@@ -310,5 +310,6 @@ Output a combined summary:
 [ ] Commits executed with Conventional Commits format.
 [ ] Task file cleanup: completed task files deleted, partial task files confirmed with user.
 [ ] Session complexity check performed; `/flowai-skill-reflect` auto-invoked if signals detected.
+[ ] Post-reflect cleanup commit created when reflect left uncommitted edits to project instructions; otherwise skipped.
 [ ] Both review and commit results reported to user.
 </verification>

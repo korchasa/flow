@@ -66,7 +66,7 @@ Keep answers brief and affirmative.`;
     {
       id: "suggest_reflect",
       description:
-        "Did the agent suggest running `/flowai-skill-reflect` (or mention flowai-skill-reflect) after committing, citing session complexity signals like errors, retries, or user corrections?",
+        "At any point during the workflow (before or after the commit), did the agent suggest running `/flowai-skill-reflect` (or mention flowai-skill-reflect), citing session complexity signals like errors, retries, or user corrections?",
       critical: true,
     },
   ];

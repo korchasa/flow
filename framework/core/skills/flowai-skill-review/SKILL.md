@@ -95,7 +95,7 @@ Input sources:
      review — failures will be included in the final report as `[critical]`.
 
 3. **Gather Context**
-   - If you don't know the content of `documents/requirements.md` (SRS) and `documents/design.md` (SDS) — read them now.
+   - **First**: check if `documents/requirements.md` (SRS) and `documents/design.md` (SDS) exist (`ls documents/` or equivalent). If they exist and their current content is not already in your context — read them before proceeding.
    - Create a review plan in the task management tool.
    - Collect the diff: `git diff` (unstaged), `git diff --cached` (staged),
      or `git log --oneline <base>..HEAD` + `git diff <base>..HEAD` for

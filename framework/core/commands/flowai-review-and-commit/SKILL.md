@@ -1,6 +1,6 @@
 ---
 name: flowai-review-and-commit
-description: "Composite command: review changes then commit only if approved. Inlines flowai-skill-review and flowai-commit with a verdict gate between them."
+description: "Two-phase workflow: review changes, then commit if approved. Verdict gate between phases. Self-contained — execute the inlined steps directly, do NOT invoke other skills via the Skill tool."
 ---
 
 # Task: Review and Commit
@@ -22,26 +22,24 @@ commit. This command inlines both workflows:
 
 The gate logic prevents committing code that has critical issues.
 
-NOTE: The step_by_step sections of Phase 1 and Phase 2 are kept in sync with
-flowai-skill-review/SKILL.md and flowai-commit/SKILL.md respectively. The sync check
-script (scripts/check-skill-sync.ts) verifies this — if you change one, update
-the other.
+Maintainer note (NOT for runtime): step_by_step blocks are kept verbatim in sync with `flowai-skill-review/SKILL.md` and `flowai-commit/SKILL.md` via `scripts/check-skill-sync.ts`. This is for source-of-truth bookkeeping only.
 </context>
 
 ## Rules & Constraints
 
 <rules>
-1. **Two Phases**: Execute Phase 1 (review) fully before considering Phase 2
+1. **No delegation**: Phase 1 and Phase 2 are FULLY INLINED below. Execute the steps directly. Do NOT invoke `flowai-skill-review`, `flowai-commit`, `flowai-commit-beta`, or any other skill via the Skill tool — they would re-enter without the composite's verdict gate and the workflow would silently exit after the review step.
+2. **Two Phases**: Execute Phase 1 (review) fully before considering Phase 2
    (commit). Never interleave.
-2. **Gate Logic**: After Phase 1, check the verdict. Only **Approve** proceeds
+3. **Gate Logic**: After Phase 1, check the verdict. Only **Approve** proceeds
    to Phase 2. **Request Changes** or **Needs Discussion** → output the review
    report and STOP. Do not commit.
-3. **No partial commit**: If Phase 1 itself fails (errors, crashes), STOP — do
+4. **No partial commit**: If Phase 1 itself fails (errors, crashes), STOP — do
    not proceed to Phase 2.
-4. **Transparency**: Output both review findings and commit results to the user.
-5. **Planning**: Use a task management tool (e.g., `todo_write`, `todowrite`)
+5. **Transparency**: Output both review findings and commit results to the user.
+6. **Planning**: Use a task management tool (e.g., `todo_write`, `todowrite`)
    to track steps.
-6. **Session Scope**: Compare current `git status` with the git status snapshot
+7. **Session Scope**: Compare current `git status` with the git status snapshot
    from session start (available in system context). By default, files already
    modified/untracked at session start are outside the review and commit scope —
    note them but do not review or commit. **Exception**: if the user's request
@@ -89,7 +87,7 @@ the other.
      review — failures will be included in the final report as `[critical]`.
 
 3. **Gather Context**
-   - If you don't know the content of `documents/requirements.md` (SRS) and `documents/design.md` (SDS) — read them now.
+   - **First**: check if `documents/requirements.md` (SRS) and `documents/design.md` (SDS) exist (`ls documents/` or equivalent). If they exist and their current content is not already in your context — read them before proceeding.
    - Create a review plan in the task management tool.
    - Collect the diff: `git diff` (unstaged), `git diff --cached` (staged),
      or `git log --oneline <base>..HEAD` + `git diff <base>..HEAD` for
@@ -220,11 +218,9 @@ the other.
 ### Verdict Gate
 
 After completing the review report above:
-- If verdict is `## Review: Approve` → proceed to Phase 2 below.
-- If verdict is `## Review: Request Changes` or `## Review: Needs Discussion`
-  → output the full review report to the user and **STOP**. Do NOT proceed.
-- If the review phase crashed or produced no verdict → report the error and
-  **STOP**.
+- `Approve` → **DO NOT commit yet**. Phase 2 below is MANDATORY: re-plan the todo list with Phase 2 steps and execute all of them in order. Committing before reaching Phase 2 step 6 (Reflect) is a workflow violation.
+- `Request Changes` or `Needs Discussion` → output the full report and **STOP**. Do NOT commit.
+- Phase 1 crashed or produced no verdict → report the error and **STOP**.
 
 ### Phase 2 — Commit
 

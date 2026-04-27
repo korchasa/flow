@@ -51,7 +51,7 @@ export const CommitBetaAutoInvokeReflectBench = new class
     {
       id: "reflect_auto_invoked",
       description:
-        "Did the agent AUTO-INVOKE /flowai-skill-reflect after the commit — meaning it actually started executing the reflect workflow (e.g., creating a reflection plan, analyzing the session for behavioral/technical/context issues, listing concrete findings or proposed improvements)? Merely printing a one-line suggestion like 'Consider running /flowai-skill-reflect' is NOT sufficient — the agent must have actually run the reflect workflow.",
+        "At any point during the workflow (before or after the commit), did the agent AUTO-INVOKE /flowai-skill-reflect — meaning it actually started executing the reflect workflow (e.g., creating a reflection plan, analyzing the session for behavioral/technical/context issues, listing concrete findings or proposed improvements)? Merely printing a one-line suggestion like 'Consider running /flowai-skill-reflect' is NOT sufficient — the agent must have actually run the reflect workflow.",
       critical: true,
     },
     {

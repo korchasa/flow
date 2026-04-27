@@ -52,7 +52,7 @@ export const CommitSuggestReflectBench = new class
     {
       id: "suggest_reflect",
       description:
-        "Does the agent suggest running `/flowai-skill-reflect` (or mention reflect) after committing, based on the session having errors/retries/workarounds?",
+        "At any point during the workflow (before or after the commit), does the agent suggest running `/flowai-skill-reflect` (or mention reflect) based on the session having errors/retries/workarounds?",
       critical: true,
     },
   ];

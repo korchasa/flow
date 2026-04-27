@@ -1,16 +1,16 @@
 {
   "schema": 1,
-  "key": "d375e45b5fe235952625051f777e6b0fde61ebd5dd663176eaaca84d4e33899c",
+  "key": "ffd865c3cd315adcbd73481ad7ad08117112dfbcf2c06d25ac4f73519d38089c",
   "scenarioId": "flowai-skill-reflect-by-history-mixed",
   "ide": "claude",
   "agentModel": "claude-sonnet-4-6",
-  "recordedAt": "2026-04-19T17:29:18.583Z",
+  "recordedAt": "2026-04-27T14:00:37.180Z",
   "result": {
     "success": true,
-    "score": 100,
+    "score": 83.33333333333334,
     "errorsCount": 0,
-    "warningsCount": 0,
-    "durationMs": 170374.33504200002,
+    "warningsCount": 1,
+    "durationMs": 154200.666291,
     "tokensUsed": 0,
     "totalCost": 0,
     "toolCallsCount": 0,
@@ -18,27 +18,27 @@
     "checklistResults": {
       "locate_and_read_history": {
         "pass": true,
-        "reason": "The agent used Glob tool to discover files at `.claude/projects/-sandbox/*.jsonl`, then explicitly read all 5 session files (session-01.jsonl through session-05.jsonl) from the correct override path …"
+        "reason": "The agent explicitly listed the directory `.claude/projects/-sandbox/` using `ls -la` on the full absolute path, then read all 5 JSONL files (session-01 through session-05) from that exact override p…"
       },
       "identify_pattern_1": {
         "pass": true,
-        "reason": "The agent identified Pattern 2: 'Кодовая сессия начинается без чтения AGENTS.md (3/4 кодовых сессий)' with detailed evidence from sess-01 (camelCase violation), sess-02 (try/catch + camelCase after n…"
+        "reason": "The agent identified 'Паттерн B: AGENTS.md не читается перед началом реализации — 3/4 кодовых сессий (01, 02, 04)'. It provided per-session evidence: session-01 used camelCase before reading AGENTS.m…"
       },
       "identify_pattern_2": {
         "pass": true,
-        "reason": "The agent identified Pattern 1: 'Линтер запускается после коммита, не до него (3/5 сессий)' with explicit evidence from sess-01 (3 lint errors post-commit), sess-04 (2 lint errors post-commit), and s…"
+        "reason": "The agent identified 'Паттерн A: Lint пропускается перед коммитом — 3/4 кодовых сессий (01, 04, 05)'. It documented per-session evidence: session-01 committed after `deno test`, user found 3 lint err…"
       },
       "distinguish_isolated": {
         "pass": true,
-        "reason": "The agent explicitly marked sess-03 as a clean/trivial session: 'sess-03 (18 мар): Опечатка в README → тривиальная задача, прошла чисто'. It excluded sess-03 from coding session counts (using '3/4 ко…"
+        "reason": "Session-03 ('Fix typo in README') is explicitly called out in the session summary as 'Простое исправление опечатки. Паттернов нет.' and it is excluded from all pattern analyses. In the 'Isolated Issu…"
       },
       "prioritize_by_frequency": {
         "pass": true,
-        "reason": "The agent produced an explicit prioritized table ranking: (1) Lint skipped before commit — 3/5 sessions — CRITICAL; (2) AGENTS.md not read at session start — 3/4 coding sessions — HIGH; (3) try/catch…"
+        "reason": "The agent explicitly ranked both recurring patterns as 'Риск рецидива: ВЫСОКИЙ' and presented them as the two prioritised findings, while session-03 (isolated typo fix) was excluded from corrective a…"
       },
       "propose_different_artifact_types": {
-        "pass": true,
-        "reason": "The agent proposed distinct artifact types for different patterns: for the lint-before-commit pattern, it proposed a **pre-commit hook** in `.claude/settings.json` (mechanical enforcement) plus a rul…"
+        "pass": false,
+        "reason": "The agent proposed the same artifact type — CLAUDE.md rule additions — for both patterns. For Pattern A it suggested adding to 'Detected Commands' and 'TDD Flow/Core Project Rules' in CLAUDE.md; for …"
       }
     }
   }
