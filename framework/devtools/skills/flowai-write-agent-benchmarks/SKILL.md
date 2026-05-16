@@ -273,6 +273,46 @@ export const TriggerPos1 = new class extends AcceptanceTestScenario {
 
 Before scaling, write one positive scenario and run it; confirm the judge correctly fails the run when the skill's `description` is mangled to be unrelated. Then revert the description. This validates the pattern end-to-end. See SRS `FR-ACCEPT.TRIGGER`, SDS §3.4.2.
 
+## 6.2 Agent Scenarios — Wrapped, Not Standalone
+
+Subagents (files under `framework/<pack>/agents/<name>.md`) MUST be tested **through their wrapping skill scenario**, not as standalone `AcceptanceTestAgentScenario` runs. The framework spawns the main runtime in `-p` mode with `userQuery` as the user message; the agent `.md` file is copied to `.claude/agents/` only as a *template the main runtime may dispatch to*. There is no path that loads the subagent's body as a system prompt for direct execution. A standalone `AcceptanceTestAgentScenario` therefore tests the main runtime's behaviour given access to the agent template — NOT the agent's body.
+
+Two consequences:
+
+1. Use a wrapping skill's `via-subagent`-style scenario (parent skill → `Agent`/`Task` tool → subagent → mocked CLI → relay back). Checklists should gate on the parent-side dispatch (`worker_subagent_invoked`) and the relay signal (`mock_content_relayed`), both of which ARE observable from the flat trace.
+2. If no wrapping skill exists, the subagent is not testable in this framework — write the wrapper first, then the scenario.
+
+Precedent: existing worker-style subagents in the framework have no `acceptance-tests/` directory of their own; they are tested only via their orchestrating skill's scenarios.
+
+### Flat-trace caveat for subagent scenarios
+
+The trace produced by `formatAgentLogs` does NOT preserve parent-vs-subagent nesting. When a parent invokes `Agent(subagent_type=...)`, the subagent's internal `Bash` calls appear at the same top-level as the parent's tool calls. Avoid checklist items like "no `Bash("codex …")` in the parent" — the judge cannot distinguish parent-side from worker-side Bash from the flat trace alone. Instead gate on the presence of the `Agent`/`Task` dispatch and on the relay-content signal; together they imply the worker did the work.
+
+## 6.3 Mock Pitfalls
+
+### Mocks fire on the first bare command word
+
+The framework's `PreToolUse(Bash)` hook strips env assignments (`FOO=bar`, `CLAUDECODE=""`) and subshell wrappers (`( … ) &`, backticks, `$(…)`) before checking whether the first bare command word matches a mocked tool. It does NOT inspect piped commands — `echo "..." | codex exec -` matches `echo`, not `codex`, and the mock never fires.
+
+Consequences when authoring scenarios that mock a target CLI:
+
+- If the agent body or skill instructs the model to use the stdin/pipe form, the mock will be invisible and the real binary will run. In the sandbox this typically surfaces as an auth error (e.g. Codex 401 Unauthorized) — a misleading symptom that looks like a sandbox setup bug rather than a mock-miss.
+- Write agent/skill bodies that **prefer argv form by default** for any mock-able target (`codex exec "$P"`, not `echo "$P" | codex exec -`).
+- If your scenario genuinely needs to test the pipe form, the mock won't help — either drop the mock for that scenario or extend the hook.
+
+### Relay-verification checklists must gate on substantive content, not on harness markers
+
+The framework injects mock strings like `[benchmock-xxx] CODEX-MOCK: <body>`. Agents under a courier rule (verbatim relay of a child runtime's stdout, common in cross-IDE or LLM-as-judge skills) will reasonably strip `[benchmock-xxx]` and `<TOOL>-MOCK:` prefixes as harness artefacts — that is correct behaviour per such a contract, not a relay failure.
+
+To verify relay actually happened, embed a **deliberately-absurd phrase** inside the mock body and check for that phrase in the final answer. The phrase must be:
+
+- (a) absent from any SKILL.md or agent body in the project,
+- (b) implausible as a free-form completion from the model's weights given the user query.
+
+Examples drawn from passing scenarios: `alphabetise your tuples on Wednesdays`, `octopus-shaped type definitions`, `tag mutable state with marigold-coloured comments`, `alphabetise trailing semicolons before lowercase Friday refactors`.
+
+Bench-prefix tokens (`[benchmock-xxx]`) fail both conditions: they ARE in the harness artefact category, and the courier rule permits stripping them. Don't gate on them.
+
 ## 7. Universal Result Schema
 
 To ensure cross-platform compatibility, benchmark results must follow a standard JSON schema.
