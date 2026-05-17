@@ -2,6 +2,42 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.12.17](https://github.com/korchasa/flowai/compare/v0.12.16...v0.12.17) (2026-05-17)
+
+
+### Features
+
+* **flowai-do:** new TDD implement atom (Commit 6/9) ([c40c573](https://github.com/korchasa/flowai/commit/c40c5738d01187fe2828a9ba747d5a16a8157662))
+* **flowai-push:** new safe git push command (Commit 7/9) ([f40c026](https://github.com/korchasa/flowai/commit/f40c026c520522b9f084c2ab19b75da717c5f383))
+* **flowai-ship:** terminal full-cycle composite (Commit 8/9) ([d983acd](https://github.com/korchasa/flowai/commit/d983acd1a1d3fdc2c819afd8b2d03f714fb131dc))
+* **ide-bridge:** add cross-IDE delegation pack with worker subagent ([ef61a3b](https://github.com/korchasa/flowai/commit/ef61a3bd54f8de9be5226852d79563eb09dc2ddb))
+* **plugins:** add codex marketplace output ([f10975f](https://github.com/korchasa/flowai/commit/f10975ffacb7233e64d3a8c78faf5cf8a6afef84))
+* **skill-compose:** atom render pipeline + extract flowai-plan-exp-permanent-tasks (Commit 2/9) ([8af0dd9](https://github.com/korchasa/flowai/commit/8af0dd99910aa9f7adc492f5a7592866a9baac9e))
+* **skill-compose:** composite template + regenerate review-and-commit / do-with-plan (Commit 4/9) ([0710149](https://github.com/korchasa/flowai/commit/07101498c6cd76b42148b5e6f045f9eb626fcd1c))
+* **skill-compose:** delete check-skill-sync.ts + composite-skills.ts (Commit 5/9) ([93df18e](https://github.com/korchasa/flowai/commit/93df18ecacb84eb169a629cf86aa8d1784ec8f7b))
+* **skill-compose:** extract flowai-review + flowai-commit-beta atoms (Commit 3/9) ([91e490e](https://github.com/korchasa/flowai/commit/91e490ecd12a05c7c0fe8992dbed84111b7604d7))
+* **skill-compose:** manifest + skeleton generator + leakage guard (FR-SKILL-COMPOSE, Commit 1/9) ([6ffb33a](https://github.com/korchasa/flowai/commit/6ffb33a457dd1ecae4e5417da951bcc33e60901a))
+
+
+### Agent Changes
+
+* apply reflect-suggested improvements ([6f1a382](https://github.com/korchasa/flowai/commit/6f1a38209b95b075fd39248aa97de4545eeaaa82))
+
+
+### Documentation
+
+* **flowai-ship:** deprecate flowai-do-with-plan, doc sweep (Commit 9/9) ([38a4907](https://github.com/korchasa/flowai/commit/38a490788a649f8a6470a7fbecf4fe5ac6701d1b))
+
+
+### Build System
+
+* **skill-compose:** gitignore generated SKILL.md as build artefacts ([913f0ef](https://github.com/korchasa/flowai/commit/913f0ef6ed4a4defd20fdcfb4be244b5d1705a91))
+
+
+### Chores
+
+* **skill-compose:** finalize atom hardening and acceptance sweeps ([9040bac](https://github.com/korchasa/flowai/commit/9040bacc0a5c49a5f7399afae4f10412691c03a1))
+
 ### [0.12.16](https://github.com/korchasa/flowai/compare/v0.12.15...v0.12.16) (2026-05-16)
 
 
