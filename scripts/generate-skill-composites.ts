@@ -665,6 +665,48 @@ export async function listTargets(): Promise<string[]> {
   return out;
 }
 
+/**
+ * Verify `.gitignore` lists exactly the manifest's targets. Generated SKILL.md
+ * files are build artefacts (FR-SKILL-COMPOSE); every target MUST be ignored
+ * so consumers don't accidentally track stale renders. Returns the diff
+ * (missing-from-gitignore, extra-in-gitignore) or null if in sync.
+ */
+export async function checkGitignoreParity(
+  targets: string[],
+): Promise<{ missing: string[]; extra: string[] } | null> {
+  const gitignorePath = "./.gitignore";
+  const raw = await Deno.readTextFile(gitignorePath);
+  const tracked = new Set<string>();
+  for (const line of raw.split("\n")) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+    if (trimmed.endsWith("/SKILL.md")) tracked.add(trimmed);
+  }
+  const expected = new Set(targets);
+  const missing = [...expected].filter((t) => !tracked.has(t)).sort();
+  const extra = [...tracked].filter((t) => !expected.has(t)).sort();
+  if (missing.length === 0 && extra.length === 0) return null;
+  return { missing, extra };
+}
+
+function reportGitignoreParity(
+  diff: { missing: string[]; extra: string[] },
+): void {
+  console.error(
+    "[generate-skill-composites] .gitignore is out of sync with the manifest:",
+  );
+  for (const m of diff.missing) {
+    console.error(`  missing (should be added):   ${m}`);
+  }
+  for (const e of diff.extra) {
+    console.error(`  stale (should be removed):   ${e}`);
+  }
+  console.error(
+    "Update .gitignore so it lists exactly the targets returned by " +
+      "`deno run -A scripts/generate-skill-composites.ts --list-targets`.",
+  );
+}
+
 async function main(args: string[]): Promise<number> {
   const mode = args.includes("--write")
     ? "write"
@@ -672,10 +714,17 @@ async function main(args: string[]): Promise<number> {
     ? "list"
     : "check";
   const manifest = await loadManifest();
+  const targets = await listTargets();
   if (mode === "list") {
-    const targets = await listTargets();
     console.log(targets.join("\n"));
     return 0;
+  }
+  // Parity check runs for both --write and --check: a stale .gitignore is a
+  // build-artefact contract violation that must fail loudly in both flows.
+  const parityDiff = await checkGitignoreParity(targets);
+  if (parityDiff) {
+    reportGitignoreParity(parityDiff);
+    return 1;
   }
   const rendered = await renderAll(manifest);
   if (mode === "write") {
@@ -685,28 +734,14 @@ async function main(args: string[]): Promise<number> {
     );
     return 0;
   }
-  const drifts = await diffAgainstDisk(rendered);
-  if (drifts.length === 0) {
-    if (rendered.length === 0) {
-      console.log(
-        "[generate-skill-composites] manifest is empty; nothing to regenerate",
-      );
-    } else {
-      console.log(
-        `[generate-skill-composites] ${rendered.length} target(s) up-to-date`,
-      );
-    }
-    return 0;
-  }
-  for (const d of drifts) {
-    console.error(d.diff);
-    console.error("");
-  }
-  console.error(
-    `[generate-skill-composites] ${drifts.length} target(s) out of sync. ` +
-      `Run: deno run -A scripts/generate-skill-composites.ts --write`,
+  // --check: now that targets are gitignored, on-disk drift is meaningless
+  // after a fresh clone. Treat --check as a syntax + parity self-test:
+  // success means the generator loads + renders + .gitignore is consistent.
+  console.log(
+    `[generate-skill-composites] ${rendered.length} target(s) render OK; ` +
+      `.gitignore in sync`,
   );
-  return 1;
+  return 0;
 }
 
 if (import.meta.main) {

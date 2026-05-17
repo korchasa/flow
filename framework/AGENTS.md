@@ -39,7 +39,7 @@ Both `<pack>/commands/` and `<pack>/skills/` install into the **same** target di
 
 ## Composite Skill Authoring (FR-SKILL-COMPOSE)
 
-Composite SKILL.md files are **generator output** — never hand-edit them. Source of truth: atom `_atom.md` files + composite `_composite.md` wrappers + the `framework/composites.yaml` manifest, all consumed by [scripts/generate-skill-composites.ts](../scripts/generate-skill-composites.ts). Regenerate via `deno run -A scripts/generate-skill-composites.ts --write`; CI runs the same script in `--check` mode and fails on drift.
+Composite and atomic SKILL.md files are **gitignored build artefacts** — never hand-edit, and don't expect to see them in git. Source of truth: atom `_atom.md` files + composite `_composite.md` wrappers + the `framework/composites.yaml` manifest, all consumed by [scripts/generate-skill-composites.ts](../scripts/generate-skill-composites.ts). Every consumer regenerates first: `deno task check`, `deno task acceptance-tests`, `deno task build-plugins`, and the CI `Build framework tarball` step each run `--write` as a prerequisite before reading SKILL.md, so the rendered output is always current and there is no tracked rendered copy that can drift. Manual regeneration: `deno run -A scripts/generate-skill-composites.ts --write` (idempotent). The 8 generated paths are explicitly listed in `.gitignore`; the generator's `checkGitignoreParity` fails the build if the list goes out of sync with `--list-targets`.
 
 The rules below describe **what the generator emits** and what its canon validator enforces. They are written for the maintainer who edits an `_atom.md` or `_composite.md`, not for the agent that runs the SKILL.md.
 

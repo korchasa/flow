@@ -16,7 +16,17 @@ export type CheckPlan = {
  */
 export function buildCheckPlan(): CheckPlan {
   return {
-    prerequisites: [],
+    // implements [FR-SKILL-COMPOSE](../documents/requirements.md#fr-skill-compose-generated-composite-skill-assembly)
+    // Generated SKILL.md files are gitignored build artefacts; the generator
+    // runs as a prerequisite so every downstream consumer (fmt, lint, tests,
+    // check-skills, check-pack-refs --leakage) sees up-to-date files. The
+    // generator is idempotent: a no-op when sources haven't changed.
+    prerequisites: [
+      {
+        cmd: "deno",
+        args: ["run", "-A", "scripts/generate-skill-composites.ts", "--write"],
+      },
+    ],
     parallel: [
       // Format
       {
@@ -83,14 +93,6 @@ export function buildCheckPlan(): CheckPlan {
       {
         cmd: "deno",
         args: ["run", "-A", "scripts/check-pack-refs.ts", "--leakage"],
-      },
-      // implements [FR-SKILL-COMPOSE](../documents/requirements.md#fr-skill-compose-generated-composite-skill-assembly)
-      // composite-skill regeneration drift gate. Re-runs the generator in
-      // --check mode; fails with a per-file unified diff + --write hint if
-      // any SKILL.md diverges from its atom + composite manifest source.
-      {
-        cmd: "deno",
-        args: ["run", "-A", "scripts/generate-skill-composites.ts", "--check"],
       },
       {
         cmd: "deno",

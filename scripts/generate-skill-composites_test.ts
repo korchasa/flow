@@ -8,7 +8,9 @@ import { assertEquals, assertRejects, assertStringIncludes } from "@std/assert";
 import { join } from "@std/path";
 
 import {
+  checkGitignoreParity,
   diffAgainstDisk,
+  listTargets,
   loadManifest,
   type Manifest,
   MANIFEST_PATH,
@@ -313,4 +315,29 @@ composites:
       Error,
       "unknown atom 'nonexistent'",
     ));
+});
+
+Deno.test("checkGitignoreParity: real .gitignore lists every manifest target", async () => {
+  const targets = await listTargets();
+  const diff = await checkGitignoreParity(targets);
+  assertEquals(
+    diff,
+    null,
+    diff
+      ? `gitignore parity drift — missing: ${diff.missing.join(", ")}; ` +
+        `extra: ${diff.extra.join(", ")}`
+      : "",
+  );
+});
+
+Deno.test("checkGitignoreParity: reports a missing target", async () => {
+  const fakeTargets = [
+    ...await listTargets(),
+    "framework/core/commands/flowai-nonexistent/SKILL.md",
+  ];
+  const diff = await checkGitignoreParity(fakeTargets);
+  assertEquals(diff?.missing, [
+    "framework/core/commands/flowai-nonexistent/SKILL.md",
+  ]);
+  assertEquals(diff?.extra, []);
 });

@@ -647,6 +647,26 @@ if (import.meta.main) {
     ? [...DEFAULT_PACKS]
     : flags.packs;
 
+  // implements [FR-SKILL-COMPOSE](../documents/requirements.md#fr-skill-compose-generated-composite-skill-assembly)
+  // Generated SKILL.md files are gitignored build artefacts. The plugin
+  // marketplace build reads SKILL.md from disk (per-pack copy), so regenerate
+  // first to ensure every composite + atom SKILL.md is current. Idempotent.
+  // Kept in the CLI wrapper (not inside buildClaudePlugins) so tests using a
+  // fake frameworkDir don't trigger a subprocess against a non-existent repo.
+  const regen = new Deno.Command("deno", {
+    args: ["run", "-A", "scripts/generate-skill-composites.ts", "--write"],
+    cwd,
+    stdout: "piped",
+    stderr: "piped",
+  });
+  const regenResult = await regen.output();
+  if (regenResult.code !== 0) {
+    console.error(new TextDecoder().decode(regenResult.stderr));
+    throw new Error(
+      `generate-skill-composites --write failed (exit ${regenResult.code})`,
+    );
+  }
+
   await buildClaudePlugins({
     packs,
     frameworkDir,

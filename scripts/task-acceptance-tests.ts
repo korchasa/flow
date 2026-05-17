@@ -43,8 +43,29 @@ import {
   printSummaryTable,
 } from "./acceptance-tests/lib/acceptance_report.ts";
 
+// implements [FR-SKILL-COMPOSE](../documents/requirements.md#fr-skill-compose-generated-composite-skill-assembly)
+// Generated SKILL.md files are gitignored build artefacts. The runner copies
+// framework/ verbatim into the sandbox via copyFrameworkToIdeDir, so each
+// composite + atom SKILL.md must exist on disk before discovery. Idempotent:
+// no-op when sources haven't changed.
+async function regenerateCompositeSkills(): Promise<void> {
+  const cmd = new Deno.Command("deno", {
+    args: ["run", "-A", "scripts/generate-skill-composites.ts", "--write"],
+    stdout: "piped",
+    stderr: "piped",
+  });
+  const { code, stderr } = await cmd.output();
+  if (code !== 0) {
+    throw new Error(
+      `generate-skill-composites --write failed (exit ${code}): ` +
+        new TextDecoder().decode(stderr),
+    );
+  }
+}
+
 /** Parses CLI args, discovers scenarios, runs benchmarks, and prints summary report. */
 async function main() {
+  await regenerateCompositeSkills();
   const config = await loadConfig();
   const args = parseAndValidateArgs();
   const setup = buildRuntimeSetup(args, config);

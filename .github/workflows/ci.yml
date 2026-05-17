@@ -103,6 +103,11 @@ jobs:
           # Deterministic mtime tied to the release commit (UTC).
           SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct)
           export SOURCE_DATE_EPOCH
+          # implements [FR-SKILL-COMPOSE](../../documents/requirements.md#fr-skill-compose-generated-composite-skill-assembly)
+          # Regenerate composite + atom SKILL.md from sources. Targets are
+          # gitignored build artefacts; running this guarantees the tarball
+          # carries the latest rendered output regardless of CI cache state.
+          deno run -A scripts/generate-skill-composites.ts --write
           # GNU tar (ubuntu-latest): sorted entries, numeric IDs, fixed mtime.
           # gzip -n omits filename + timestamp in the gzip header.
           # implements [FR-SKILL-COMPOSE](../../documents/requirements.md#fr-skill-compose-generated-composite-skill-assembly)
