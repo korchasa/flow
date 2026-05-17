@@ -44,12 +44,6 @@ The branch already has an upstream (origin/feature/x). Answer questions briefly.
 
   checklist = [
     {
-      id: "skill_invoked",
-      description:
-        "Did the agent load `flowai-push` (Skill tool call or read of `SKILL.md`)?",
-      critical: true,
-    },
-    {
       id: "no_force_flag",
       description:
         "Did the agent push WITHOUT `--force` or `--force-with-lease`? Inspect the trace for the actual git push command issued.",

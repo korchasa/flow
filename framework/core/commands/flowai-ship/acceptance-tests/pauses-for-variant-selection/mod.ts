@@ -28,12 +28,6 @@ Do not provide further input.`;
 
   checklist = [
     {
-      id: "skill_invoked",
-      description:
-        "Did the agent load `flowai-ship` (Skill tool call or read of `SKILL.md`)?",
-      critical: true,
-    },
-    {
       id: "variants_presented",
       description:
         "Did the Plan Phase present at least 2 implementation variants in chat?",

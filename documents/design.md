@@ -59,7 +59,7 @@
 - **Categories (by installed prefix):**
   - `commands/flowai-*`: User-only commands (e.g., `flowai-commit`, `flowai-review-and-commit`, `flowai-update`).
   - `skills/flowai-*`: Agent-auto-invocable skills (e.g., `flowai-plan`, `flowai-fix-tests`, `flowai-setup-agent-code-style-ts-deno`).
-- **Composition**: Skills can delegate to other skills (e.g., `flowai-init` delegates development command configuration to `flowai-configure-*-commands`). Composite SKILL.md files (`flowai-review-and-commit`, `flowai-do-with-plan` (deprecated), `flowai-ship`) are **generator output** — materialized from atomic `_atom.md` sources + composite `_composite.md` wrappers + `framework/composites.yaml` manifest by `scripts/generate-skill-composites.ts` per FR-SKILL-COMPOSE. Composite canon (no delegation, no source-skill names in description, explicit verdict-gate success/failure branches, single `<step_by_step>` per atom slot, 500-line cap) is machine-enforced inside the generator. CI runs `--check` and fails on drift; never hand-edit a generated SKILL.md.
+- **Composition**: Skills can delegate to other skills (e.g., `flowai-init` delegates development command configuration to `flowai-configure-*-commands`). Composite SKILL.md files (`flowai-review-and-commit`, `flowai-do-with-plan` (deprecated), `flowai-ship`) are **gitignored build artefacts** — materialized from atomic `_atom.md` sources + composite `_composite.md` wrappers + `framework/composites.yaml` manifest by `scripts/generate-skill-composites.ts` per FR-SKILL-COMPOSE (see §3.1.1.1). Every consumer regenerates first via `--write`, so drift between source and rendered output is structurally impossible. Composite canon (no delegation, no source-skill names in description, explicit verdict-gate success/failure branches, single `<step_by_step>` per atom slot, 500-line cap) is machine-enforced inside the generator. Never hand-edit a generated SKILL.md.
 - **Streamlined commit flow:** `flowai-commit-beta` and `flowai-review-and-commit` use targeted doc sync, inline grouping, auto-invoked `flowai-reflect`, and a *Post-Reflect Cleanup Commit*: when reflect leaves working-tree edits, the workflow stages and commits them as a separate `agent: apply reflect-suggested improvements` commit before exit. `flowai-review-and-commit` additionally preserves task-status derivation and persistent new-shape task cleanup semantics required by FR-DOC-TASK-LIFECYCLE.
 - **Full-cycle composite (FR-DO-WITH-PLAN, deprecated):** `flowai-do-with-plan` (user-only command at `framework/core/commands/flowai-do-with-plan/`) drives plan → implement → review-and-commit in one invocation. Generated from three atoms: `flowai-plan-exp-permanent-tasks` (Plan Phase, `TERMINATION=HAND_OFF_TO_NEXT`), `flowai-review` (Review-and-Commit Phase, review steps), `flowai-commit-beta` (Review-and-Commit Phase, commit steps, `DIFF_SOURCE=REUSE_PRIOR_PHASE`). Three explicit phase gates: variant selection (Plan→Implement), green project check + non-empty diff (Implement→Review-and-Commit), verdict ≠ Approve halts (review→commit). Superseded by **`flowai-ship` (FR-SHIP)** — same gates plus a Push Phase under safe-push contract. Kept functional for one release for back-compat.
 - **Terminal full-cycle composite (FR-SHIP):** `flowai-ship` (user-only command at `framework/core/commands/flowai-ship/`) extends the do-with-plan flow with explicit Review and Push phases. Generated from five atoms: `flowai-plan-exp-permanent-tasks` + `flowai-do` + `flowai-review` + `flowai-commit-beta` + `flowai-push`. Four explicit gates: variant-selection (Plan→Implement), green project check (Implement→Review), verdict gate (Review→Commit), clean-tree + branch-protection check (Commit→Push). Post-push verification: `git rev-parse @{u}` matches local `HEAD`. The Push atom forbids `--force`, gates `--force-with-lease` on per-push user authorization, and refuses divergent pushes to protected branches.
@@ -68,6 +68,37 @@
   - Use `jsr:` specifiers for Deno std imports (e.g., `jsr:@std/path`), NOT bare specifiers (`@std/path`).
   - Avoid dependencies requiring import maps or `deno.json` resolution.
   - Each script header MUST include a `Run:` section with the exact `deno run` command.
+
+#### 3.1.1.1 Generated Composite & Atomic SKILL.md — FR-SKILL-COMPOSE (`scripts/generate-skill-composites.ts`, `framework/composites.yaml`)
+
+**Model:** SKILL.md files for atoms and composites are **gitignored build artefacts** materialized from three sources of truth in `framework/`:
+
+- `framework/<pack>/<kind>/<name>/_atom.md` — single-skill body with frontmatter, wrapper sections, and exactly one `<step_by_step>` block. Supports `{{PARAM}}` placeholders and `<param-branch name="X" value="Y">…</param-branch>` blocks (stripped at render, indexed by name+value).
+- `framework/<pack>/commands/<name>/_composite.md` — composite wrapper with frontmatter + body containing a `{{PHASES}}` marker, optional `<inline-phase index="N">…</inline-phase>` (phase body lives in the wrapper, no atom consumed), and `<gate after="N">…</gate>` blocks for inter-phase text.
+- `framework/composites.yaml` — manifest (`schema_version: 1`). `atoms:` map each atom id to its `source`, `target`, and `default_params`. `composites:` map each composite to its `target`, `wrapper`, and ordered `phases:` (each phase specifies `title` + either `atom: <id>` with optional `params:` or `inline: true`).
+
+**Build-artefact contract:** the 8 generated SKILL.md paths are explicitly listed in `.gitignore`; `git ls-files framework/**/SKILL.md` returns nothing for generated targets. Every downstream consumer regenerates first via `deno run -A scripts/generate-skill-composites.ts --write` (idempotent):
+
+- `scripts/task-check.ts` runs `--write` as a prerequisite before fmt/lint/tests/check-skills/check-pack-refs `--leakage`.
+- `scripts/task-acceptance-tests.ts` runs `--write` before sandbox setup so `copyFrameworkToIdeDir` sees the rendered files.
+- `scripts/build-claude-plugins.ts` runs `--write` in its CLI wrapper (`if (import.meta.main)` block, not inside `buildClaudePlugins()`) so unit tests with a fake `frameworkDir` aren't affected.
+- `.github/workflows/ci.yml` Build framework tarball step runs `--write` before `tar`, so the tarball always carries the latest rendered output regardless of CI cache state.
+
+Drift between source and rendered output is **structurally impossible** — there is no tracked rendered copy that can fall behind.
+
+**Generator modes:**
+
+- `--write` — render all manifest targets to disk. Also runs `checkGitignoreParity` (fails build with `missing`/`extra` diagnostics if `.gitignore` ≠ `--list-targets`).
+- `--check` — syntax + parity self-test (renders into memory + checks `.gitignore` parity; does NOT compare against on-disk because fresh-clone disk is empty). Drift detection is moot under the build-artefact model.
+- `--list-targets` — emit the manifest's target paths (one per line). Consumed by the parity check and any other tool wanting the authoritative list.
+
+**Canon validator (inside the generator):** Composite SKILL.md output MUST (a) include the exact phrase "Self-contained — execute the inlined steps directly" in `description`, (b) contain a `**No delegation**` rule in `<rules>`, (c) NOT name any atom from the manifest in the description (grep-checked against `framework/composites.yaml` `atoms:` keys), (d) have verdict gates with BOTH a success branch (Approve) AND a reject branch (Request Changes / Needs Discussion / Reject), and (e) stay under 500 lines. Each `_atom.md` MUST contain exactly one `<step_by_step>` block. Failures point at the manifest entry and offending line.
+
+**Bundle-leakage gate:** `framework.tar.gz` excludes generator inputs via `tar --exclude='_atom.md' --exclude='_composite.md' --exclude='composites.yaml'`. `scripts/check-pack-refs.ts --leakage` rebuilds the tarball locally with the same flags, unpacks it, and fails with the offending filenames if anything leaks. End-user IDE configs see only the rendered SKILL.md.
+
+**Token-cap exemption:** `FR-UNIVERSAL.DISCLOSURE` caps SKILL.md frontmatter at 5000 tokens; the cap is relaxed for composites. The exemption list is derived live from `framework/composites.yaml` via `scripts/lib/composite-list.ts`, so adding a composite to the manifest automatically exempts it without a separate hand-maintained list.
+
+**Predecessor (deleted):** This system replaces the legacy `scripts/check-skill-sync.ts` (substring drift check) + `scripts/composite-skills.ts` (hard-coded composite list with `COMPOSITE_SKILLS` array). Both files removed; `scripts/lib/composite-list.ts` is the manifest-driven replacement.
 
 #### 3.1.2 Script Language Policy
 

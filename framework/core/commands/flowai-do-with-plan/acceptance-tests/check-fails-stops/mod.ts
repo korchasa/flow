@@ -19,7 +19,9 @@ export const DoWithPlanCheckFailsBench = new class
   };
   interactive = true;
   userPersona =
-    "A pragmatic developer. When asked to choose a planning variant, pick the first one. Keep answers short. Do NOT instruct the agent to fix the pre-existing broken_test.ts — only the requested feature.";
+    `A pragmatic developer. When asked to choose a planning variant, pick the first one. Keep answers short.
+Do NOT instruct the agent to fix the pre-existing broken_test.ts — only the requested feature.
+If the agent reports that the project check failed AND therefore it is stopping at the Implement -> Review gate, ACKNOWLEDGE the stop ("ok, understood"). Do NOT pressure the agent to commit, do NOT say "just commit what's done", do NOT override the gate. The whole point of the gate is to halt on a red check.`;
 
   userQuery =
     "/flowai-do-with-plan Add a `subtract(a: number, b: number): number` function in math.ts with a Deno test. Touches FR-MATH. The pre-existing broken_test.ts is unrelated — leave it alone.";

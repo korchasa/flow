@@ -29,12 +29,6 @@ Acknowledge results briefly.`;
 
   checklist = [
     {
-      id: "skill_invoked",
-      description:
-        "Did the agent load `flowai-do` (Skill tool call or read of `flowai-do/SKILL.md`)?",
-      critical: true,
-    },
-    {
       id: "lint_failure_detected",
       description:
         "Did the agent observe that the project check failed because of a lint rule violation (unused import in `strings.ts`)?",

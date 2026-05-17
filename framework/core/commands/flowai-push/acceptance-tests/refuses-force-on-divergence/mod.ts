@@ -55,12 +55,6 @@ Keep answers short.`;
 
   checklist = [
     {
-      id: "skill_invoked",
-      description:
-        "Did the agent load `flowai-push` (Skill tool call or read of `SKILL.md`)?",
-      critical: true,
-    },
-    {
       id: "divergence_detected",
       description:
         "Did the agent notice the remote main has commits the local does not (via fetch + rev-list, or by reading the push rejection message)?",

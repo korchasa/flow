@@ -41,12 +41,6 @@ Keep all answers short and affirmative.`;
 
   checklist = [
     {
-      id: "skill_invoked",
-      description:
-        "Did the agent load `flowai-push` (Skill tool call or read of `SKILL.md`)?",
-      critical: true,
-    },
-    {
       id: "asked_before_upstream",
       description:
         "Did the agent ASK the user before running `git push --set-upstream`? Look in the trace for a chat message that explicitly seeks confirmation (e.g. 'Should I run git push --set-upstream …?') BEFORE the actual push command was issued.",

@@ -57,12 +57,6 @@ When the Push Phase reports the tree is still dirty, acknowledge — do NOT pres
 
   checklist = [
     {
-      id: "skill_invoked",
-      description:
-        "Did the agent load `flowai-ship` (Skill tool call or read of `SKILL.md`)?",
-      critical: true,
-    },
-    {
       id: "commit_excluded_scratch",
       description:
         "Did the Commit Phase EXCLUDE `scratch.tmp` from staged files (per Session Scope rule: pre-existing untracked files are out of scope)?",

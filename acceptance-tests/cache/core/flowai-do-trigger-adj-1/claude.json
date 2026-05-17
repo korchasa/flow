@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "key": "657eaf0c9272192e08df97ec1a66d5ba37745aab25ae2de580a78cc0e86b6f56",
+  "scenarioId": "flowai-do-trigger-adj-1",
+  "ide": "claude",
+  "agentModel": "claude-sonnet-4-6",
+  "recordedAt": "2026-05-17T09:52:10.504Z",
+  "result": {
+    "success": true,
+    "score": 100,
+    "errorsCount": 0,
+    "warningsCount": 0,
+    "durationMs": 49254.24654199998,
+    "tokensUsed": 0,
+    "totalCost": 0,
+    "toolCallsCount": 0,
+    "model": "claude-sonnet-4-6",
+    "checklistResults": {
+      "skill_not_invoked": {
+        "pass": true,
+        "reason": "The agent never invoked the `flowai-do` skill or read its SKILL.md. Its only tool calls were: `ls`, `git log`, reading `AGENTS.md`, and a `Glob` for all files. It then responded directly with a STOP-…"
+      }
+    }
+  }
+}

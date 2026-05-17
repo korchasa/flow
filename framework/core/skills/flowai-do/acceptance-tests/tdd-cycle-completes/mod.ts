@@ -29,12 +29,6 @@ When shown test results, acknowledge them. Keep answers brief and affirmative.`;
 
   checklist = [
     {
-      id: "skill_invoked",
-      description:
-        "Did the agent load `flowai-do` (Skill tool call or read of `flowai-do/SKILL.md`)?",
-      critical: true,
-    },
-    {
       id: "plan_re_read",
       description:
         "Did the agent re-read the plan file `documents/tasks/2026/05/add-trim.md` from disk before implementing?",

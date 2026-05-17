@@ -38,12 +38,24 @@ You are autonomous and proactive. You exhaust all available resources (codebase,
 6. **Stop-Analysis Protocol**: Follow Stop-Analysis rules from `# YOU MUST` in AGENTS.md.
 7. **AGENTS.md Planning Rules**: Follow all rules from `## Planning Rules` section in AGENTS.md (Environment Side-Effects, Verification Steps, Functionality Preservation, Data-First, Architectural Validation, Variant Analysis, User Decision Gate).
 8. **Traceability & Acceptance Tuple**: If the task creates, modifies, or implements FR-* requirements, the `implements:` YAML frontmatter is REQUIRED with every affected FR-* code. Every item in `## Definition of Done` MUST pair with an FR-ID and a runnable acceptance reference — `Test: <path>::<name>` (or `Benchmark: <scenario-id>`) + `Evidence: <command>`. Exception — `manual — <reviewer>` — only when automation cost exceeds defect cost. DoD items without this tuple are not accepted and must be rewritten before the plan is finalized. The test does not need to exist yet — the develop phase creates it as RED — but the plan MUST fix WHERE it will live. If an FR is new (not yet in `documents/requirements.md`), the plan MUST also list "add FR-XXX section to SRS with `**Acceptance:**` field" as a DoD item, paired with the same tuple.
-9. **Frontmatter Shape**: The task file's YAML frontmatter MUST contain ALL of the following keys (in this order recommended):
+9. **Frontmatter Shape**: The task file's YAML frontmatter MUST contain ALL FIVE of the following keys, in this exact order. **Each key MUST be PRESENT even when its value is empty** — write `implements: []`, `tags: []`, `related_tasks: []` rather than omitting the key. Eliding a key is a defect:
    - `date: <YYYY-MM-DD>` — today's date as a quoted ISO string. Use the date you used for the directory hierarchy.
    - `status: to do` — initial value for a freshly-created task with all DoD items unchecked. Other valid values: `in progress`, `done`. Status is auto-derived from DoD checkbox state by `flowai-commit` / `flowai-review-and-commit` on every subsequent commit; do NOT update it manually.
-   - `implements: [FR-..., ...]` — FR-IDs the task touches (may be empty `[]` if the task is purely operational, but prefer naming an FR).
-   - `tags: [...]` — short keyword list (lowercase). May be empty `[]`.
-   - `related_tasks: [...]` — relative paths to other tasks under `documents/tasks/`, e.g. `2026/03/20/precursor-task.md`. May be empty `[]`.
+   - `implements: [FR-..., ...]` — FR-IDs the task touches. May be empty `[]` if the task is purely operational, but prefer naming an FR. **The key itself is mandatory.**
+   - `tags: [...]` — short keyword list (lowercase). May be empty `[]`. **The key itself is mandatory.**
+   - `related_tasks: [...]` — relative paths to other tasks under `documents/tasks/`, e.g. `2026/03/20/precursor-task.md`. May be empty `[]`. **The key itself is mandatory.**
+
+   Canonical empty-valued example for an operational task with no FR / tags / related tasks:
+
+   ```yaml
+   ---
+   date: "2026-05-17"
+   status: to do
+   implements: []
+   tags: []
+   related_tasks: []
+   ---
+   ```
 </rules>
 
 ## Question Format (FR-UNIVERSAL.QA-FORMAT)

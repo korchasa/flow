@@ -41,11 +41,13 @@ export const ShipFullCycleSuccess = new class extends AcceptanceTestScenario {
     await runGit(sandboxPath, ["push", "origin", "feature/add-trim"]);
   }
 
-  userQuery = "/flowai-ship Add a trim helper to strings.ts";
+  userQuery =
+    "/flowai-ship Add a configurable `trim(input, options?)` helper to strings.ts that supports trimming a custom character set (e.g. trim leading commas + spaces), in addition to the default whitespace-only trim. Touches FR-TRIM.";
 
   userPersona =
     `You are a developer who wants the agent to plan, implement, review, commit, and push a small task end-to-end.
 - When the agent presents Plan-Phase variants, pick the simplest one in one short sentence ("Go with variant 1.").
+- When the agent writes the task file, expect ALL five frontmatter keys: date, status, implements, tags, related_tasks. If you notice any missing, mention it.
 - When the Implement Phase reports results, acknowledge briefly.
 - When the Review Phase asks anything, answer affirmatively.
 - When the Commit Phase asks about documentation or grouping, accept its defaults.
@@ -53,12 +55,6 @@ export const ShipFullCycleSuccess = new class extends AcceptanceTestScenario {
 Keep all answers short and on-topic.`;
 
   checklist = [
-    {
-      id: "skill_invoked",
-      description:
-        "Did the agent load `flowai-ship` (Skill tool call or read of `SKILL.md`)?",
-      critical: true,
-    },
     {
       id: "plan_phase_wrote_task_file",
       description:

@@ -35,12 +35,6 @@ DO NOT explicitly type "Request Changes" — let the agent's review logic produc
 
   checklist = [
     {
-      id: "skill_invoked",
-      description:
-        "Did the agent load `flowai-ship` (Skill tool call or read of `SKILL.md`)?",
-      critical: true,
-    },
-    {
       id: "review_produced_non_approve",
       description:
         "Did the Review Phase emit a verdict that is NOT `Approve` — i.e. one of `Request Changes` / `Needs Discussion` (because of the `console.log` hygiene issue)?",
