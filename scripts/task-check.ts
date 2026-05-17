@@ -80,6 +80,22 @@ export function buildCheckPlan(): CheckPlan {
         cmd: "deno",
         args: ["run", "-A", "scripts/check-pack-refs.ts"],
       },
+      // implements [FR-SKILL-COMPOSE](../documents/requirements.md#fr-skill-compose-generated-composite-skill-assembly)
+      // bundle-leakage gate: builds framework.tar locally with the same
+      // --exclude flags as CI, unpacks it, fails on any _atom.md /
+      // _composite.md / composites.yaml leak into user IDE configs.
+      {
+        cmd: "deno",
+        args: ["run", "-A", "scripts/check-pack-refs.ts", "--leakage"],
+      },
+      // implements [FR-SKILL-COMPOSE](../documents/requirements.md#fr-skill-compose-generated-composite-skill-assembly)
+      // composite-skill regeneration drift gate. Re-runs the generator in
+      // --check mode; fails with a per-file unified diff + --write hint if
+      // any SKILL.md diverges from its atom + composite manifest source.
+      {
+        cmd: "deno",
+        args: ["run", "-A", "scripts/generate-skill-composites.ts", "--check"],
+      },
       {
         cmd: "deno",
         args: ["run", "-A", "scripts/check-naming-prefix.ts"],

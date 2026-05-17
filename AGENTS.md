@@ -97,8 +97,11 @@ Maps source-code paths to documentation sections that describe them. Used by
 compare-and-update when each file changes. If a change touches a path below and
 the mapped section contradicts new code → update the section.
 
-- `framework/<pack>/commands/<name>/SKILL.md` → [README §Packs](README.md#packs), [FR-CMD-EXEC](documents/requirements.md#fr-cmd-exec-command-execution) / any `FR-*<NAME>*` clause, [SDS §3.1.1 Product Packs](documents/design.md#3.1.1-product-packs-framework)
-- `framework/<pack>/skills/<name>/SKILL.md` → [README §Packs](README.md#packs), [FR-HOWTO](documents/requirements.md#fr-howto-automation-how-to) / any `FR-*<NAME>*` clause, [SDS §3.1.1 Product Packs](documents/design.md#3.1.1-product-packs-framework)
+- `framework/<pack>/commands/<name>/SKILL.md` → [README §Packs](README.md#packs), [FR-CMD-EXEC](documents/requirements.md#fr-cmd-exec-command-execution) / any `FR-*<NAME>*` clause, [SDS §3.1.1 Product Packs](documents/design.md#3.1.1-product-packs-framework). **If a sibling `_atom.md` or `_composite.md` exists, the SKILL.md is generator output — do NOT edit it; edit the sibling and run `deno run -A scripts/generate-skill-composites.ts --write` (FR-SKILL-COMPOSE).**
+- `framework/<pack>/skills/<name>/SKILL.md` → [README §Packs](README.md#packs), [FR-HOWTO](documents/requirements.md#fr-howto-automation-how-to) / any `FR-*<NAME>*` clause, [SDS §3.1.1 Product Packs](documents/design.md#3.1.1-product-packs-framework). **Same generator rule as commands above.**
+- `framework/<pack>/commands/<name>/_atom.md`, `framework/<pack>/skills/<name>/_atom.md` → SRS FR-SKILL-COMPOSE; excluded from `framework.tar.gz` (see `scripts/check-pack-refs.ts --leakage`).
+- `framework/<pack>/commands/<name>/_composite.md` → SRS FR-SKILL-COMPOSE; composite wrapper consumed by the generator. Excluded from the bundle.
+- `framework/composites.yaml` → SRS FR-SKILL-COMPOSE, SDS §3.1.1 Composite Skill Generation subsection. Excluded from the bundle.
 - `framework/<pack>/agents/<name>.md` → [SDS §3.2 Product Agents](documents/design.md#3.2-product-agents-in-packs), README §Agents (if public-facing)
 - `framework/<pack>/hooks/` → SRS `FR-HOOK-*` clauses, [SDS §3.1.1 Product Packs](documents/design.md#3.1.1-product-packs-framework) (hook subsection)
 - `framework/<pack>/pack.yaml` → [FR-PACKS](documents/requirements.md#fr-packs-pack-system-modular-resource-installation), [SDS §3.1.1 Product Packs](documents/design.md#3.1.1-product-packs-framework); [README §Packs](README.md#packs) when a pack is added/removed

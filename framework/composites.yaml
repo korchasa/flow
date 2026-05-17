@@ -1,0 +1,9 @@
+# Composite Skill Generation manifest (FR-SKILL-COMPOSE).
+#
+# Read by scripts/generate-skill-composites.ts (--check / --write modes).
+# Excluded from framework.tar.gz by .github/workflows/ci.yml `tar --exclude`
+# and re-checked by scripts/check-pack-refs.ts `--leakage` mode.
+# Never shipped to user IDE configs.
+schema_version: 1
+atoms: {}
+composites: {}

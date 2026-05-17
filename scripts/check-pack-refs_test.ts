@@ -1,5 +1,11 @@
 import { assertEquals } from "@std/assert";
-import { findCrossPackRefs } from "./check-pack-refs.ts";
+import { join } from "@std/path";
+import {
+  checkCiExcludes,
+  findCrossPackRefs,
+  findLeakedFiles,
+  LEAKED_FILENAMES,
+} from "./check-pack-refs.ts";
 
 const primitiveMap = new Map([
   ["flowai-commit", "core"],
@@ -99,4 +105,91 @@ Deno.test("pack-refs: core referencing core is OK", () => {
     primitiveMap,
   );
   assertEquals(errors, []);
+});
+
+// --- Bundle-leakage gate (FR-SKILL-COMPOSE) ---
+
+async function withTempTree<T>(
+  layout: Record<string, string>,
+  fn: (root: string) => Promise<T>,
+): Promise<T> {
+  const root = await Deno.makeTempDir({ prefix: "flowai-leak-test-" });
+  try {
+    for (const [rel, content] of Object.entries(layout)) {
+      const full = join(root, rel);
+      const parent = full.replace(/\/[^/]+$/, "");
+      await Deno.mkdir(parent, { recursive: true });
+      await Deno.writeTextFile(full, content);
+    }
+    return await fn(root);
+  } finally {
+    await Deno.remove(root, { recursive: true });
+  }
+}
+
+Deno.test("leakage: detects_leaked_atom in unpacked tree", async () => {
+  await withTempTree(
+    {
+      "framework/core/skills/foo/SKILL.md": "ok",
+      "framework/core/skills/foo/_atom.md": "leak",
+    },
+    async (root) => {
+      const leaks = await findLeakedFiles(root);
+      assertEquals(leaks, ["framework/core/skills/foo/_atom.md"]);
+    },
+  );
+});
+
+Deno.test("leakage: detects_leaked_composite in unpacked tree", async () => {
+  await withTempTree(
+    {
+      "framework/core/commands/bar/SKILL.md": "ok",
+      "framework/core/commands/bar/_composite.md": "leak",
+    },
+    async (root) => {
+      const leaks = await findLeakedFiles(root);
+      assertEquals(leaks, ["framework/core/commands/bar/_composite.md"]);
+    },
+  );
+});
+
+Deno.test("leakage: detects_leaked_manifest at top of framework/", async () => {
+  await withTempTree(
+    {
+      "framework/composites.yaml": "schema_version: 1",
+      "framework/core/skills/x/SKILL.md": "ok",
+    },
+    async (root) => {
+      const leaks = await findLeakedFiles(root);
+      assertEquals(leaks, ["framework/composites.yaml"]);
+    },
+  );
+});
+
+Deno.test("leakage: passes_on_clean_tarball (no leak files present)", async () => {
+  await withTempTree(
+    {
+      "framework/core/skills/foo/SKILL.md": "ok",
+      "framework/core/commands/bar/SKILL.md": "ok",
+      "framework/core/pack.yaml": "id: core",
+    },
+    async (root) => {
+      const leaks = await findLeakedFiles(root);
+      assertEquals(leaks, []);
+    },
+  );
+});
+
+Deno.test("leakage: LEAKED_FILENAMES list is stable", () => {
+  assertEquals([...LEAKED_FILENAMES], [
+    "_atom.md",
+    "_composite.md",
+    "composites.yaml",
+  ]);
+});
+
+Deno.test("leakage: checkCiExcludes passes on the real .github/workflows/ci.yml", async () => {
+  // After Commit 1 wires --exclude into ci.yml, this MUST return [].
+  const missing = await checkCiExcludes(".github/workflows/ci.yml");
+  assertEquals(missing, []);
 });

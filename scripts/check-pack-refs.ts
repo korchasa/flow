@@ -1,15 +1,30 @@
 /**
- * Validates that skills/agents do not have cross-pack references.
+ * Pack reference + bundle-leakage validator.
  *
- * Rules:
- * - Any pack may reference core primitives: OK
- * - Intra-pack references (same pack): OK
- * - Core referencing non-core: ERROR
- * - Non-core-A referencing non-core-B: ERROR
+ * Two modes (CLI-selected, both invoked from `deno task check` and CI):
  *
- * Scans SKILL.md and agent .md files for backtick-quoted primitive names.
+ * 1. Default — cross-pack references in source.
+ *    Any pack may reference core primitives: OK
+ *    Intra-pack references (same pack): OK
+ *    Core referencing non-core: ERROR
+ *    Non-core-A referencing non-core-B: ERROR
+ *    Scans SKILL.md and agent .md files for backtick-quoted primitive names.
+ *
+ * 2. `--leakage [--tarball <path>]` — generator-input leakage gate
+ *    (FR-SKILL-COMPOSE). Builds framework.tar locally if no tarball is given,
+ *    unpacks it into a temp dir, fails with exit 1 + filename list if any of
+ *    `_atom.md`, `_composite.md`, or `composites.yaml` is present. Sister
+ *    mitigation to the `tar --exclude` flags in .github/workflows/ci.yml.
+ *    See documents/tasks/2026/05/generate-skills-from-atoms.md (Commit 1).
  */
 import { join } from "@std/path";
+
+export const LEAKED_FILENAMES = [
+  "_atom.md",
+  "_composite.md",
+  "composites.yaml",
+] as const;
+const TAR_EXCLUDES = LEAKED_FILENAMES.map((f) => `--exclude=${f}`);
 
 export interface PackRefError {
   file: string;
@@ -175,7 +190,164 @@ export async function validatePackRefs(
   return allErrors;
 }
 
+/**
+ * Walks a directory recursively and returns relative paths of files whose
+ * basename matches one of the leak-target filenames. Used by the leakage
+ * gate after unpacking the framework tarball.
+ */
+export async function findLeakedFiles(
+  rootDir: string,
+  targets: readonly string[] = LEAKED_FILENAMES,
+): Promise<string[]> {
+  const targetSet = new Set(targets);
+  const leaks: string[] = [];
+  async function walk(dir: string, rel: string): Promise<void> {
+    for await (const entry of Deno.readDir(dir)) {
+      const next = join(dir, entry.name);
+      const nextRel = rel ? `${rel}/${entry.name}` : entry.name;
+      if (entry.isDirectory) {
+        await walk(next, nextRel);
+      } else if (entry.isFile && targetSet.has(entry.name)) {
+        leaks.push(nextRel);
+      }
+    }
+  }
+  await walk(rootDir, "");
+  leaks.sort();
+  return leaks;
+}
+
+/**
+ * Builds framework.tar from `frameworkDir` using `tar --exclude` (matching
+ * .github/workflows/ci.yml), unpacks it under `outDir`, and returns the
+ * unpack-root path. The output is non-reproducible — for leakage checking
+ * only, NOT for release bundling.
+ */
+export async function buildAndUnpackTarball(
+  frameworkDir: string,
+  outDir: string,
+): Promise<string> {
+  const tarPath = join(outDir, "framework.tar");
+  const buildCmd = new Deno.Command("tar", {
+    args: [...TAR_EXCLUDES, "-cf", tarPath, frameworkDir],
+    stdout: "piped",
+    stderr: "piped",
+  });
+  const built = await buildCmd.output();
+  if (!built.success) {
+    throw new Error(
+      `[check-pack-refs] tar build failed: ${
+        new TextDecoder().decode(built.stderr)
+      }`,
+    );
+  }
+  const unpackDir = join(outDir, "unpacked");
+  await Deno.mkdir(unpackDir, { recursive: true });
+  const extractCmd = new Deno.Command("tar", {
+    args: ["-xf", tarPath, "-C", unpackDir],
+    stdout: "piped",
+    stderr: "piped",
+  });
+  const extracted = await extractCmd.output();
+  if (!extracted.success) {
+    throw new Error(
+      `[check-pack-refs] tar extract failed: ${
+        new TextDecoder().decode(extracted.stderr)
+      }`,
+    );
+  }
+  return unpackDir;
+}
+
+/**
+ * Verifies the CI workflow file declares the required `--exclude` flags on
+ * its `tar` invocation. Static check — catches the most common regression
+ * (someone editing CI and dropping the excludes) without running tar.
+ */
+export async function checkCiExcludes(
+  workflowPath: string = ".github/workflows/ci.yml",
+): Promise<string[]> {
+  let content: string;
+  try {
+    content = await Deno.readTextFile(workflowPath);
+  } catch (e) {
+    throw new Error(
+      `[check-pack-refs] cannot read ${workflowPath}: ${
+        e instanceof Error ? e.message : String(e)
+      }`,
+    );
+  }
+  const missing: string[] = [];
+  for (const f of LEAKED_FILENAMES) {
+    if (
+      !content.includes(`--exclude='${f}'`) &&
+      !content.includes(`--exclude=${f}`)
+    ) {
+      missing.push(f);
+    }
+  }
+  return missing;
+}
+
+async function runLeakageMode(args: string[]): Promise<number> {
+  const tarballIdx = args.indexOf("--tarball");
+  const tarballPath = tarballIdx >= 0 ? args[tarballIdx + 1] : null;
+  let unpackRoot: string;
+  let tmpDir: string | null = null;
+  if (tarballPath) {
+    tmpDir = await Deno.makeTempDir({ prefix: "flowai-leak-extract-" });
+    const cmd = new Deno.Command("tar", {
+      args: ["-xf", tarballPath, "-C", tmpDir],
+      stdout: "piped",
+      stderr: "piped",
+    });
+    const r = await cmd.output();
+    if (!r.success) {
+      console.error(
+        `[check-pack-refs] failed to unpack ${tarballPath}: ${
+          new TextDecoder().decode(r.stderr)
+        }`,
+      );
+      return 1;
+    }
+    unpackRoot = tmpDir;
+  } else {
+    tmpDir = await Deno.makeTempDir({ prefix: "flowai-leak-build-" });
+    unpackRoot = await buildAndUnpackTarball("framework", tmpDir);
+  }
+  try {
+    const leaks = await findLeakedFiles(unpackRoot);
+    const missingCi = await checkCiExcludes();
+    if (leaks.length === 0 && missingCi.length === 0) {
+      console.log(
+        "[check-pack-refs] bundle leakage check passed (no _atom.md / _composite.md / composites.yaml in tarball)",
+      );
+      return 0;
+    }
+    for (const l of leaks) {
+      console.error(`[check-pack-refs] leaked into tarball: ${l}`);
+    }
+    for (const m of missingCi) {
+      console.error(
+        `[check-pack-refs] .github/workflows/ci.yml is missing --exclude='${m}' on the tar step`,
+      );
+    }
+    return 1;
+  } finally {
+    if (tmpDir) {
+      try {
+        await Deno.remove(tmpDir, { recursive: true });
+      } catch { /* best effort */ }
+    }
+  }
+}
+
 if (import.meta.main) {
+  if (Deno.args.includes("--leakage")) {
+    const code = await runLeakageMode(Deno.args);
+    Deno.exit(code);
+  }
+
   console.log("Checking cross-pack references...");
 
   const errors = await validatePackRefs("framework");

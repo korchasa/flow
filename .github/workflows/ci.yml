@@ -105,9 +105,16 @@ jobs:
           export SOURCE_DATE_EPOCH
           # GNU tar (ubuntu-latest): sorted entries, numeric IDs, fixed mtime.
           # gzip -n omits filename + timestamp in the gzip header.
+          # implements [FR-SKILL-COMPOSE](../../documents/requirements.md#fr-skill-compose-generated-composite-skill-assembly)
+          # exclude generator inputs (atom/composite/manifest); see
+          # scripts/check-pack-refs.ts --leakage and Variants section in
+          # documents/tasks/2026/05/generate-skills-from-atoms.md.
           tar --sort=name \
               --owner=0 --group=0 --numeric-owner \
               --mtime="@${SOURCE_DATE_EPOCH}" \
+              --exclude='_atom.md' \
+              --exclude='_composite.md' \
+              --exclude='composites.yaml' \
               -cf framework.tar framework/
           gzip -n -9 framework.tar
           sha256sum framework.tar.gz > framework.tar.gz.sha256
@@ -115,6 +122,16 @@ jobs:
           echo "framework_sha256=${ACTUAL}" >> "$GITHUB_OUTPUT"
           echo "framework_version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "Framework tarball SHA-256: ${ACTUAL}"
+
+      # implements [FR-SKILL-COMPOSE](../../documents/requirements.md#fr-skill-compose-generated-composite-skill-assembly)
+      # verify the bundle did not leak any _atom.md / _composite.md /
+      # composites.yaml. Runs between the tarball build and the Framework
+      # Release step so a missing --exclude aborts the release.
+      - name: Verify framework tarball contains no generator-input leaks
+        if: steps.releasable.outputs.should_release == 'true'
+        run: |
+          set -euo pipefail
+          deno run -A scripts/check-pack-refs.ts --leakage --tarball framework.tar.gz
 
       - name: Create GitHub Release
         if: steps.releasable.outputs.should_release == 'true'
