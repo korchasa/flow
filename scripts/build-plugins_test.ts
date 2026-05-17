@@ -1,5 +1,5 @@
-// implements [FR-DIST.MARKETPLACE](../documents/requirements.md#fr-dist.marketplace-claude-code-plugin-marketplace-pilot)
-// Verification of scripts/build-claude-plugins.ts.
+// implements [FR-DIST.MARKETPLACE](../documents/requirements.md#fr-dist.marketplace-claude-code-codex-plugin-marketplace)
+// Verification of scripts/build-plugins.ts.
 //
 // Tests run the real build against the actual `framework/core/` tree, plus
 // hermetic fixtures for fail-fast invariant violations. No network.
@@ -8,11 +8,11 @@ import { assert, assertEquals, assertStringIncludes } from "@std/assert";
 import { join } from "@std/path";
 import { parse as parseYaml } from "@std/yaml";
 import {
-  buildClaudePlugins,
+  buildPlugins,
   DEFAULT_MARKETPLACE_NAME,
   resolveModelTier,
   transformAgentFrontmatter,
-} from "./build-claude-plugins.ts";
+} from "./build-plugins.ts";
 
 const FRAMEWORK = join(Deno.cwd(), "framework");
 
@@ -36,7 +36,7 @@ async function readFrontmatter(
 Deno.test("emits-marketplace-and-plugin-manifest-for-core", async () => {
   const out = await tempOut();
   try {
-    await buildClaudePlugins({
+    await buildPlugins({
       packs: ["core"],
       frameworkDir: FRAMEWORK,
       outDir: out,
@@ -72,10 +72,135 @@ Deno.test("emits-marketplace-and-plugin-manifest-for-core", async () => {
   }
 });
 
+Deno.test("codex-marketplace emits-codex-marketplace-for-all-packs", async () => {
+  const out = await tempOut();
+  try {
+    await buildPlugins({
+      packs: ["typescript", "core", "deno"],
+      frameworkDir: FRAMEWORK,
+      outDir: out,
+    });
+
+    const mp = await readJson(
+      join(out, ".agents", "plugins", "marketplace.json"),
+    ) as Record<string, unknown>;
+    assertEquals(mp.name, DEFAULT_MARKETPLACE_NAME);
+    assertEquals(
+      (mp.interface as Record<string, unknown>).displayName,
+      "flowai Plugins",
+    );
+    assert(Array.isArray(mp.plugins));
+    const plugins = mp.plugins as Array<Record<string, unknown>>;
+    assertEquals(
+      plugins.map((p) => p.name),
+      ["flowai-core", "flowai-deno", "flowai-typescript"],
+    );
+    assertEquals(
+      plugins.map((
+        p,
+      ) => ((p.source as Record<string, unknown>).path as string)),
+      [
+        "./plugins/flowai-core",
+        "./plugins/flowai-deno",
+        "./plugins/flowai-typescript",
+      ],
+    );
+    for (const plugin of plugins) {
+      assertEquals(
+        (plugin.source as Record<string, unknown>).source,
+        "local",
+      );
+      assertEquals(
+        (plugin.policy as Record<string, unknown>).installation,
+        "AVAILABLE",
+      );
+      assertEquals(
+        (plugin.policy as Record<string, unknown>).authentication,
+        "ON_INSTALL",
+      );
+      assertEquals(plugin.category, "Productivity");
+    }
+  } finally {
+    await Deno.remove(out, { recursive: true });
+  }
+});
+
+Deno.test("codex-plugin-manifests emits-codex-plugin-manifests", async () => {
+  const out = await tempOut();
+  try {
+    await buildPlugins({
+      packs: ["core"],
+      frameworkDir: FRAMEWORK,
+      outDir: out,
+    });
+
+    const manifest = await readJson(
+      join(out, "plugins", "flowai-core", ".codex-plugin", "plugin.json"),
+    ) as Record<string, unknown>;
+    assertEquals(manifest.name, "flowai-core");
+    assertEquals(manifest.skills, "./skills/");
+    assertEquals(manifest.hooks, undefined);
+    assertEquals(manifest.repository, "https://github.com/korchasa/flowai");
+    assertEquals((manifest.author as Record<string, unknown>).name, "korchasa");
+    assertEquals(
+      (manifest.interface as Record<string, unknown>).displayName,
+      "flowai core",
+    );
+    assertEquals(
+      (manifest.interface as Record<string, unknown>).category,
+      "Productivity",
+    );
+    assert(
+      Array.isArray(
+        (manifest.interface as Record<string, unknown>).capabilities,
+      ),
+      "Codex manifest must declare user-visible capabilities",
+    );
+  } finally {
+    await Deno.remove(out, { recursive: true });
+  }
+});
+
+Deno.test("codex-payload codex-payload-matches-shared-transform-contract", async () => {
+  const out = await tempOut();
+  try {
+    await buildPlugins({
+      packs: ["core"],
+      frameworkDir: FRAMEWORK,
+      outDir: out,
+    });
+
+    const skillsDir = join(out, "plugins", "flowai-core", "skills");
+    const names: string[] = [];
+    for await (const e of Deno.readDir(skillsDir)) {
+      if (e.isDirectory) names.push(e.name);
+    }
+    names.sort();
+    assert(names.includes("commit"), "command payload missing");
+    assert(names.includes("plan"), "skill payload missing");
+    assert(!names.includes("flowai-commit"), "flowai- prefix leaked");
+    assert(!names.includes("update"), "project-only primitive leaked");
+
+    const cmdFm = await readFrontmatter(
+      join(skillsDir, "commit", "SKILL.md"),
+    );
+    assertEquals(cmdFm["disable-model-invocation"], true);
+
+    const skillText = await Deno.readTextFile(
+      join(skillsDir, "adapt-instructions", "SKILL.md"),
+    );
+    assertStringIncludes(skillText, "assets/AGENTS.template.md");
+    assert(!skillText.includes("../../assets/AGENTS.template.md"));
+    assert(!/\/flowai-(commit|plan|review)\b/.test(skillText));
+  } finally {
+    await Deno.remove(out, { recursive: true });
+  }
+});
+
 Deno.test("skill-and-command-dirs-have-prefix-stripped", async () => {
   const out = await tempOut();
   try {
-    await buildClaudePlugins({
+    await buildPlugins({
       packs: ["core"],
       frameworkDir: FRAMEWORK,
       outDir: out,
@@ -106,7 +231,7 @@ Deno.test(
   async () => {
     const out = await tempOut();
     try {
-      await buildClaudePlugins({
+      await buildPlugins({
         packs: ["core"],
         frameworkDir: FRAMEWORK,
         outDir: out,
@@ -179,7 +304,7 @@ Deno.test("model-tier-resolution", () => {
 Deno.test("marketplace-and-plugin-json-schema-valid", async () => {
   const out = await tempOut();
   try {
-    await buildClaudePlugins({
+    await buildPlugins({
       packs: ["core"],
       frameworkDir: FRAMEWORK,
       outDir: out,
@@ -213,12 +338,12 @@ Deno.test("byte-deterministic-rerun", async () => {
   const a = await tempOut();
   const b = await tempOut();
   try {
-    await buildClaudePlugins({
+    await buildPlugins({
       packs: ["core"],
       frameworkDir: FRAMEWORK,
       outDir: a,
     });
-    await buildClaudePlugins({
+    await buildPlugins({
       packs: ["core"],
       frameworkDir: FRAMEWORK,
       outDir: b,
@@ -289,7 +414,7 @@ Deno.test("fails-fast-on-cmd-invariant-violation", async () => {
     );
     let threw = false;
     try {
-      await buildClaudePlugins({
+      await buildPlugins({
         packs: ["core"],
         frameworkDir: join(fx, "framework"),
         outDir: out,
@@ -334,7 +459,7 @@ Deno.test("fails-fast-on-skill-invariant-violation", async () => {
     );
     let threw = false;
     try {
-      await buildClaudePlugins({
+      await buildPlugins({
         packs: ["core"],
         frameworkDir: join(fx, "framework"),
         outDir: out,
@@ -356,7 +481,7 @@ Deno.test("fails-fast-on-skill-invariant-violation", async () => {
 Deno.test("preserves-skill-subdirectories", async () => {
   const out = await tempOut();
   try {
-    await buildClaudePlugins({
+    await buildPlugins({
       packs: ["core"],
       frameworkDir: FRAMEWORK,
       outDir: out,
@@ -376,7 +501,7 @@ Deno.test("preserves-skill-subdirectories", async () => {
 Deno.test("emits-agents-with-claude-native-frontmatter", async () => {
   const out = await tempOut();
   try {
-    await buildClaudePlugins({
+    await buildPlugins({
       packs: ["core"],
       frameworkDir: FRAMEWORK,
       outDir: out,
@@ -409,7 +534,7 @@ Deno.test("emits-agents-with-claude-native-frontmatter", async () => {
 Deno.test("scope-filter-excludes-project-only-primitives", async () => {
   const out = await tempOut();
   try {
-    await buildClaudePlugins({
+    await buildPlugins({
       packs: ["core"],
       frameworkDir: FRAMEWORK,
       outDir: out,
@@ -434,7 +559,7 @@ Deno.test("scope-filter-excludes-project-only-primitives", async () => {
 Deno.test("injects-version-from-upstream-deno-json", async () => {
   const out = await tempOut();
   try {
-    await buildClaudePlugins({
+    await buildPlugins({
       packs: ["core"],
       frameworkDir: FRAMEWORK,
       outDir: out,
@@ -458,7 +583,7 @@ Deno.test("injects-version-from-upstream-deno-json", async () => {
 Deno.test("copies-pack-assets-into-consuming-skill-dirs", async () => {
   const out = await tempOut();
   try {
-    await buildClaudePlugins({
+    await buildPlugins({
       packs: ["core"],
       frameworkDir: FRAMEWORK,
       outDir: out,
@@ -513,7 +638,7 @@ Deno.test("strips-cli-only-fences", async () => {
         "after",
       ].join("\n") + "\n",
     );
-    await buildClaudePlugins({
+    await buildPlugins({
       packs: ["core"],
       frameworkDir: join(fx, "framework"),
       outDir: out,
@@ -559,7 +684,7 @@ Deno.test("slash-rewriter-skips-file-paths-and-identifiers", async () => {
         "Module name: import 'X/flowai-tools' (must NOT rewrite).",
       ].join("\n") + "\n",
     );
-    await buildClaudePlugins({
+    await buildPlugins({
       packs: ["core"],
       frameworkDir: join(fx, "framework"),
       outDir: out,
@@ -602,7 +727,7 @@ Deno.test("rewrites-cross-skill-slash-invocations", async () => {
         "Already-rewritten /flowai-core:other stays untouched.",
       ].join("\n") + "\n",
     );
-    await buildClaudePlugins({
+    await buildPlugins({
       packs: ["core"],
       frameworkDir: join(fx, "framework"),
       outDir: out,
@@ -647,7 +772,7 @@ Deno.test("collects-tags-into-marketplace-entry-only", async () => {
       join(pack, "skills", "flowai-two", "SKILL.md"),
       "---\nname: flowai-two\ndescription: d\ntags: [beta, shared]\n---\nbody\n",
     );
-    await buildClaudePlugins({
+    await buildPlugins({
       packs: ["core"],
       frameworkDir: join(fx, "framework"),
       outDir: out,
@@ -695,7 +820,7 @@ Deno.test("transforms-hook-yaml-into-hooks-json", async () => {
       join(pack, "hooks", "my-hook", "run.ts"),
       'console.log("hi");\n',
     );
-    await buildClaudePlugins({
+    await buildPlugins({
       packs: ["core"],
       frameworkDir: join(fx, "framework"),
       outDir: out,

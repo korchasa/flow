@@ -1,16 +1,16 @@
-// implements [FR-DIST.MARKETPLACE](../documents/requirements.md#fr-dist.marketplace-claude-code-plugin-marketplace-pilot)
-// Verification of scripts/validate-claude-plugins.ts.
+// implements [FR-DIST.MARKETPLACE](../documents/requirements.md#fr-dist.marketplace-claude-code-codex-plugin-marketplace)
+// Verification of scripts/validate-plugins.ts.
 //
 // Hermetic fixtures + one happy-path against the real `framework/core/` build.
 
 import { assert, assertEquals, assertStringIncludes } from "@std/assert";
 import { join } from "@std/path";
-import { buildClaudePlugins } from "./build-claude-plugins.ts";
-import { validateMarketplaceTree } from "./validate-claude-plugins.ts";
+import { buildPlugins } from "./build-plugins.ts";
+import { validateMarketplaceTree } from "./validate-plugins.ts";
 
 async function freshBuild(): Promise<string> {
   const out = await Deno.makeTempDir({ prefix: "flowai-validate-test-" });
-  await buildClaudePlugins({
+  await buildPlugins({
     packs: ["core"],
     frameworkDir: join(Deno.cwd(), "framework"),
     outDir: out,
@@ -36,8 +36,19 @@ Deno.test("rejects-missing-marketplace-json", async () => {
   const out = await Deno.makeTempDir({ prefix: "flowai-validate-test-" });
   try {
     const issues = await validateMarketplaceTree(out);
-    assertEquals(issues.length, 1);
-    assertStringIncludes(issues[0].message, "marketplace.json not found");
+    assertEquals(issues.length, 2);
+    assert(
+      issues.some((issue) =>
+        issue.file.includes(".claude-plugin") &&
+        issue.message.includes("marketplace.json not found")
+      ),
+    );
+    assert(
+      issues.some((issue) =>
+        issue.file.includes(".agents/plugins") &&
+        issue.message.includes("marketplace.json not found")
+      ),
+    );
   } finally {
     await Deno.remove(out, { recursive: true });
   }
@@ -183,6 +194,60 @@ Deno.test("rejects-agent-with-missing-description", async () => {
     assert(
       issues.some((i) => i.message.includes("description")),
       `expected missing-description issue, got: ${JSON.stringify(issues)}`,
+    );
+  } finally {
+    await Deno.remove(out, { recursive: true });
+  }
+});
+
+Deno.test("codex rejects-invalid-codex-marketplace", async () => {
+  const out = await freshBuild();
+  try {
+    const marketplacePath = join(
+      out,
+      ".agents",
+      "plugins",
+      "marketplace.json",
+    );
+    const mp = JSON.parse(await Deno.readTextFile(marketplacePath));
+    mp.plugins[0].source.path = "../outside";
+    await Deno.writeTextFile(marketplacePath, JSON.stringify(mp, null, 2));
+
+    const issues = await validateMarketplaceTree(out);
+    assert(
+      issues.some((i) =>
+        i.file.includes(".agents/plugins/marketplace.json") &&
+        i.message.includes("must start with './'")
+      ),
+      `expected Codex source path issue, got: ${JSON.stringify(issues)}`,
+    );
+  } finally {
+    await Deno.remove(out, { recursive: true });
+  }
+});
+
+Deno.test("codex rejects-invalid-codex-plugin-manifest", async () => {
+  const out = await freshBuild();
+  try {
+    const manifestPath = join(
+      out,
+      "plugins",
+      "flowai-core",
+      ".codex-plugin",
+      "plugin.json",
+    );
+    const manifest = JSON.parse(await Deno.readTextFile(manifestPath));
+    manifest.skills = "../skills/";
+    await Deno.writeTextFile(manifestPath, JSON.stringify(manifest, null, 2));
+
+    const issues = await validateMarketplaceTree(out);
+    assert(
+      issues.some((i) =>
+        i.file.includes(".codex-plugin/plugin.json") &&
+        i.message.includes("component path") &&
+        i.message.includes("must start with './'")
+      ),
+      `expected Codex component path issue, got: ${JSON.stringify(issues)}`,
     );
   } finally {
     await Deno.remove(out, { recursive: true });

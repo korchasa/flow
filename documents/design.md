@@ -81,7 +81,7 @@
 
 - `scripts/task-check.ts` runs `--write` as a prerequisite before fmt/lint/tests/check-skills/check-pack-refs `--leakage`.
 - `scripts/task-acceptance-tests.ts` runs `--write` before sandbox setup so `copyFrameworkToIdeDir` sees the rendered files.
-- `scripts/build-claude-plugins.ts` runs `--write` in its CLI wrapper (`if (import.meta.main)` block, not inside `buildClaudePlugins()`) so unit tests with a fake `frameworkDir` aren't affected.
+- `scripts/build-plugins.ts` runs `--write` in its CLI wrapper (`if (import.meta.main)` block, not inside `buildPlugins()`) so unit tests with a fake `frameworkDir` aren't affected.
 - `.github/workflows/ci.yml` Build framework tarball step runs `--write` before `tar`, so the tarball always carries the latest rendered output regardless of CI cache state.
 
 Drift between source and rendered output is **structurally impossible** — there is no tracked rendered copy that can fall behind.
@@ -327,20 +327,23 @@ graph TD
 - **Relation to `flowai-update`:** `flowai-update` (scope: `project-only`) delegates the AGENTS.md migration step to `/flowai-adapt-instructions` rather than re-implementing template diffing.
 - **Behavioral requirements:** See acceptance test `flowai-adapt-instructions-basic`.
 
-### 3.5.2 Claude Code Plugin Marketplace — FR-DIST.MARKETPLACE (`scripts/build-claude-plugins.ts`)
+### 3.5.2 Claude Code + Codex Plugin Marketplace — FR-DIST.MARKETPLACE (`scripts/build-plugins.ts`)
 
-- **Purpose:** Additional, additive distribution channel that publishes flowai packs as native Claude Code plugins through a marketplace at `korchasa/flowai-plugins`. flowai CLI (3.5) remains primary for Cursor / OpenCode / Codex and stays supported for Claude Code; marketplace is offered alongside, not as a replacement.
-- **Location:** `scripts/build-claude-plugins.ts` (build), `scripts/build-claude-plugins_test.ts` (tests), `.github/workflows/ci.yml` step `Build Claude Code plugin marketplace` + downstream sync (publish). Output tree at `dist/claude-plugins/` is gitignored.
+- **Purpose:** Additional, additive distribution channel that publishes flowai packs as native Claude Code + Codex plugins through one generated marketplace at `korchasa/flowai-plugins`. flowai CLI (3.5) remains primary for Cursor / OpenCode and stays supported for Claude Code / Codex; marketplace install is offered alongside, not as a replacement.
+- **Location:** `scripts/build-plugins.ts` (build), `scripts/validate-plugins.ts` (validator), `scripts/build-plugins_test.ts` + `scripts/validate-plugins_test.ts` (tests), `.github/workflows/ci.yml` step `Build and validate plugin marketplace` + downstream sync (publish). Compatibility wrappers `scripts/build-claude-plugins.ts` and `scripts/validate-claude-plugins.ts` call the new scripts for one transition release. Output tree at `dist/claude-plugins/` is gitignored.
 - **Interfaces:**
   - CLI: `deno task build-plugins [--pack core] [--framework ./framework] [--out ./dist/claude-plugins] [--marketplace-name flowai-plugins]`. Defaults: pack=`core`, out=`dist/claude-plugins`, marketplace-name from `DEFAULT_MARKETPLACE_NAME` constant in the build script.
   - CI: steps inside the existing `release` job, gated on the same `should_release == 'true'` condition that produces `framework-v*` tags. Order: build framework tarball → publish framework release → build plugin tree → checkout downstream → sync + commit + push.
   - Downstream: repository `korchasa/flowai-plugins`. `main` is updated by CI on each framework release; tags `framework-vX.Y.Z` mirror the upstream framework version. CI auth via deploy key secret `FLOWAI_PLUGINS_DEPLOY_KEY` (write-enabled).
 - **Generated layout:**
-  - `<out>/.claude-plugin/marketplace.json` — top-level catalog.
-  - `<out>/plugins/flowai-<pack>/.claude-plugin/plugin.json` — per-pack manifest.
+  - `<out>/.claude-plugin/marketplace.json` — Claude Code catalog.
+  - `<out>/.agents/plugins/marketplace.json` — Codex catalog with `plugins[].source = {source:"local", path:"./plugins/flowai-<pack>"}`.
+  - `<out>/plugins/flowai-<pack>/.claude-plugin/plugin.json` — Claude Code manifest.
+  - `<out>/plugins/flowai-<pack>/.codex-plugin/plugin.json` — Codex manifest (`skills: "./skills/"`, optional `hooks: "./hooks/hooks.json"`).
   - `<out>/plugins/flowai-<pack>/skills/<stripped>/SKILL.md` (+ supporting subdirs) — commands and skills merged into one dir; commands carry injected `disable-model-invocation: true`.
-  - `<out>/plugins/flowai-<pack>/agents/<name>.md` — agents with Claude-native frontmatter.
+  - `<out>/plugins/flowai-<pack>/agents/<name>.md` — agents with Claude-native frontmatter. Codex manifest does not declare an `agents` component because current Codex plugin docs do not define one.
   - `<out>/plugins/flowai-<pack>/hooks/hooks.json` — generated only when the pack has hooks (no hooks in `core`).
+- **Internal model:** `PluginPackArtifact` records plugin name, pack name, description, version, tags, hook presence, and license. Build flow: emit shared payload once per pack → emit Claude manifest → emit Codex manifest → emit Claude marketplace → emit Codex marketplace. Surface-specific emitters never re-read framework source.
 - **Stripped names:** outermost source directory `flowai-<short>` → emitted `<short>`. Applies to both `commands/` and `skills/`. Eliminates the `/flowai-core:flowai-commit` double prefix by mapping to `/flowai-core:commit`. Source tree retains canonical `flowai-*` names; the stripping is a build-time concern only.
 - **Frontmatter transforms:**
   - SKILL.md: command source → inject `disable-model-invocation: true`; skill source → no injection. Resolve `model` tier (`max|smart|fast|cheap|inherit`) → `opus|sonnet|haiku|haiku|(drop)`.
@@ -349,7 +352,8 @@ graph TD
   - FR-PACKS.CMD-INVARIANT: a source SKILL.md under `framework/<pack>/commands/` that already carries `disable-model-invocation` aborts the build with the offending path. The flag belongs to the writer, not the source.
   - FR-PACKS.SKILL-INVARIANT: same flag in `framework/<pack>/skills/` aborts the build (primitive should be under `commands/` if user-only).
 - **Determinism:** sorted directory walk, sorted plugin entry list (alphabetical pack name), stable YAML / JSON serialization with fixed key ordering (commands first frontmatter keys: `name`, `description`, `disable-model-invocation`, ...; agent frontmatter: `name`, `description`, `tools`, `disallowedTools`, `model`, `effort`, `maxTurns`, `background`, `isolation`, `color`). Building twice produces byte-identical output (verified by `byte-deterministic-rerun` test).
-- **Version policy:** `plugin.json` and marketplace entry both carry the upstream `deno.json` `.version` (validated as semver by `validate-claude-plugins.ts`). Auto-update via Claude Code is tied to the downstream commit SHA; the semver field is supplementary metadata so `/plugin list` and marketplace UIs show a human-readable version.
+- **Version policy:** Claude + Codex `plugin.json` and Claude marketplace entries carry upstream `deno.json` `.version` (validated as semver by `validate-plugins.ts`). Auto-update is tied to the downstream commit SHA; the semver field is supplementary metadata so plugin UIs show a human-readable version.
+- **Codex validation:** `CodexMarketplaceSchema` validates `.agents/plugins/marketplace.json`; `CodexPluginManifestSchema` validates `.codex-plugin/plugin.json`. Path rules: marketplace `source.path` and manifest component paths start with `./`, stay inside the marketplace/plugin root after resolution, and point to existing files/dirs. Malformed Codex output aborts `deno task validate-plugins` before downstream sync.
 - **Build transforms (execution order, FR-DIST.MARKETPLACE round 2):**
   1. **Scope filter** — primitives with `scope: project-only` (e.g. `flowai-update`) are skipped before any per-skill copy. They have no meaning in plugin context.
   2. **Skill / command emit** — copy support files, transform SKILL.md frontmatter, inject `disable-model-invocation: true` on commands.
@@ -358,14 +362,15 @@ graph TD
   5. **Cross-skill slash rewrite** — `/flowai-<name>` references in SKILL.md bodies become `/flowai-<pack>:<name>`. Idempotent — already-rewritten refs are skipped via a negative lookahead on `:`.
   6. **Version inject** — upstream `deno.json` `.version` written into both plugin.json and marketplace entry.
   7. **Tag union** — `tags:` from each SKILL.md frontmatter is collected, deduped, sorted, capped at 8, and emitted on the marketplace entry only. The tag key is stripped from per-skill frontmatter (Claude's plugin validator rejects `tags` in plugin.json, mirroring `category`).
-  8. **Hook transform** — `framework/<pack>/hooks/<name>/{hook.yaml,run.ts}` → `plugins/<plugin>/hooks/hooks.json` keyed by `event`, with `command: "deno run -A ${CLAUDE_PLUGIN_ROOT}/hooks/<name>/run.ts"`; the `run.ts` is co-emitted. Core has zero hooks today; the transformer covers `devtools` / `memex` rollout.
+  8. **Hook transform** — `framework/<pack>/hooks/<name>/{hook.yaml,run.ts}` → `plugins/<plugin>/hooks/hooks.json` keyed by `event`, with `command: "deno run -A ${CLAUDE_PLUGIN_ROOT}/hooks/<name>/run.ts"`; the `run.ts` is co-emitted. Core has zero hooks today; the transformer covers `devtools` / `memex` rollout. `${CLAUDE_PLUGIN_ROOT}` is retained because Claude Code requires it and Codex exposes it as a compatibility variable; Codex users must enable `[features].plugin_hooks = true` before relying on hooks.
 - **Pre-conditions:**
   - Local smoke test (`/plugin marketplace add ./dist/claude-plugins` → `/plugin install flowai-core@flowai-plugins`) requires Claude Code CLI installed.
+  - Local Codex smoke test (`codex plugin marketplace add ./dist/claude-plugins` → `/plugins` → install `flowai-core`) requires Codex CLI with plugin support installed. Official public Codex Plugin Directory submission is out of scope until self-serve publishing exists.
   - Downstream repo bootstrap is manual once: create `korchasa/flowai-plugins`, commit `README.md` + `LICENSE`, register write-enabled deploy key, expose private key as upstream `FLOWAI_PLUGINS_DEPLOY_KEY` secret.
 - **Failure modes:**
   - Build failure on invariant violation → CI step fails before downstream checkout; downstream untouched.
   - Downstream auth failure or push rejection → CI step fails; framework release tag is preserved (already published) and the workflow can be re-run after credentials are restored. Idempotent re-publish: `git diff --cached --quiet` short-circuits empty commits, `git tag -f` + `git push --force-with-lease` tolerates a re-shot tag.
-- **Drift surface (acknowledged):** agent transform logic is vendored in `build-claude-plugins.ts` rather than shared with `flowai-cli`'s `crossTransformAgent`. Drift risk bounded by FR-DIST.MAPPING coverage in tests; follow-up tracked as extraction of `@korchasa/flowai-transforms` to JSR once a second consumer surfaces.
+- **Drift surface (acknowledged):** agent transform logic is vendored in `build-plugins.ts` rather than shared with `flowai-cli`'s `crossTransformAgent`. Drift risk bounded by FR-DIST.MAPPING coverage in tests; follow-up tracked as extraction of `@korchasa/flowai-transforms` to JSR once a second consumer surfaces.
 
 ### 3.6 Migrate Command — FR-DIST.MIGRATE (`cli/src/migrate.ts`)
 
