@@ -19,6 +19,11 @@ atoms:
     target: framework/core/commands/flowai-commit-beta/SKILL.md
     default_params:
       DIFF_SOURCE: FRESH_READ
+  flowai-do:
+    source: framework/core/skills/flowai-do/_atom.md
+    target: framework/core/skills/flowai-do/SKILL.md
+    default_params:
+      TERMINATION: TOTAL_STOP
 composites:
   flowai-review-and-commit:
     target: framework/core/commands/flowai-review-and-commit/SKILL.md
