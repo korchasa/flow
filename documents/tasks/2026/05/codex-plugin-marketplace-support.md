@@ -79,9 +79,9 @@ Business value:
 - [x] FR-DIST.MARKETPLACE: `deno task build-plugins` builds and validates both Claude and Codex plugin surfaces in one output tree.
   - Test: manual — korchasa
   - Evidence: `deno task build-plugins && deno task check` exits 0
-- [ ] FR-DIST.MARKETPLACE: CI downstream sync preserves `README.md` and `LICENSE`, publishes both `.claude-plugin/` and `.agents/plugins/` catalog files, and keeps one release commit/tag per framework release.
+- [x] FR-DIST.MARKETPLACE: CI downstream sync preserves `README.md` and `LICENSE`, publishes both `.claude-plugin/` and `.agents/plugins/` catalog files, and keeps one release commit/tag per framework release.
   - Test: manual — korchasa
-  - Evidence: after a preview release, `git -C <downstream-clone> ls-files .claude-plugin/marketplace.json .agents/plugins/marketplace.json 'plugins/*/.codex-plugin/plugin.json'` returns non-empty paths
+  - Evidence: GitHub Actions run `26005062103` succeeded; downstream `korchasa/flowai-plugins` main is `d80cb59a016a6773912ffa6ddc6f61b6e23c658e` (`release: framework-v0.12.17`); GitHub contents API returns `.agents/plugins/marketplace.json` and `plugins/flowai-core/.codex-plugin/plugin.json`.
 - [x] FR-DIST.MARKETPLACE: README documents Codex installation through the plugin marketplace and warns that plugin installs and `flowai sync` should not be mixed for the same Codex project.
   - Test: manual — korchasa
   - Evidence: `grep -n 'codex plugin marketplace add korchasa/flowai-plugins' README.md` returns a non-empty match
@@ -96,7 +96,7 @@ Business value:
 
 Selected variant: **1 — shared generator, shared downstream repository**.
 
-Implementation status: local build, validation, tests, and docs are done. External preview-release downstream inspection and interactive Codex smoke remain open.
+Implementation status: local build, validation, tests, docs, push, CI, and downstream publication are done. Interactive Codex `/plugins` install smoke remains open.
 
 Smoke note (2026-05-18): `codex plugin marketplace add /Users/korchasa/www/flowai/flowai/dist/claude-plugins` succeeds against a clean temporary Codex home and writes `[marketplaces.flowai-plugins]`. `codex plugin` currently exposes marketplace management only (`marketplace add|upgrade|remove`), not a non-interactive plugin install command. A full smoke still requires opening Codex `/plugins`, installing `flowai-core`, and starting a new thread. A `codex exec` attempt with temporary `-c` marketplace/plugin overrides reached the model, but the visible `flowai-plan` source was the existing global `r0/flowai-plan/SKILL.md`, so it does not prove plugin-store loading.
 
