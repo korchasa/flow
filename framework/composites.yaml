@@ -56,3 +56,25 @@ composites:
         atom: flowai-commit-beta
         params:
           DIFF_SOURCE: REUSE_PRIOR_PHASE
+  flowai-ship:
+    target: framework/core/commands/flowai-ship/SKILL.md
+    wrapper: framework/core/commands/flowai-ship/_composite.md
+    phases:
+      - title: Plan Phase
+        atom: flowai-plan-exp-permanent-tasks
+        params:
+          TERMINATION: HAND_OFF_TO_NEXT
+      - title: Implement Phase
+        atom: flowai-do
+        params:
+          TERMINATION: HAND_OFF_TO_NEXT
+      - title: Review Phase
+        atom: flowai-review
+      - title: Commit Phase
+        atom: flowai-commit-beta
+        params:
+          DIFF_SOURCE: REUSE_PRIOR_PHASE
+      - title: Push Phase
+        atom: flowai-push
+        params:
+          TERMINATION: TOTAL_STOP
