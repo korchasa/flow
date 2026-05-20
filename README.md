@@ -74,7 +74,7 @@ Framework primitives MAY declare `scope: project-only` or `scope: global-only` i
 
 ### Claude Code + Codex plugin marketplace
 
-In addition to the `flowai` CLI, Claude Code and Codex users can install any pack as a native plugin from the [korchasa/flowai-plugins](https://github.com/korchasa/flowai-plugins) marketplace. All six packs (`core`, `deno`, `devtools`, `engineering`, `memex`, `typescript`) are published as separate plugins on every framework release:
+In addition to the `flowai` CLI, Claude Code and Codex users can install any pack as a native plugin from the [korchasa/flowai-plugins](https://github.com/korchasa/flowai-plugins) marketplace. All seven marketplace packs (`core`, `deno`, `devtools`, `engineering`, `memex`, `typescript`, `workflow`) are published as separate plugins on every framework release:
 
 ```sh
 # Inside a Claude Code session:
@@ -86,6 +86,7 @@ In addition to the `flowai` CLI, Claude Code and Codex users can install any pac
 /plugin install flowai-engineering@flowai-plugins
 /plugin install flowai-devtools@flowai-plugins
 /plugin install flowai-memex@flowai-plugins
+/plugin install flowai-workflow@flowai-plugins
 /reload-plugins
 ```
 
@@ -95,7 +96,7 @@ codex plugin marketplace add korchasa/flowai-plugins
 # Then open Codex /plugins and install flowai-core or any pack you use.
 ```
 
-Skills are invoked under the `/flowai-<pack>:` namespace, e.g. `/flowai-core:commit`, `/flowai-core:plan`, `/flowai-core:update`, `/flowai-engineering:deep-research`, `/flowai-memex:memex-save`. The `flowai-` prefix is stripped from the namespaced part to avoid a `/flowai-core:flowai-commit` double prefix. Cross-skill references inside skill bodies are rewritten to the namespaced form during build, and pack-level assets (e.g. `AGENTS.template.md`) ship inside each consuming skill — `/flowai-core:update` and `/flowai-core:init` work out of the box without a separate `flowai sync` step. Hooks declared by `devtools` and `memex` are translated to Claude Code's `hooks.json` format automatically.
+Skills are invoked under the `/flowai-<pack>:` namespace, e.g. `/flowai-core:commit`, `/flowai-core:plan`, `/flowai-core:update`, `/flowai-engineering:deep-research`, `/flowai-memex:memex-save`, `/flowai-workflow:scaffold`. The `flowai-` prefix is stripped from the namespaced part to avoid a `/flowai-core:flowai-commit` double prefix. Cross-skill references inside skill bodies are rewritten to the namespaced form during build, and pack-level assets (e.g. `AGENTS.template.md`) ship inside each consuming skill — `/flowai-core:update` and `/flowai-core:init` work out of the box without a separate `flowai sync` step. Hooks declared by `devtools` and `memex` are translated to Claude Code's `hooks.json` format automatically.
 
 Codex receives the same generated `skills/` payload through `.agents/plugins/marketplace.json` and per-pack `.codex-plugin/plugin.json`. Codex hook execution is feature-gated; enable `[features].plugin_hooks = true` in Codex before relying on plugin hooks.
 
@@ -243,6 +244,14 @@ TypeScript-specific setup skills.
 **Skills:**
 - `flowai-setup-agent-code-style-ts-deno` — Deno/TS code style
 - `flowai-setup-agent-code-style-ts-strict` — strict TypeScript
+
+### workflow
+
+flowai-workflow setup and live-run supervision.
+
+**Skills:**
+- `flowai-scaffold` — scaffold a bundled flowai-workflow DAG into a project and adapt copied workflow files
+- `flowai-supervise` — supervise a live flowai-workflow run, diagnose failures, patch workflow files, and resume the same run
 
 ## CLI Commands
 

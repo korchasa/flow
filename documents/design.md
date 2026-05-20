@@ -52,7 +52,7 @@
     scripts/<name>         # utility scripts (optional)
     assets/                # shared templates (optional, e.g. AGENTS.md templates)
   ```
-- **Packs:** `core` (base commands), `devtools` (skill/agent authoring), `engineering` (procedural knowledge), `deno` (Deno-specific), `typescript` (TS-specific), `memex` (long-term knowledge bank for AI agents, see §3.15), `ide-bridge` (cross-IDE delegation: relay + isolated-context subagent, see §3.17).
+- **Packs:** `core` (base commands), `devtools` (skill/agent authoring), `engineering` (procedural knowledge), `deno` (Deno-specific), `typescript` (TS-specific), `memex` (long-term knowledge bank for AI agents, see §3.15), `workflow` (flowai-workflow scaffold + live-run supervision), `ide-bridge` (cross-IDE delegation: relay + isolated-context subagent, see §3.17).
 - **Resource discovery:** Convention over configuration — resources found by scanning subdirectories, not listed in `pack.yaml`.
 - **No inter-pack dependencies:** Each pack is self-contained. Enforced by `check-pack-refs.ts` (core→non-core and non-core-A→non-core-B references are errors; any→core and intra-pack are OK).
 - **Naming:** Directory names inside packs are the full installed names (e.g., `flowai-commit/`, `flowai-write-dep/`). flowai copies them as-is — no name transformation at install time.
@@ -324,7 +324,7 @@ graph TD
 - **Purpose:** Additional, additive distribution channel that publishes flowai packs as native Claude Code + Codex plugins through one generated marketplace at `korchasa/flowai-plugins`. flowai CLI (3.5) remains primary for Cursor / OpenCode and stays supported for Claude Code / Codex; marketplace install is offered alongside, not as a replacement.
 - **Location:** `scripts/build-plugins.ts` (build), `scripts/validate-plugins.ts` (validator), `scripts/build-plugins_test.ts` + `scripts/validate-plugins_test.ts` (tests), `.github/workflows/ci.yml` step `Build and validate plugin marketplace` + downstream sync (publish). Compatibility wrappers `scripts/build-claude-plugins.ts` and `scripts/validate-claude-plugins.ts` call the new scripts for one transition release. Output tree at `dist/claude-plugins/` is gitignored.
 - **Interfaces:**
-  - CLI: `deno task build-plugins [--pack core] [--framework ./framework] [--out ./dist/claude-plugins] [--marketplace-name flowai-plugins]`. Defaults: pack=`core`, out=`dist/claude-plugins`, marketplace-name from `DEFAULT_MARKETPLACE_NAME` constant in the build script.
+  - CLI: `deno task build-plugins [--pack core] [--framework ./framework] [--out ./dist/claude-plugins] [--marketplace-name flowai-plugins]`. Defaults: packs from `DEFAULT_PACKS`, out=`dist/claude-plugins`, marketplace-name from `DEFAULT_MARKETPLACE_NAME` constant in the build script.
   - CI: steps inside the existing `release` job, gated on the same `should_release == 'true'` condition that produces `framework-v*` tags. Order: build framework tarball → publish framework release → build plugin tree → checkout downstream → sync + commit + push.
   - Downstream: repository `korchasa/flowai-plugins`. `main` is updated by CI on each framework release; tags `framework-vX.Y.Z` mirror the upstream framework version. CI auth via deploy key secret `FLOWAI_PLUGINS_DEPLOY_KEY` (write-enabled).
 - **Generated layout:**
@@ -335,7 +335,7 @@ graph TD
   - `<out>/plugins/flowai-<pack>/skills/<stripped>/SKILL.md` (+ supporting subdirs) — commands and skills merged into one dir; commands carry injected `disable-model-invocation: true`.
   - `<out>/plugins/flowai-<pack>/agents/<name>.md` — agents with Claude-native frontmatter. Codex manifest does not declare an `agents` component because current Codex plugin docs do not define one.
   - `<out>/plugins/flowai-<pack>/hooks/hooks.json` — generated only when the pack has hooks (no hooks in `core`).
-- **Internal model:** `PluginPackArtifact` records plugin name, pack name, description, version, tags, hook presence, and license. Build flow: emit shared payload once per pack → emit Claude manifest → emit Codex manifest → emit Claude marketplace → emit Codex marketplace. Surface-specific emitters never re-read framework source.
+- **Internal model:** `DEFAULT_PACKS` currently publishes `core`, `deno`, `devtools`, `engineering`, `memex`, `typescript`, and `workflow`. `PluginPackArtifact` records plugin name, pack name, description, version, tags, hook presence, and license. Build flow: emit shared payload once per pack → emit Claude manifest → emit Codex manifest → emit Claude marketplace → emit Codex marketplace. Surface-specific emitters never re-read framework source.
 - **Stripped names:** outermost source directory `flowai-<short>` → emitted `<short>`. Applies to both `commands/` and `skills/`. Eliminates the `/flowai-core:flowai-commit` double prefix by mapping to `/flowai-core:commit`. Source tree retains canonical `flowai-*` names; the stripping is a build-time concern only.
 - **Frontmatter transforms:**
   - SKILL.md: command source → inject `disable-model-invocation: true`; skill source → no injection. Resolve `model` tier (`max|smart|fast|cheap|inherit`) → `opus|sonnet|haiku|haiku|(drop)`.
