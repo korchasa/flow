@@ -21,10 +21,10 @@ Procedure for recovering the complete Codex LLM request template from the binary
 
 ## Inputs
 
-| Input | Required | Description |
-|-------|----------|-------------|
-| Artifact path | Yes | Either: (a) Bun Mach-O arm64 ~200MB from `~/.local/share/Codex/versions/<ver>`, or (b) JS bundle `cli.js` ~11MB from npm package |
-| Output path | Yes | Where to write the template `.txt` file |
+| Input         | Required | Description                                                                                                                      |
+| ------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| Artifact path | Yes      | Either: (a) Bun Mach-O arm64 ~200MB from `~/.local/share/Codex/versions/<ver>`, or (b) JS bundle `cli.js` ~11MB from npm package |
+| Output path   | Yes      | Where to write the template `.txt` file                                                                                          |
 
 ## Codex Prompt Architecture
 
@@ -43,6 +43,7 @@ User context (AGENTS.md, date) is sent as **messages[0]**, wrapped in `<system-r
 ### Section Order
 
 Static (globally cacheable):
+
 1. Intro — CYBER_RISK + URL warning
 2. System — tool permissions, hooks, compression
 3. Doing tasks — code style, security, help
@@ -67,19 +68,20 @@ Dynamic (per-session):
 
 ### Conditional Variants
 
-| Condition | Gate | Affects |
-|-----------|------|---------|
-| Anthropic employee | `USER_TYPE === 'ant'` | Doing tasks, Using tools, Tone, Output style, Session guidance, numeric_length_anchors |
-| Opus 4.6 + ant | `quiet_salted_ember` in clientDataCache | Additional `anti_verbosity` section |
-| Feature flags | `feature('FLAG_NAME')` | TOKEN_BUDGET, KAIROS/BRIEF, CACHED_MICROCOMPACT, EXPERIMENTAL_SKILL_SEARCH |
-| Non-interactive | `isNonInteractiveSession()` | Prefix variant, `! <command>` hint removed |
-| Fork subagent | `isForkSubagentEnabled()` | Agent tool guidance rewritten |
+| Condition          | Gate                                    | Affects                                                                                |
+| ------------------ | --------------------------------------- | -------------------------------------------------------------------------------------- |
+| Anthropic employee | `USER_TYPE === 'ant'`                   | Doing tasks, Using tools, Tone, Output style, Session guidance, numeric_length_anchors |
+| Opus 4.6 + ant     | `quiet_salted_ember` in clientDataCache | Additional `anti_verbosity` section                                                    |
+| Feature flags      | `feature('FLAG_NAME')`                  | TOKEN_BUDGET, KAIROS/BRIEF, CACHED_MICROCOMPACT, EXPERIMENTAL_SKILL_SEARCH             |
+| Non-interactive    | `isNonInteractiveSession()`             | Prefix variant, `! <command>` hint removed                                             |
+| Fork subagent      | `isForkSubagentEnabled()`               | Agent tool guidance rewritten                                                          |
 
 ## Procedure
 
 ### Phase 0: Locate or Download the Artifact
 
 **To find a version by date** (e.g., "early January 2026"):
+
 ```bash
 # Use the helper script to find versions by date range
 scripts/cc-find-version.sh 2026-01-01 2026-01-10
@@ -93,6 +95,7 @@ for ver, ts in sorted(data.items()):
 ```
 
 **To download a specific version:**
+
 ```bash
 mkdir -p /tmp/Codex-<ver> && cd /tmp/Codex-<ver>
 npm pack @anthropic-ai/Codex@<ver>
@@ -100,6 +103,7 @@ tar xzf anthropic-ai-Codex-*.tgz
 ```
 
 **To use the currently installed version:**
+
 ```bash
 which Codex                 # → ~/.local/bin/Codex (symlink)
 ls -la $(which Codex)       # → follow to ~/.local/share/Codex/versions/<ver>
@@ -112,10 +116,10 @@ Codex --version             # → e.g. 2.1.104
 file <path-to-artifact>
 ```
 
-| Result | Type | Size | Approach |
-|--------|------|------|----------|
-| `Mach-O 64-bit executable arm64` | Bun binary | ~200MB | Use `strings` extraction (Phase 1A) |
-| `a /usr/bin/env node script text` | JS bundle | ~11MB | Read JS directly (Phase 1B) |
+| Result                            | Type       | Size   | Approach                            |
+| --------------------------------- | ---------- | ------ | ----------------------------------- |
+| `Mach-O 64-bit executable arm64`  | Bun binary | ~200MB | Use `strings` extraction (Phase 1A) |
+| `a /usr/bin/env node script text` | JS bundle  | ~11MB  | Read JS directly (Phase 1B)         |
 
 **Historical note:** versions before ~2.1.90 ship as JS bundles; later versions are Bun Mach-O binaries.
 
@@ -136,30 +140,34 @@ file <path-to-artifact>
 ### Phase 1B: Read JS Bundle Directly (Node script only)
 
 The JS bundle is a minified single-file Node.js script. The prompt is embedded as string literals.
+
 ```bash
 wc -l <path>/cli.js                                    # typically ~5000 lines
 grep -n "You are Codex" <path>/cli.js            # find identity prefix
 grep -n "# Doing tasks" <path>/cli.js                  # find prompt sections
 ```
+
 Skip Phase 2 (navigate binary strings) — proceed directly to Phase 3.
 
 ### Phase 2: Navigate the Binary Strings (Mach-O only — skip for JS bundles)
 
 Strings exist in **two forms** — choose the right one:
 
-| Form | Location | Pros | Cons |
-|------|----------|------|------|
-| **Minified JS** | ~line 139K | Complete assembly logic, all conditionals visible | Variable names mangled, one huge line |
-| **Standalone constants** | ~line 200K | Already expanded, human-readable | Fragmented — tool names replaced by empty strings, sections split across lines |
+| Form                     | Location   | Pros                                              | Cons                                                                           |
+| ------------------------ | ---------- | ------------------------------------------------- | ------------------------------------------------------------------------------ |
+| **Minified JS**          | ~line 139K | Complete assembly logic, all conditionals visible | Variable names mangled, one huge line                                          |
+| **Standalone constants** | ~line 200K | Already expanded, human-readable                  | Fragmented — tool names replaced by empty strings, sections split across lines |
 
 **Prefer the minified JS form** — it preserves the complete assembly logic including conditional branches. Use standalone constants only for cross-referencing.
 
 To find the minified JS block, look for very long lines containing multiple function definitions:
+
 ```bash
 grep -n "function.*Executing actions with care" /tmp/binary-strings.txt
 ```
 
 The prompt functions typically cluster in one line of 5000+ characters. Check line sizes to confirm:
+
 ```bash
 sed -n '<line_number>p' /tmp/binary-strings.txt | wc -c
 ```
@@ -167,6 +175,7 @@ sed -n '<line_number>p' /tmp/binary-strings.txt | wc -c
 ### Phase 3: Extract Metadata
 
 Find the MACRO object containing version and build time:
+
 ```bash
 grep -o 'VERSION:"[^"]*"' /tmp/binary-strings.txt | head -3
 grep -o 'BUILD_TIME:"[^"]*"' /tmp/binary-strings.txt | head -3
@@ -232,8 +241,8 @@ We are analyzing the binary **from outside** — there is no live Codex session 
 
 All paths below are relative to the skill directory.
 
-| Script | Purpose |
-|--------|---------|
-| `scripts/cc-find-version.sh <from> <to>` | Find Codex npm versions in a date range |
-| `scripts/cc-download-version.sh <ver> [dir]` | Download version, detect artifact type, print metadata |
-| `scripts/cc-diff-templates.sh <old> <new>` | Diff two extracted templates, report section-level changes |
+| Script                                       | Purpose                                                    |
+| -------------------------------------------- | ---------------------------------------------------------- |
+| `scripts/cc-find-version.sh <from> <to>`     | Find Codex npm versions in a date range                    |
+| `scripts/cc-download-version.sh <ver> [dir]` | Download version, detect artifact type, print metadata     |
+| `scripts/cc-diff-templates.sh <old> <new>`   | Diff two extracted templates, report section-level changes |

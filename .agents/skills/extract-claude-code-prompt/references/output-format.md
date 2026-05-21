@@ -3,6 +3,7 @@
 ## Header
 
 Two lines only:
+
 ```
 time: {{BUILD_TIME or extraction date}}
 version: {{VERSION}}
@@ -59,12 +60,12 @@ Brief summary of included tools. Full tool descriptions are part of the prompt b
 
 ## Conventions
 
-| Syntax | Meaning |
-|--------|---------|
-| `{{UPPER_CASE}}` | Runtime placeholder — value interpolated at request time |
-| `{{If condition:}}` | Optional section — included only when condition is true |
-| `{{[CONDITION] ...}}` | User-type or feature-gated variant block |
-| `== field[N]: desc ==` | API request field separator (system, messages, tools) |
+| Syntax                 | Meaning                                                  |
+| ---------------------- | -------------------------------------------------------- |
+| `{{UPPER_CASE}}`       | Runtime placeholder — value interpolated at request time |
+| `{{If condition:}}`    | Optional section — included only when condition is true  |
+| `{{[CONDITION] ...}}`  | User-type or feature-gated variant block                 |
+| `== field[N]: desc ==` | API request field separator (system, messages, tools)    |
 
 ## Rules
 
