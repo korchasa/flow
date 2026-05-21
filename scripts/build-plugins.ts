@@ -7,22 +7,23 @@
 //
 //   <out>/.claude-plugin/marketplace.json
 //   <out>/.agents/plugins/marketplace.json
-//   <out>/plugins/flowai-<pack>/.claude-plugin/plugin.json
-//   <out>/plugins/flowai-<pack>/.codex-plugin/plugin.json
-//   <out>/plugins/flowai-<pack>/skills/<stripped-name>/SKILL.md     (+ subdirs, + per-skill assets/)
-//   <out>/plugins/flowai-<pack>/agents/<name>.md
-//   <out>/plugins/flowai-<pack>/hooks/hooks.json                    (if any hooks)
-//   <out>/plugins/flowai-<pack>/hooks/<name>/run.ts                 (per hook)
+//   <out>/plugins/<plugin>/.claude-plugin/plugin.json
+//   <out>/plugins/<plugin>/.codex-plugin/plugin.json
+//   <out>/plugins/<plugin>/skills/<stripped-name>/SKILL.md          (+ subdirs, + per-skill assets/)
+//   <out>/plugins/<plugin>/agents/<name>.md
+//   <out>/plugins/<plugin>/hooks/hooks.json                         (if any hooks)
+//   <out>/plugins/<plugin>/hooks/<name>/run.ts                      (per hook)
 //
 // Transform passes (in order):
 //   (a) scope filter — drop primitives with `scope: project-only`.
 //   (b) emit skills + commands; commands get disable-model-invocation injected.
 //   (c) asset copy + path rewrite — pack-level `assets/*` referenced by SKILL.md
 //       is copied INTO the consuming skill's own dir, paths rewritten to local.
-//   (d) flowai-init fence strip — block between
+//   (d) init fence strip — block between
 //       `<!-- begin: cli-only-skill-update -->` and `<!-- end: cli-only-skill-update -->`
 //       is removed during plugin emit.
-//   (e) cross-skill slash rewrite — `/flowai-foo` → `/flowai-<pack>:foo`.
+//   (e) cross-skill slash rewrite — `/foo` or `/flowai-foo` →
+//       `/<plugin>:foo` for known primitives in the same pack.
 //   (f) version inject — read upstream deno.json `.version`, inject into
 //       plugin.json AND marketplace entry.
 //   (g) tag union — collect SKILL.md `tags:` arrays, dedupe + sort + cap 8,
@@ -254,10 +255,14 @@ interface PackContext {
   version: string;
 }
 
+export function pluginNameForPack(packName: string): string {
+  return packName === "core" ? "flowai" : `flowai-${packName}`;
+}
+
 async function buildPack(
   ctx: PackContext,
 ): Promise<PluginPackArtifact> {
-  const pluginName = `flowai-${ctx.packName}`;
+  const pluginName = pluginNameForPack(ctx.packName);
   const pluginRoot = join(ctx.outDir, "plugins", pluginName);
   await ensureDir(pluginRoot);
 
@@ -270,7 +275,8 @@ async function buildPack(
   );
 
   const collectedTags = new Set<string>();
-  const slashRewriter = makeSlashRewriter(pluginName);
+  const primitiveNames = await collectPackPrimitiveNames(ctx.packDir);
+  const slashRewriter = makeSlashRewriter(pluginName, primitiveNames);
 
   await emitPrimitives({
     sourceDir: join(ctx.packDir, "commands"),
@@ -456,6 +462,20 @@ function stripFlowaiPrefix(name: string): string {
   return name.startsWith("flowai-") ? name.slice("flowai-".length) : name;
 }
 
+async function collectPackPrimitiveNames(
+  packDir: string,
+): Promise<Set<string>> {
+  const names = new Set<string>();
+  for (const dirName of ["commands", "skills"]) {
+    const dir = join(packDir, dirName);
+    if (!(await exists(dir))) continue;
+    for await (const entry of Deno.readDir(dir)) {
+      if (entry.isDirectory) names.add(stripFlowaiPrefix(entry.name));
+    }
+  }
+  return names;
+}
+
 interface TransformSkillCtx {
   kind: "command" | "skill";
   sourceFile: string;
@@ -520,22 +540,30 @@ function transformSkillFile(
 }
 
 /**
- * Rewrites `/flowai-foo` → `/flowai-<pack>:foo` in skill bodies.
+ * Rewrites same-pack primitive invocations to plugin namespace form:
+ * `/foo` or `/flowai-foo` → `/<plugin>:foo`.
  *
- * The replacement is idempotent: `/flowai-core:commit` does not match because
- * the trailing `:` is not part of the captured suffix and the `\b` after the
- * suffix would still match — but the second pass would produce
- * `/flowai-<pack>:core:commit` which is wrong. To stay idempotent we explicitly
- * skip occurrences that already contain `:` immediately after the suffix.
+ * The replacement is idempotent: already-namespaced invocations are skipped,
+ * and unknown slash paths such as `/healthz` are left untouched.
  */
-function makeSlashRewriter(pluginName: string): (text: string) => string {
-  // Match `/flowai-<name>` only at a real word boundary — the leading `/` must
+function makeSlashRewriter(
+  pluginName: string,
+  primitiveNames: Set<string>,
+): (text: string) => string {
+  // Match slash commands only at a real word boundary — the leading `/` must
   // not be preceded by an identifier / path char (rules out file paths like
-  // `scripts/flowai-foo.ts`). Trailing negative lookahead on `:` keeps the
-  // rewrite idempotent against already-namespaced `/flowai-core:commit`.
-  const re = /(?<![A-Za-z0-9_.-])\/flowai-([a-z0-9][a-z0-9-]*)(?![a-z0-9-:])/g;
+  // `scripts/foo.ts`). Trailing negative lookahead on `:` keeps the rewrite
+  // idempotent against already-namespaced `/flowai:commit`.
+  const re =
+    /(?<![A-Za-z0-9_.-])\/(flowai-)?([a-z0-9][a-z0-9-]*)(?![a-z0-9-:])/g;
   return (text: string) =>
-    text.replace(re, (_match, suffix: string) => `/${pluginName}:${suffix}`);
+    text.replace(
+      re,
+      (match, _legacyPrefix: string | undefined, suffix: string) => {
+        if (!primitiveNames.has(suffix)) return match;
+        return `/${pluginName}:${suffix}`;
+      },
+    );
 }
 
 function orderObjectKeys(

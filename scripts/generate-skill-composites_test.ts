@@ -316,8 +316,8 @@ Deno.test("renderAtomTarget: drift detection on edited target", async () => {
   // Renders the real plan-exp-permanent-tasks atom. Output should match
   // on-disk SKILL.md byte-for-byte (Commit 2 regenerated it).
   const m = await loadManifest();
-  const entry = m.atoms["flowai-plan-exp-permanent-tasks"];
-  const r = await renderAtomTarget("flowai-plan-exp-permanent-tasks", entry);
+  const entry = m.atoms["plan-exp-permanent-tasks"];
+  const r = await renderAtomTarget("plan-exp-permanent-tasks", entry);
   const onDisk = await Deno.readTextFile(entry.target);
   assertEquals(r.body, onDisk);
 });
@@ -357,11 +357,11 @@ Deno.test("checkGitignoreParity: real .gitignore lists every manifest target", a
 Deno.test("checkGitignoreParity: reports a missing target", async () => {
   const fakeTargets = [
     ...await listTargets(),
-    "framework/core/commands/flowai-nonexistent/SKILL.md",
+    "framework/core/commands/nonexistent/SKILL.md",
   ];
   const diff = await checkGitignoreParity(fakeTargets);
   assertEquals(diff?.missing, [
-    "framework/core/commands/flowai-nonexistent/SKILL.md",
+    "framework/core/commands/nonexistent/SKILL.md",
   ]);
   assertEquals(diff?.extra, []);
 });

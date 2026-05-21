@@ -29,7 +29,7 @@ Dependencies between unclosed requirements define execution order:
 2. **FR-HOOK-RESOURCES** Hook Resources — depends on FR-PACKS (pack structure)
 3. **FR-SCRIPTS** Script Resources — depends on FR-PACKS (pack structure)
 4. **FR-UNIVERSAL** Universal Skill & Script Requirements — standardize before distribution
-5. **FR-INIT.RERUN** flowai-init idempotent re-run — independent, can run in parallel with 4
+5. **FR-INIT.RERUN** init idempotent re-run — independent, can run in parallel with 4
 6. **FR-ACCEPT.COLOC** Co-locate benchmarks with skills — can run in parallel with 4–5
 
 ```
@@ -45,12 +45,13 @@ Note: FR-DIST.MAPPING defines cross-IDE resource mapping; open questions need us
 ### FR-CMD-EXEC: Command Execution
 
 - **Description:** The system must provide executable workflows for common development tasks, accessible via chat commands (`/<command>`).
+- **Tasks:** [remove-flowai-prefix-from-primitives](tasks/2026/05/remove-flowai-prefix-from-primitives.md)
 - **Acceptance verified by acceptance tests:** See Component Coverage Matrix (section 3.8) — all commands benchmarked.
 
 ### FR-RULES: Rule Enforcement
 
 - **Description:** The system must automatically apply development rules and coding standards (code style, TDD, documentation).
-- **Acceptance verified by acceptance tests:** `flowai-setup-agent-code-style-ts-deno-basic`, `flowai-setup-agent-code-style-ts-strict-basic`
+- **Acceptance verified by acceptance tests:** `setup-agent-code-style-deno-basic`, `setup-agent-code-style-strict-basic`
 
 ### FR-DOCS: Documentation Management
 
@@ -59,21 +60,22 @@ Note: FR-DIST.MAPPING defines cross-IDE resource mapping; open questions need us
 
 ### FR-HOWTO: Automation & How-To
 
-- **Description:** The system must provide guides (`flowai-*`) for complex or situational tasks (QA, testing, diagrams, prompts, research, etc.).
+- **Description:** The system must provide short-named guides for complex or situational tasks (QA, testing, diagrams, prompts, research, etc.).
+- **Tasks:** [remove-flowai-prefix-from-primitives](tasks/2026/05/remove-flowai-prefix-from-primitives.md)
 - **Acceptance verified by acceptance tests:** See Component Coverage Matrix (section 3.8) — all skills benchmarked.
 
 ### FR-WORKFLOW-ORCH: flowai-workflow Orchestration
 
-- **Description:** Workflow pack must provide a public `flowai-orchestrate` skill plus `flowai-workflow-orchestrator` subagent for policy-driven workflow selection. The orchestrator reads `.flowai-workflow/ORCHESTRATION.md`, discovers `.flowai-workflow/<name>/workflow.yaml`, uses append-only `.flowai-workflow/orchestration.jsonl` for decision history, returns a structured supervisor delegation request for each selected workflow (or directly delegates when the host supports nested subagents), and never diagnoses run artifacts directly. The public skill acts as parent dispatcher between orchestrator and supervisor when nested subagent calls are unavailable.
+- **Description:** Workflow pack must provide a public `orchestrate` skill plus `orchestrator` subagent for policy-driven workflow selection. The orchestrator reads `.flowai-workflow/ORCHESTRATION.md`, discovers `.flowai-workflow/<name>/workflow.yaml`, uses append-only `.flowai-workflow/orchestration.jsonl` for decision history, returns a structured supervisor delegation request for each selected workflow (or directly delegates when the host supports nested subagents), and never diagnoses run artifacts directly. The public skill acts as parent dispatcher between orchestrator and supervisor when nested subagent calls are unavailable.
 - **Tasks:** [workflow-orchestration-agents](tasks/2026/05/2026-05-21-workflow-orchestration-agents.md)
-- **Acceptance verified by acceptance tests:** `flowai-orchestrate-maintenance-cadence`, `flowai-orchestrate-primary-before-maintenance`, `flowai-orchestrate-missing-or-ambiguous-policy`, `flowai-orchestrate-delegates-supervisor`, `flowai-workflow-orchestrator-long-cycle-delegation`
+- **Acceptance verified by acceptance tests:** `orchestrate-maintenance-cadence`, `orchestrate-primary-before-maintenance`, `orchestrate-missing-or-ambiguous-policy`, `orchestrate-delegates-supervisor`, `orchestrator-long-cycle-delegation`
 - **Status:** [x]
 
 ### FR-WORKFLOW-SUPERVISOR: flowai-workflow Run Supervision
 
-- **Description:** Workflow pack must provide `flowai-workflow-supervisor` subagent for exactly one workflow/run per invocation, and `flowai-supervise` must be a public wrapper that delegates to it. The supervisor starts or resumes a named workflow, reads `workflow.yaml`, `journal.jsonl`, `state.json`, `logs/`, and node artifacts as needed, diagnoses failed/stalled nodes, patches the smallest root-cause surface, resumes the same run with `flowai-workflow run <workflow> --resume <run-id>`, and never interprets `.flowai-workflow/ORCHESTRATION.md`.
+- **Description:** Workflow pack must provide `supervisor` subagent for exactly one workflow/run per invocation, and `supervise` must be a public wrapper that delegates to it. The supervisor starts or resumes a named workflow, reads `workflow.yaml`, `journal.jsonl`, `state.json`, `logs/`, and node artifacts as needed, diagnoses failed/stalled nodes, patches the smallest root-cause surface, resumes the same run with `flowai-workflow run <workflow> --resume <run-id>`, and never interprets `.flowai-workflow/ORCHESTRATION.md`.
 - **Tasks:** [workflow-orchestration-agents](tasks/2026/05/2026-05-21-workflow-orchestration-agents.md)
-- **Acceptance verified by acceptance tests:** `flowai-supervise-delegates-supervisor`, `flowai-workflow-supervisor-failed-run-resume`, `flowai-workflow-supervisor-no-orchestration-policy`
+- **Acceptance verified by acceptance tests:** `supervise-delegates-supervisor`, `supervisor-failed-run-resume`, `supervisor-no-orchestration-policy`
 - **Status:** [x]
 
 ### FR-MAINT: Project Maintenance
@@ -131,7 +133,7 @@ Note: FR-DIST.MAPPING defines cross-IDE resource mapping; open questions need us
 
 ### FR-ACCEPT-GUARDS: Resource Guards For Spawned Agents
 
-- **Desc:** `SpawnedAgent` MUST defend the host against two failure modes observed on 2026-05-09 that escalated to multi-reboot system hangs: (1) **fork-loop** — a benchmarked skill recursively spawns subprocesses (incident at 02:43: a `flowai-configure-deno-commands` scenario produced a `deno test -A` chain that grew to ~720 descendants in 90 s); (2) **bloat-OOM** — a single agent process leaks/holds memory until the kernel VM compressor saturates (incident at 07:50: `compressor_size = 7.18 GiB`, `compression_ratio = 14`, kernel found "no eligible processes" to jetsam, `SystemUIServer` froze in TCC checks, host hung until forced reboot at 08:53). Container-based isolation is unavailable (see FR-ACCEPT-ISOLATION trade-offs), so guards run in userspace on the host.
+- **Desc:** `SpawnedAgent` MUST defend the host against two failure modes observed on 2026-05-09 that escalated to multi-reboot system hangs: (1) **fork-loop** — a benchmarked skill recursively spawns subprocesses (incident at 02:43: a `configure-deno-commands` scenario produced a `deno test -A` chain that grew to ~720 descendants in 90 s); (2) **bloat-OOM** — a single agent process leaks/holds memory until the kernel VM compressor saturates (incident at 07:50: `compressor_size = 7.18 GiB`, `compression_ratio = 14`, kernel found "no eligible processes" to jetsam, `SystemUIServer` froze in TCC checks, host hung until forced reboot at 08:53). Container-based isolation is unavailable (see FR-ACCEPT-ISOLATION trade-offs), so guards run in userspace on the host.
 - **Scenario:** A bench scenario triggers either (a) a runaway shell command that forks recursively or (b) a long-context turn that pushes the agent's V8 heap past available RAM. The guard MUST kill the agent's entire process tree (root PID + all descendants) and proceed to the judge with an `exit_code_zero` failure verdict, instead of letting the kernel hang the host. A pre-flight check MUST refuse to spawn the next agent when the host is already under enough pressure that the next spawn risks the same compressor-shortage state.
 - **Mechanism (`scripts/acceptance-tests/lib/process_watchdog.ts` + `system_health.ts` + `setpgrp_exec.py`):**
   - **Process-group isolation**: every spawn is wrapped in `python3 setpgrp_exec.py <agent> <args>`. The wrapper calls `os.setsid()` then `os.execvp()`, making the agent the leader of a new process group whose PGID equals the agent's PID. All descendants inherit the PGID — even after re-parenting to PID 1 when an intermediate parent dies. Required because the prior PPID-walk approach killed only direct descendants; orphaned grandchildren kept forking and ultimately required a host reboot on 2026-05-09 12:12.
@@ -154,9 +156,9 @@ Note: FR-DIST.MAPPING defines cross-IDE resource mapping; open questions need us
   - Per-agent guards do not cap the AGGREGATE across N parallel agents. If `task-bench.ts` ever spawns concurrent scenarios, each agent's 6 GiB cap multiplies → an N-agent run can consume `N × 6` GiB before any individual trip. Not addressed in this FR; if/when concurrency lands, add an aggregate accumulator in the runner orchestrator.
   - `assertHealthy` is macOS-only (Linux returns neutral). Linux/CI runs rely on the kernel's own OOM-killer.
   - Setting `BENCH_MAX_RSS_GB` too low (< ~1.5 GiB for `claude`) will trip during normal long-context turns. Default 6 GiB is calibrated against observed peaks; lower with care.
-- **Deferred (not blocking — root cause fixed in `flowai-configure-deno-commands` SKILL.md rules 13–14, which prevents the agent from generating the fork-bomb pattern at source; userspace guards remain as defense-in-depth):**
+- **Deferred (not blocking — root cause fixed in `configure-deno-commands` SKILL.md rules 13–14, which prevents the agent from generating the fork-bomb pattern at source; userspace guards remain as defense-in-depth):**
   - Aggregate RSS accumulator across all live `SpawnedAgent` instances. Activate only when `task-bench.ts` adds concurrent scenario execution; current runner is sequential.
-  - End-to-end re-validation on a low-memory host with the original fork-loop scenario re-introduced. Verified indirectly on 2026-05-09: re-ran `flowai-configure-deno-commands-trigger-pos-{1,2,3}` (the `-2`/`-3` scenarios were later consolidated into `-1` on 2026-05-10), `-basic`, `flowai-setup-ai-ide-devcontainer-{deno-claude,feature-discovery}` after the SKILL.md fix — six previously-dangerous scenarios passed without tripping the watchdog and without measurable swap pressure.
+  - End-to-end re-validation on a low-memory host with the original fork-loop scenario re-introduced. Verified indirectly on 2026-05-09: re-ran `configure-deno-commands-trigger-pos-{1,2,3}` (the `-2`/`-3` scenarios were later consolidated into `-1` on 2026-05-10), `-basic`, `setup-ai-ide-devcontainer-{deno-claude,feature-discovery}` after the SKILL.md fix — six previously-dangerous scenarios passed without tripping the watchdog and without measurable swap pressure.
 
 ### FR-ACCEPT-CACHE: Acceptance Test Result Cache
 
@@ -201,6 +203,7 @@ Note: FR-DIST.MAPPING defines cross-IDE resource mapping; open questions need us
 ### FR-ACCEPT.TRIGGER: Skill Description-Matching Verification
 
 - **Desc:** Every skill in `framework/<pack>/skills/` MUST have 3 trigger scenarios verifying description-matching correctness: 1 positive (skill should activate), 1 adjacent-negative (a different skill is the right match), 1 false-use-negative (query is in the skill's domain but the wrong intent for it). Catches regressions where a description rewrite makes the skill invisible to the model (false negative) or over-triggered (false positive).
+- **Tasks:** [remove-flowai-prefix-from-primitives](tasks/2026/05/remove-flowai-prefix-from-primitives.md)
 - **Scope:** Only `framework/<pack>/skills/`. Commands (`framework/<pack>/commands/`) carry `disable-model-invocation: true` (injected at sync) and are triggered by explicit `/name` — out of scope.
 - **Shape:** Regular `AcceptanceTestScenario` with one `userQuery` and one critical checklist item evaluated by the LLM judge against the trace. No new infra.
 - **Layout:** Sibling folders inside the skill's existing `acceptance-tests/`:
@@ -214,7 +217,7 @@ Note: FR-DIST.MAPPING defines cross-IDE resource mapping; open questions need us
 - **Enforcement:** `scripts/check-trigger-coverage.ts` fails `deno task check` on missing/misnamed scenarios. Stray `trigger-{pos,adj,false}-{2,3,...}` directories are reported as misnamed (the previous 3+3+3 layout was reduced to 1+1+1 on 2026-05-10; see `documents/tasks/2026/05/trigger-n1-retry.md`).
 - **Cost note:** Full sweep adds N×3 scenarios to `deno task bench` (was N×9). The result cache (FR-ACCEPT-CACHE) absorbs unchanged scenarios; refreshes are scoped to skill-description edits.
 - **Retry:** Judge-level retry-on-error (`scripts/acceptance-tests/lib/judge.ts:103`) absorbs transient judge failures. Agent-level retry on result is intentionally NOT performed — re-running a "skill not invoked" scenario until it passes would mask real description regressions. Suspected agent variance is investigated by manual re-run (`deno task bench -f <scenario-id>`); if empirical flake rate at N=1 proves > 5% per scenario, add a scenario-level `retryOnFail` field as a separate FR.
-- **Acceptance verified by acceptance tests:** every `framework/*/skills/flowai-*/acceptance-tests/trigger-{pos,adj,false}-1/mod.ts` (verified by `scripts/check-trigger-coverage.ts`).
+- **Acceptance verified by acceptance tests:** every `framework/*/skills/*/acceptance-tests/trigger-{pos,adj,false}-1/mod.ts` (verified by `scripts/check-trigger-coverage.ts`).
 - **Acceptance:** `deno test scripts/check-trigger-coverage_test.ts` passes; `find framework -type d -path '*/skills/*/acceptance-tests/trigger-*' | wc -l` equals (skill count) × 3.
 - **Status:** [x]
 
@@ -235,9 +238,9 @@ All 39 skills have at least one acceptance test scenario. Coverage is the source
 
 ### FR-INIT: Project Initialization
 
-- **Description:** The `flowai-init` skill bootstraps AI agent understanding of a project by analyzing codebase, generating a single AGENTS.md file from the pack-level asset template, and scaffolding documentation (CLAUDE.md, SRS, SDS). Uses `generate_agents.ts` (Deno/TS, read-only) for project analysis. The AGENTS.md template is a pack-level asset (not a flowai-init scaffold) — its updates are tracked independently via `assets:` in `pack.yaml`. Legacy three-file layouts (`documents/AGENTS.md`, `scripts/AGENTS.md`) are detected and collapsed into the single root file during brownfield initialization.
-- **Use case scenario:** User runs `/flowai-init` on existing or new project. Agent runs the analysis script, determines Greenfield vs Brownfield by its own judgment, interviews user (Greenfield) or reverse-engineers architecture (Brownfield), generates AGENTS.md, documentation (SRS, SDS, task file), and configures development commands.
-- **Acceptance verified by acceptance tests:** `flowai-init-greenfield`, `flowai-init-brownfield`, `flowai-init-brownfield-update`, `flowai-init-brownfield-idempotent`, `flowai-init-vision-integration`, `flowai-init-claude-md-symlinks`
+- **Description:** The `init` skill bootstraps AI agent understanding of a project by analyzing codebase, generating a single AGENTS.md file from the pack-level asset template, and scaffolding documentation (CLAUDE.md, SRS, SDS). Uses `generate_agents.ts` (Deno/TS, read-only) for project analysis. The AGENTS.md template is a pack-level asset (not a init scaffold) — its updates are tracked independently via `assets:` in `pack.yaml`. Legacy three-file layouts (`documents/AGENTS.md`, `scripts/AGENTS.md`) are detected and collapsed into the single root file during brownfield initialization.
+- **Use case scenario:** User runs `/init` on existing or new project. Agent runs the analysis script, determines Greenfield vs Brownfield by its own judgment, interviews user (Greenfield) or reverse-engineers architecture (Brownfield), generates AGENTS.md, documentation (SRS, SDS, task file), and configures development commands.
+- **Acceptance verified by acceptance tests:** `init-greenfield`, `init-brownfield`, `init-brownfield-update`, `init-brownfield-idempotent`, `init-vision-integration`, `init-claude-md-symlinks`
 - **Infrastructure acceptance (code/scripts):**
   - [x] **FR-INIT.STACK Stack detection**: `generate_agents.ts` detects 6 stacks via marker files.
   - [x] **FR-INIT.TESTS Unit tests**: `generate_agents.test.ts` covers 8 scenarios.
@@ -256,7 +259,7 @@ All 39 skills have at least one acceptance test scenario. Coverage is the source
 ### FR-DIST: Global Framework Distribution — flowai
 
 - **Description:** `flowai` CLI tool (developed in the external [korchasa/flowai-cli](https://github.com/korchasa/flowai-cli) repo, published to JSR as `@korchasa/flowai`) syncs framework skills/agents into project-local IDE config dirs. Single command, no subcommands. Reads bundled framework data (no network dependency at runtime). The CLI repo pins a framework revision via `framework.lock` and consumes a SHA-256-verified `framework.tar.gz` released from this repo (FR-DIST.BUNDLE.PIN).
-- **Tasks:** [extract-cli-to-separate-repo](tasks/2026/05/extract-cli-to-separate-repo.md), [simplify-flowai-update-boundaries](tasks/2026/05/simplify-flowai-update-boundaries.md)
+- **Tasks:** [extract-cli-to-separate-repo](tasks/2026/05/extract-cli-to-separate-repo.md), [simplify-update-boundaries](tasks/2026/05/simplify-update-boundaries.md), [remove-flowai-prefix-from-primitives](tasks/2026/05/remove-flowai-prefix-from-primitives.md)
 - **Def/Abbr:** CLI = flowai, BundledSource = JSON artifact with all framework files baked at publish time.
 
 #### FR-DIST.SYNC Sync Command (`flowai`)
@@ -349,25 +352,25 @@ All 39 skills have at least one acceptance test scenario. Coverage is the source
 
 #### FR-DIST.MARKETPLACE Claude Code + Codex Plugin Marketplace
 
-- **Desc:** Additional native-plugin distribution channel for Claude Code and Codex users. The framework publishes a generated marketplace at downstream repo `korchasa/flowai-plugins`. Surface catalogs (`.claude-plugin/marketplace.json`, `.agents/plugins/marketplace.json`) and plugin payloads are generated from `framework/<pack>/` by `scripts/build-plugins.ts` on every framework release (CI step inside the existing `release` job, gated on `framework-v*` tag publication). No plugin artefacts are committed to this repo (`dist/` is gitignored). Seven marketplace packs ship as separate plugins (`flowai-core`, `flowai-deno`, `flowai-devtools`, `flowai-engineering`, `flowai-memex`, `flowai-typescript`, `flowai-workflow`). flowai CLI distribution (FR-DIST.SYNC) remains supported and is the channel for Cursor / OpenCode.
-- **Tasks:** [claude-code-plugin-marketplace-pilot](tasks/2026/05/claude-code-plugin-marketplace-pilot.md), [codex-plugin-marketplace-support](tasks/2026/05/codex-plugin-marketplace-support.md)
-- **Scenario:** A user on Claude Code runs `/plugin marketplace add korchasa/flowai-plugins` once, then `/plugin install flowai-core@flowai-plugins`. A user on Codex runs `codex plugin marketplace add korchasa/flowai-plugins`, then installs `flowai-core` from `/plugins`. Skills become available under the installed plugin namespace. The `flowai-` prefix is stripped from skill / command directory names during build so invocations avoid the `/flowai-core:flowai-commit` double-prefix. Updates flow via each IDE's plugin update path tied to the downstream repo commit SHA, so one framework release maps to exactly one plugin update event.
-- **Local install contract:** `deno task build-plugins` produces a local marketplace root at `./dist/claude-plugins`. Claude Code supports a one-session smoke via `claude --plugin-dir ./dist/claude-plugins/plugins/flowai-core` and persistent user install via `claude plugin marketplace add ./dist/claude-plugins` + `claude plugin install flowai-core@flowai-plugins --scope user`. Codex supports local marketplace registration via `codex plugin marketplace add ./dist/claude-plugins`; installation is interactive through `/plugins` because `codex-cli 0.130.0` exposes marketplace management only, not `codex plugin install`. A manual `[plugins."flowai-core@flowai-plugins"] enabled = true` entry in `~/.codex/config.toml` is not accepted as evidence of skill loading.
-- **Local refresh contract:** `deno task check` always runs `scripts/build-plugins.ts` + `scripts/validate-plugins.ts`. When `.env` or the process environment has `AUTO_INSTALL_PLUGINS=true`, `scripts/auto-install-plugins.ts` refreshes already-installed user-scope flowai plugins after the build. Claude Code refresh uses `claude plugin update <plugin>@flowai-plugins --scope user` for enabled user plugins reported by `claude plugin list --json`. Codex refresh reads enabled `[plugins."flowai-*@flowai-plugins"]` entries from `~/.codex/config.toml` and uses public `codex plugin add <plugin>@flowai-plugins` when available; older Codex CLIs that lack `plugin add` emit a warning and skip Codex refresh rather than editing plugin config by hand.
+- **Desc:** Additional native-plugin distribution channel for Claude Code and Codex users. The framework publishes a generated marketplace at downstream repo `korchasa/flowai-plugins`. Surface catalogs (`.claude-plugin/marketplace.json`, `.agents/plugins/marketplace.json`) and plugin payloads are generated from `framework/<pack>/` by `scripts/build-plugins.ts` on every framework release (CI step inside the existing `release` job, gated on `framework-v*` tag publication). No plugin artefacts are committed to this repo (`dist/` is gitignored). Seven marketplace packs ship as separate plugins (`flowai`, `flowai-deno`, `flowai-devtools`, `flowai-engineering`, `flowai-memex`, `flowai-typescript`, `flowai-workflow`). flowai CLI distribution (FR-DIST.SYNC) remains supported and is the channel for Cursor / OpenCode.
+- **Tasks:** [claude-code-plugin-marketplace-pilot](tasks/2026/05/claude-code-plugin-marketplace-pilot.md), [codex-plugin-marketplace-support](tasks/2026/05/codex-plugin-marketplace-support.md), [remove-flowai-prefix-from-primitives](tasks/2026/05/remove-flowai-prefix-from-primitives.md)
+- **Scenario:** A user on Claude Code runs `/plugin marketplace add korchasa/flowai-plugins` once, then `/plugin install flowai@flowai-plugins`. A user on Codex runs `codex plugin marketplace add korchasa/flowai-plugins`, then installs `flowai` from `/plugins`. Skills become available under the installed plugin namespace. Short primitive names avoid duplicate branding (`/flowai:commit`, not `/flowai:flowai-commit`). Updates flow via each IDE's plugin update path tied to the downstream repo commit SHA, so one framework release maps to exactly one plugin update event.
+- **Local install contract:** `deno task build-plugins` produces a local marketplace root at `./dist/claude-plugins`. Claude Code supports a one-session smoke via `claude --plugin-dir ./dist/claude-plugins/plugins/flowai` and persistent user install via `claude plugin marketplace add ./dist/claude-plugins` + `claude plugin install flowai@flowai-plugins --scope user`. Codex supports local marketplace registration via `codex plugin marketplace add ./dist/claude-plugins`; installation is interactive through `/plugins` because `codex-cli 0.130.0` exposes marketplace management only, not `codex plugin install`. A manual `[plugins."flowai@flowai-plugins"] enabled = true` entry in `~/.codex/config.toml` is not accepted as evidence of skill loading.
+- **Local refresh contract:** `deno task check` always runs `scripts/build-plugins.ts` + `scripts/validate-plugins.ts`. When `.env` or the process environment has `AUTO_INSTALL_PLUGINS=true`, `scripts/auto-install-plugins.ts` refreshes already-installed user-scope flowai plugins after the build. Claude Code refresh uses `claude plugin update <plugin>@flowai-plugins --scope user` for enabled user plugins reported by `claude plugin list --json`. Codex refresh reads enabled `flowai@flowai-plugins` or `flowai-*@flowai-plugins` entries from `~/.codex/config.toml` and uses public `codex plugin add <plugin>@flowai-plugins` when available; older Codex CLIs that lack `plugin add` emit a warning and skip Codex refresh rather than editing plugin config by hand.
 - **Build contract:** `scripts/build-plugins.ts` reads `framework/<pack>/{pack.yaml,commands,skills,agents,hooks}` and emits:
   - `<out>/.claude-plugin/marketplace.json` — catalog (top-level `name`, `owner`, `metadata.pluginRoot`, `plugins[]`).
   - `<out>/.agents/plugins/marketplace.json` — Codex catalog (top-level `name`, `interface.displayName`, `plugins[]` with local `source.path: ./plugins/<name>` and install policy).
-  - `<out>/plugins/flowai-<pack>/.claude-plugin/plugin.json` — Claude manifest. `version` mirrors upstream `deno.json`.
-  - `<out>/plugins/flowai-<pack>/.codex-plugin/plugin.json` — Codex manifest. Includes metadata, `skills: ./skills/`, optional `hooks: ./hooks/hooks.json` only when hooks exist. No `agents` component is declared because Codex plugin docs do not define it.
-  - `<out>/plugins/flowai-<pack>/skills/<stripped>/SKILL.md` (+ supporting subdirs except `acceptance-tests/`). `disable-model-invocation: true` injected on commands (source under `framework/<pack>/commands/`) and absent on skills (source under `framework/<pack>/skills/`). FR-PACKS.CMD-INVARIANT / SKILL-INVARIANT enforced fail-fast: any source SKILL.md that already carries the flag aborts the build with the offending path.
-  - `<out>/plugins/flowai-<pack>/agents/<name>.md` — frontmatter passed through the universal → Claude-native mapping from FR-DIST.MAPPING (keeps `name`, `description`, `tools`, `disallowedTools`, `model`, `effort`, `maxTurns`, `background`, `isolation`, `color`; drops `readonly`, `mode`, `opencode_tools`; resolves `model` tier `max|smart|fast|cheap` to `opus|sonnet|haiku|haiku`, drops `inherit`).
-  - `<out>/plugins/flowai-<pack>/hooks/hooks.json` only when the source pack carries hooks. Hook commands keep `${CLAUDE_PLUGIN_ROOT}` because Claude Code requires it and Codex supports this compatibility variable. Codex users must enable `[features].plugin_hooks = true` before relying on hooks.
+  - `<out>/plugins/<plugin>/.claude-plugin/plugin.json` — Claude manifest. Core emits `flowai`; optional packs emit `flowai-<pack>`. `version` mirrors upstream `deno.json`.
+  - `<out>/plugins/<plugin>/.codex-plugin/plugin.json` — Codex manifest. Includes metadata, `skills: ./skills/`, optional `hooks: ./hooks/hooks.json` only when hooks exist. No `agents` component is declared because Codex plugin docs do not define it.
+  - `<out>/plugins/<plugin>/skills/<stripped>/SKILL.md` (+ supporting subdirs except `acceptance-tests/`). `disable-model-invocation: true` injected on commands (source under `framework/<pack>/commands/`) and absent on skills (source under `framework/<pack>/skills/`). FR-PACKS.CMD-INVARIANT / SKILL-INVARIANT enforced fail-fast: any source SKILL.md that already carries the flag aborts the build with the offending path.
+  - `<out>/plugins/<plugin>/agents/<name>.md` — frontmatter passed through the universal → Claude-native mapping from FR-DIST.MAPPING (keeps `name`, `description`, `tools`, `disallowedTools`, `model`, `effort`, `maxTurns`, `background`, `isolation`, `color`; drops `readonly`, `mode`, `opencode_tools`; resolves `model` tier `max|smart|fast|cheap` to `opus|sonnet|haiku|haiku`, drops `inherit`).
+  - `<out>/plugins/<plugin>/hooks/hooks.json` only when the source pack carries hooks. Hook commands keep `${CLAUDE_PLUGIN_ROOT}` because Claude Code requires it and Codex supports this compatibility variable. Codex users must enable `[features].plugin_hooks = true` before relying on hooks.
   - Output is byte-deterministic across runs.
 - **Distribution contract:** CI step `Sync generated artefacts to downstream` checks out `korchasa/flowai-plugins` via deploy key `FLOWAI_PLUGINS_DEPLOY_KEY`, replaces every top-level entry except `README.md` / `LICENSE` / `.git`, commits as `release: framework-vX.Y.Z`, and force-pushes the matching tag. Idempotent across re-runs (`git diff --cached --quiet` short-circuits; `git tag -f` + `git push --force-with-lease` tolerates a re-shot tag).
 - **Acceptance:**
   - [ ] `scripts/build-plugins.ts` produces a deterministic shared plugin tree from `framework/core/`.
     Evidence: `deno test -A scripts/build-plugins_test.ts --filter 'byte-deterministic-rerun'`.
-  - [ ] Codex marketplace lists every emitted `flowai-*` pack and points each entry at `./plugins/<plugin-name>`.
+  - [ ] Codex marketplace lists every emitted flowai plugin and points each entry at `./plugins/<plugin-name>`.
     Evidence: `scripts/build-plugins_test.ts::codex-marketplace emits-codex-marketplace-for-all-packs`.
   - [ ] Codex plugin manifests include compatible metadata and component paths.
     Evidence: `scripts/build-plugins_test.ts::codex-plugin-manifests emits-codex-plugin-manifests`.
@@ -387,21 +390,21 @@ All 39 skills have at least one acceptance test scenario. Coverage is the source
     Evidence: manual — first preview tag round-trip (one CI run, then inspect `korchasa/flowai-plugins` `main` for `release: framework-vX.Y.Z` commit and matching tag).
   - [ ] Downstream `README.md` and `LICENSE` survive every CI sync unchanged.
     Evidence: manual — `git -C <downstream-clone> log --oneline -- README.md LICENSE` returns exactly the bootstrap commit after any number of CI publishes.
-  - [ ] Smoke install end-to-end on a fresh checkout: `deno task build-plugins` → `/plugin marketplace add ./dist/claude-plugins` → `/plugin install flowai-core@flowai-plugins` → invoke `/flowai-core:<skill>`.
+  - [ ] Smoke install end-to-end on a fresh checkout: `deno task build-plugins` → `/plugin marketplace add ./dist/claude-plugins` → `/plugin install flowai@flowai-plugins` → invoke `/flowai:<skill>`.
     Evidence: manual — korchasa (transcript captured in pilot PR).
-  - [ ] Codex smoke install end-to-end on a fresh checkout: `deno task build-plugins` → `codex plugin marketplace add ./dist/claude-plugins` → `/plugins` → install `flowai-core` → new thread shows an installed flowai skill.
+  - [ ] Codex smoke install end-to-end on a fresh checkout: `deno task build-plugins` → `codex plugin marketplace add ./dist/claude-plugins` → `/plugins` → install `flowai` → new thread shows an installed flowai skill.
     Evidence: manual — korchasa (transcript captured in implementation PR).
   - [x] Local install docs distinguish Claude Code one-session smoke, Claude Code persistent local install, Codex local marketplace registration, and Codex's current lack of non-interactive plugin install.
-    Evidence: README contains `claude --plugin-dir ./dist/claude-plugins/plugins/flowai-core` and `codex plugin marketplace add ./dist/claude-plugins`.
+    Evidence: README contains `claude --plugin-dir ./dist/claude-plugins/plugins/flowai` and `codex plugin marketplace add ./dist/claude-plugins`.
   - [x] `deno task check` rebuilds and validates the plugin marketplace, then conditionally refreshes installed user-scope flowai plugins when `AUTO_INSTALL_PLUGINS=true`.
     Evidence: `scripts/task-check_test.ts::buildCheckPlan: prerequisites build and validate plugin marketplace`, `scripts/task-check_test.ts::buildCheckPlan: plugin auto-install is gated by env flag`, `scripts/auto-install-plugins_test.ts`.
-  - [x] Plugin-installable project integration command: `flowai-update` is emitted into the plugin tree and reads local copied assets instead of requiring CLI sync.
+  - [x] Plugin-installable project integration command: `update` is emitted into the plugin tree and reads local copied assets instead of requiring CLI sync.
     Evidence: `scripts/build-plugins_test.ts::plugin-includes-project-integration-update-command`.
   - [x] Pack-level `assets/*` files referenced by a SKILL.md are copied into the consuming skill's own dir, and `../assets/...` paths in the body are rewritten to `assets/...`.
     Evidence: `scripts/build-plugins_test.ts::copies-pack-assets-into-consuming-skill-dirs` + validator `validateAssetReferences`.
   - [x] CLI-only blocks fenced with `<!-- begin: cli-only-skill-update --> ... <!-- end: cli-only-skill-update -->` are stripped during plugin emit.
     Evidence: `scripts/build-plugins_test.ts::strips-cli-only-fences`.
-  - [x] Cross-skill slash invocations `/flowai-<name>` in SKILL.md bodies are rewritten to `/flowai-<pack>:<name>`.
+  - [x] Cross-skill slash invocations `/flowai-<name>` in SKILL.md bodies are rewritten to `/<plugin>:<name>`.
     Evidence: `scripts/build-plugins_test.ts::rewrites-cross-skill-slash-invocations` + validator `validateNoUnnamespacedSlashCommands`; Codex shared-payload assertion in `scripts/build-plugins_test.ts::codex-payload codex-payload-matches-shared-transform-contract`.
   - [x] `version` is injected into `plugin.json` and the marketplace entry from the upstream `deno.json` `.version` (semver-validated).
     Evidence: `scripts/build-plugins_test.ts::injects-version-from-upstream-deno-json` + validator schema requires semver.
@@ -420,7 +423,7 @@ All 39 skills have at least one acceptance test scenario. Coverage is the source
 - **Usage:**
   - `scope: project-only` only for primitives that cannot run from plugin/user-level installs.
   - `scope: global-only` reserved for future primitives that make no sense per-project.
-  - Absent on `flowai-update`; it is plugin/user-level installable and writes only current-project artifacts.
+  - Absent on `update`; it is plugin/user-level installable and writes only current-project artifacts.
 - **Acceptance:**
   - [x] `scripts/resource-types.ts` Zod schema accepts `scope: "project-only" | "global-only"` (optional).
     Evidence: `scripts/check-skills_test.ts::validateScopeField`.
@@ -488,7 +491,7 @@ All 39 skills have at least one acceptance test scenario. Coverage is the source
 - **Desc:** When `user_sync: true` in `.flowai.yaml` and ≥2 IDEs configured, propagate user-created resources (non-`flowai-*`, non-framework) across IDE config dirs. Canonical source = newest mtime.
 - **Acceptance:**
   - [x] Scans skills/agents in each IDE dir, skips `flowai-*` prefix.
-  - [x] Skips framework-bundled resources by name (e.g., `flowai-deep-research-worker`).
+  - [x] Skips framework-bundled resources by name (e.g., `deep-research-worker`).
   - [x] Merges by `(type, name)` across IDEs, picks canonical by newest mtime.
   - [x] Agent frontmatter transformed per IDE via `crossTransformAgent()`.
   - [x] Invalid YAML frontmatter: copies as-is with warning (no crash).
@@ -571,7 +574,7 @@ All 39 skills have at least one acceptance test scenario. Coverage is the source
 
 **Not synced (by design):**
 
-- Framework resources (`flowai-*` prefix or matching bundled names) — managed by framework sync (FR-DIST.SYNC)
+- Framework resources (matching bundled names plus legacy `flowai-*` names during cleanup) — managed by framework sync (FR-DIST.SYNC)
 - Rules (`.cursor/rules/` ↔ `.claude/rules/`) — frontmatter differs fundamentally (globs vs paths), no automated transform
 - Hooks (`.cursor/hooks.json` ↔ `.claude/settings.json` hooks key) — structure and event names differ, no automated transform
 - MCP config (`mcp.json` ↔ `.mcp.json`) — trivial rename, user responsibility
@@ -589,8 +592,8 @@ All 39 skills have at least one acceptance test scenario. Coverage is the source
 
 #### FR-DIST.CODEX-AGENTS OpenAI Codex Subagent Sync
 
-- **Desc:** Sync universal agent files (`framework/<pack>/agents/*.md`) to OpenAI Codex subagent format. Codex uses TOML configuration (`~/.codex/config.toml` or `<repo>/.codex/config.toml`) with `[agents.<name>]` tables that reference sidecar agent files via `config_file`. Agent prompt body lives in `<repo>/.codex/agents/<name>.toml` as `developer_instructions` (TOML multi-line string). Flowai owns only `[agents.<name>]` tables whose key starts with `flowai-` (see FR-DIST.CLEAN-PREFIX); user-authored tables without that prefix are preserved.
-- **Scenario:** `flowai sync` with `ides: [codex]` and a set of universal agents writes each agent body to `.codex/agents/<name>.toml` (with `name`/`description`/`developer_instructions`) and merges `[agents.<name>]` entries into `.codex/config.toml` via `mergeCodexConfig`. Removing (or renaming) an agent removes its table and sidecar on next run via the prefix rule. Malformed TOML in `.codex/config.toml` throws a clear error naming the file path — does NOT silently overwrite user config.
+- **Desc:** Sync universal agent files (`framework/<pack>/agents/*.md`) to OpenAI Codex subagent format. Codex uses TOML configuration (`~/.codex/config.toml` or `<repo>/.codex/config.toml`) with `[agents.<name>]` tables that reference sidecar agent files via `config_file`. Agent prompt body lives in `<repo>/.codex/agents/<name>.toml` as `developer_instructions` (TOML multi-line string). Flowai owns current bundled agent names and legacy `flowai-*` entries only for one-way cleanup (see FR-DIST.CLEAN-PREFIX); user-authored tables outside the bundle are preserved.
+- **Scenario:** `flowai sync` with `ides: [codex]` and a set of universal agents writes each agent body to `.codex/agents/<name>.toml` (with `name`/`description`/`developer_instructions`) and merges `[agents.<name>]` entries into `.codex/config.toml` via `mergeCodexConfig`. Removing (or renaming) an agent removes its table and sidecar on next run via bundled-name ownership plus legacy-prefix cleanup. Malformed TOML in `.codex/config.toml` throws a clear error naming the file path — does NOT silently overwrite user config.
 - **Acceptance:**
   - [x] `mergeCodexConfig(tomlText, changes)` is pure (no FS). It upserts `[agents.<name>]` for each change and deletes any existing `[agents.<k>]` where `k.startsWith("flowai-")` and `k` is not in `changes`. Non-prefix tables are left untouched.
     Evidence: implemented in [korchasa/flowai-cli](https://github.com/korchasa/flowai-cli) (CLI moved to external repo; see upstream tests).
@@ -602,12 +605,12 @@ All 39 skills have at least one acceptance test scenario. Coverage is the source
   - [x] Legacy `.codex/flowai-agents.json` manifest is deleted on next sync after upgrade (one-shot migration).
     Evidence: implemented in [korchasa/flowai-cli](https://github.com/korchasa/flowai-cli) (CLI moved to external repo; see upstream tests).
 
-#### FR-DIST.CLEAN-PREFIX Prefix-Based Orphan Cleanup
+#### FR-DIST.CLEAN-PREFIX Legacy Prefix Orphan Cleanup
 
-- **Desc:** Framework sync owns only primitives whose installed name starts with `flowai-`. After writing the current set, flowai scans the managed target dirs and deletes any `flowai-*` entry that is not in the current keep-set. Supersedes the per-name `computeDeletePlan` comparison and the Codex `flowai-agents.json` manifest — both missed renames where the old name disappeared from the current bundle.
-- **Scenario A (skill/command rename):** Framework renames `flowai-plan` → `flowai-plan`. On next `flowai sync`, `{ide}/skills/flowai-plan/` is (re-)written and `{ide}/skills/flowai-plan/` is removed. User skill `my-skill` and third-party skill `paperclip` (no `flowai-` prefix) are untouched.
-- **Scenario B (agent rename):** `framework/core/agents/flowai-deep-research-worker.md` is removed from the bundle. On next sync, `{ide}/agents/flowai-deep-research-worker.md` (and `.toml` for Codex) is deleted. User agent `my-agent.md` untouched.
-- **Scenario C (symlink preservation):** `{ide}/skills/flowai-plan` is a symlink (user-maintained). Sync does NOT remove it even if the target is missing from the bundle.
+- **Desc:** Framework sync owns current bundled primitive names and treats legacy `flowai-*` installed names as removable migration orphans. After writing the current short-name set, flowai scans managed target dirs and deletes any legacy `flowai-*` entry whose short-name equivalent is in the current keep-set or whose old prefixed name disappeared from the bundle. Supersedes the per-name `computeDeletePlan` comparison and the Codex `flowai-agents.json` manifest — both missed renames where the old name disappeared from the current bundle.
+- **Scenario A (skill/command rename):** Framework renames `flowai-plan` → `plan`. On next `flowai sync`, `{ide}/skills/plan/` is written and legacy `{ide}/skills/flowai-plan/` is removed. User skill `my-skill` and third-party skill `paperclip` are untouched.
+- **Scenario B (agent rename):** `framework/core/agents/deep-research-worker.md` is removed from the bundle. On next sync, `{ide}/agents/deep-research-worker.md` (and `.toml` for Codex) is deleted. User agent `my-agent.md` untouched.
+- **Scenario C (symlink preservation):** `{ide}/skills/plan` is a symlink (user-maintained). Sync does NOT remove it even if the target is missing from the bundle.
 - **Managed target dirs (per IDE, per scope via `resolveIdeBaseDir`):**
   - `{ide}/skills/` — skills + commands share this dir; keep-set = union of installed `skillNames` and `commandNames`.
   - `{ide}/agents/` — keep-set = `agentNames`. File extension `.md` (Claude/Cursor/OpenCode) or `.toml` (Codex sidecar) is stripped before matching.
@@ -658,59 +661,59 @@ All 39 skills have at least one acceptance test scenario. Coverage is the source
 
 ### FR-AGENT-COMMIT: Conventional Commits — `agent` Type
 
-- **Description:** Add `agent:` as a new commit type in Conventional Commits convention used by `flowai-commit`. Covers changes to agents, skills, `AGENTS.md`, and other AI-agent-related configuration in IDE directories.
-- **Use case scenario:** Developer modifies a skill's `SKILL.md` or updates an agent definition. On commit, the message is prefixed with `agent:` (e.g., `agent: update flowai-commit skill with atomic grouping rules`).
-- **Acceptance verified by acceptance tests:** `flowai-commit-agent-type`
+- **Description:** Add `agent:` as a new commit type in Conventional Commits convention used by `commit`. Covers changes to agents, skills, `AGENTS.md`, and other AI-agent-related configuration in IDE directories.
+- **Use case scenario:** Developer modifies a skill's `SKILL.md` or updates an agent definition. On commit, the message is prefixed with `agent:` (e.g., `agent: update commit skill with atomic grouping rules`).
+- **Acceptance verified by acceptance tests:** `commit-agent-type`
 
-### FR-REVIEW-COMMIT: Review-and-Commit Workflow — `flowai-review-and-commit`
+### FR-REVIEW-COMMIT: Review-and-Commit Workflow — `review-and-commit`
 
 - **Description:** Composite command: review → gate (Approve only) → commit. Stops on Request Changes/Needs Discussion.
 - **Generated origin:** `framework/composites.yaml` + `framework/composites/review-and-commit.md` per FR-SKILL-COMPOSE.
 - **Tasks:** [generate-skills-from-atoms](tasks/2026/05/generate-skills-from-atoms.md)
-- **Acceptance verified by acceptance tests:** `flowai-review-and-commit-approve`, `flowai-review-and-commit-reject`, `flowai-review-and-commit-auto-docs`, `flowai-review-and-commit-auto-invoke-reflect`, `flowai-review-and-commit-phase-2-diff-eliminated`, `flowai-review-and-commit-post-reflect-cleanup-commit`, `flowai-review-and-commit-parallel-delegation`, `flowai-review-and-commit-non-deno-project`
+- **Acceptance verified by acceptance tests:** `review-and-commit-approve`, `review-and-commit-reject`, `review-and-commit-auto-docs`, `review-and-commit-auto-invoke-reflect`, `review-and-commit-phase-2-diff-eliminated`, `review-and-commit-post-reflect-cleanup-commit`, `review-and-commit-parallel-delegation`, `review-and-commit-non-deno-project`
 
-### FR-DO-WITH-PLAN: Full-Cycle Workflow — `flowai-do-with-plan`
+### FR-DO-WITH-PLAN: Full-Cycle Workflow — `do-with-plan`
 
-- **Description:** User-invoked composite command that drives the canonical task lifecycle end-to-end in one invocation: Plan Phase (writes `documents/tasks/<YYYY>/<MM>/<slug>.md` per `flowai-plan-exp-permanent-tasks`), Implement Phase (TDD per AGENTS.md), Review-and-Commit Phase (same streamlined commit flow as `flowai-review-and-commit` with verdict gate). Three explicit phase gates: variant-selection (Plan→Implement), green project check + non-empty diff (Implement→Review-and-Commit), verdict ≠ Approve halts (review→commit). Generated from `framework/composites/do-with-plan.md` + atom phases per FR-SKILL-COMPOSE; canon machine-enforced by the generator.
-- **Deprecated:** Prefer `flowai-ship` (FR-SHIP) for new work. Primitive remains functional; removal scheduled in a follow-up task.
-- **Tasks:** [flowai-do-with-plan-command](tasks/2026/05/flowai-do-with-plan-command.md), [generate-skills-from-atoms](tasks/2026/05/generate-skills-from-atoms.md)
-- **Acceptance verified by acceptance tests:** `flowai-do-with-plan-full-cycle`, `flowai-do-with-plan-rejects-on-changes-requested`, `flowai-do-with-plan-pauses-for-variant-selection`
+- **Description:** User-invoked composite command that drives the canonical task lifecycle end-to-end in one invocation: Plan Phase (writes `documents/tasks/<YYYY>/<MM>/<slug>.md` per `plan-exp-permanent-tasks`), Implement Phase (TDD per AGENTS.md), Review-and-Commit Phase (same streamlined commit flow as `review-and-commit` with verdict gate). Three explicit phase gates: variant-selection (Plan→Implement), green project check + non-empty diff (Implement→Review-and-Commit), verdict ≠ Approve halts (review→commit). Generated from `framework/composites/do-with-plan.md` + atom phases per FR-SKILL-COMPOSE; canon machine-enforced by the generator.
+- **Deprecated:** Prefer `ship` (FR-SHIP) for new work. Primitive remains functional; removal scheduled in a follow-up task.
+- **Tasks:** [do-with-plan-command](tasks/2026/05/do-with-plan-command.md), [generate-skills-from-atoms](tasks/2026/05/generate-skills-from-atoms.md)
+- **Acceptance verified by acceptance tests:** `do-with-plan-full-cycle`, `do-with-plan-rejects-on-changes-requested`, `do-with-plan-pauses-for-variant-selection`
 - **Status:** [x]
 
 ### FR-SKILL-COMPOSE: Generated Composite Skill Assembly
 
 - **Description:** Composite and atomic SKILL.md files are **gitignored build artefacts** materialized from a single source of truth (`framework/atoms/*.md` + `framework/composites/*.md` wrappers + `framework/composites.yaml` manifest) by [scripts/generate-skill-composites.ts](../scripts/generate-skill-composites.ts). The generator parametrizes atoms with `{{NAME}}` placeholders + `<param-branch>` blocks so one atom serves multiple composites with phase-specific divergence. **Each downstream consumer regenerates first**: `scripts/task-check.ts` runs `--write` as a prerequisite before fmt/lint/tests; `scripts/task-acceptance-tests.ts` runs `--write` before sandbox setup; `scripts/build-plugins.ts` runs `--write` before reading SKILL.md into the marketplace tree; the CI `Build framework tarball` step runs `--write` before `tar`. This makes drift between source and rendered output structurally impossible — there is no tracked rendered copy to fall behind. `--check` mode is now a syntax + gitignore-parity self-test (no longer a drift gate, since fresh-clone disk is empty). `--list-targets` emits the manifest's target paths for `.gitignore` parity checks. `.gitignore` must list exactly the target set; parity is enforced by `checkGitignoreParity` inside both `--write` and `--check` and exercised by a unit test. Generator inputs (`framework/atoms/`, `framework/composites/`, `composites.yaml`, and legacy `_atom.md` / `_composite.md`) are excluded from `framework.tar.gz` by `tar --exclude` flags in [.github/workflows/ci.yml](../.github/workflows/ci.yml) and re-verified by [scripts/check-pack-refs.ts `--leakage`](../scripts/check-pack-refs.ts); the rendered SKILL.md files ARE included in the tarball (generated immediately before `tar`). Composite canon (no Skill-tool delegation, "Self-contained — execute the inlined steps directly" marker in description, no source-skill names in description, explicit verdict-gate success/failure branches, single `<step_by_step>` per atom slot, 500-line cap) is machine-enforced by a canon validator inside the generator. Replaces the legacy substring-matching `scripts/check-skill-sync.ts` + `scripts/composite-skills.ts` infrastructure (removed in an earlier commit of the implementing task).
-- **Use case scenario:** A maintainer edits `framework/atoms/commit-beta.md`. They run `deno task check` — `--write` regenerates the atom's standalone SKILL.md AND every composite SKILL.md that consumes the atom (e.g. `flowai-review-and-commit`, `flowai-ship`), each with phase-specific params. Fresh-clone scenario: developer clones, runs `deno task check`; the generator's `--write` prerequisite materializes all 8 SKILL.md files before any downstream check runs. Adding a new composite: the maintainer edits `framework/composites.yaml`, runs `deno task check`, sees a parity error from `checkGitignoreParity` pointing at the missing `.gitignore` entry; adds it; re-runs.
-- **Tasks:** [generate-skills-from-atoms](tasks/2026/05/generate-skills-from-atoms.md)
-- **Acceptance verified by acceptance tests:** `scripts/generate-skill-composites_test.ts` (manifest loading + render + canon validation + gitignore parity); `scripts/check-pack-refs_test.ts` (bundle-leakage detection); plus the full acceptance-test suites for every regenerated primitive (`flowai-plan-exp-permanent-tasks`, `flowai-review`, `flowai-commit-beta`, `flowai-review-and-commit`, `flowai-do-with-plan`) as semantic-equivalence gate.
+- **Use case scenario:** A maintainer edits `framework/atoms/commit-beta.md`. They run `deno task check` — `--write` regenerates the atom's standalone SKILL.md AND every composite SKILL.md that consumes the atom (e.g. `review-and-commit`, `ship`), each with phase-specific params. Fresh-clone scenario: developer clones, runs `deno task check`; the generator's `--write` prerequisite materializes all 8 SKILL.md files before any downstream check runs. Adding a new composite: the maintainer edits `framework/composites.yaml`, runs `deno task check`, sees a parity error from `checkGitignoreParity` pointing at the missing `.gitignore` entry; adds it; re-runs.
+- **Tasks:** [generate-skills-from-atoms](tasks/2026/05/generate-skills-from-atoms.md), [remove-flowai-prefix-from-primitives](tasks/2026/05/remove-flowai-prefix-from-primitives.md)
+- **Acceptance verified by acceptance tests:** `scripts/generate-skill-composites_test.ts` (manifest loading + render + canon validation + gitignore parity); `scripts/check-pack-refs_test.ts` (bundle-leakage detection); plus the full acceptance-test suites for every regenerated primitive (`plan-exp-permanent-tasks`, `review`, `commit-beta`, `review-and-commit`, `do-with-plan`) as semantic-equivalence gate.
 - **Evidence:** `deno test -A scripts/generate-skill-composites_test.ts && deno test -A scripts/check-pack-refs_test.ts && deno run -A scripts/generate-skill-composites.ts --check && deno run -A scripts/check-pack-refs.ts --leakage`
 - **Status:** [x]
 
-### FR-ATOM-DO: TDD Implement Atom — `flowai-do`
+### FR-ATOM-DO: TDD Implement Atom — `do`
 
-- **Description:** Model-invocable skill that drives the canonical TDD cycle (RED → GREEN → REFACTOR → CHECK, per [AGENTS.md § TDD Flow](../framework/AGENTS.md)) against a written plan's Solution section. Triggers on "implement under TDD per task plan" prompts without overlapping `flowai-plan` (planning), `flowai-review` (post-implement review), or `flowai-fix-tests` (existing-test repair). Source: `framework/atoms/do.md`. Generated SKILL.md materialized by [scripts/generate-skill-composites.ts](../scripts/generate-skill-composites.ts) per FR-SKILL-COMPOSE.
+- **Description:** Model-invocable skill that drives the canonical TDD cycle (RED → GREEN → REFACTOR → CHECK, per [AGENTS.md § TDD Flow](../framework/AGENTS.md)) against a written plan's Solution section. Triggers on "implement under TDD per task plan" prompts without overlapping `plan` (planning), `review` (post-implement review), or `fix-tests` (existing-test repair). Source: `framework/atoms/do.md`. Generated SKILL.md materialized by [scripts/generate-skill-composites.ts](../scripts/generate-skill-composites.ts) per FR-SKILL-COMPOSE.
 - **Tasks:** [generate-skills-from-atoms](tasks/2026/05/generate-skills-from-atoms.md)
-- **Acceptance verified by acceptance tests:** `flowai-do-tdd-cycle-completes`, `flowai-do-returns-to-red-on-check-failure`, `flowai-do-trigger-pos-1`, `flowai-do-trigger-adj-1`, `flowai-do-trigger-false-1`. (Implementation deviates from the task's "consolidated mixed-1" plan to keep `check-trigger-coverage.ts` happy without an exemption.)
+- **Acceptance verified by acceptance tests:** `do-tdd-cycle-completes`, `do-returns-to-red-on-check-failure`, `do-trigger-pos-1`, `do-trigger-adj-1`, `do-trigger-false-1`. (Implementation deviates from the task's "consolidated mixed-1" plan to keep `check-trigger-coverage.ts` happy without an exemption.)
 - **Status:** [x]
 
-### FR-ATOM-PUSH: Git Push Atom — `flowai-push`
+### FR-ATOM-PUSH: Git Push Atom — `push`
 
 - **Description:** User-invoked command (kind=command; CLI writer injects `disable-model-invocation: true` at sync time) that pushes the current branch to its remote with a strict safety contract: (a) `--force` is forbidden; (b) `--force-with-lease` is permitted ONLY with explicit per-push user authorization in chat (not via a session-long flag), **AND ONLY on non-protected branches**; (c) if upstream is unset → run `--set-upstream` automatically AFTER explicit user confirmation that the branch should track; (d) when the remote branch is `main`/`master` AND the remote has commits the local does not have, REFUSE both `--force` and `--force-with-lease` absolutely — explicit per-push authorization does NOT unlock force here (canonical regression: destroying a teammate's commits). The agent asks with exactly two options: pull-rebase or abort. If the user volunteers "force", "overwrite", or similar, the agent restates the refusal; (e) when the local branch is unprotected but the user typed a target other than the current branch, refuse. Post-push verification: `git rev-parse @{u}` matches `HEAD`. Source: `framework/atoms/push.md`.
 - **Tasks:** [generate-skills-from-atoms](tasks/2026/05/generate-skills-from-atoms.md)
-- **Acceptance verified by acceptance tests:** `flowai-push-happy-path`, `flowai-push-sets-upstream-on-first-push`, `flowai-push-refuses-force-on-divergence`. No trigger scenario (commands carry no trigger scenarios anywhere in the codebase).
+- **Acceptance verified by acceptance tests:** `push-happy-path`, `push-sets-upstream-on-first-push`, `push-refuses-force-on-divergence`. No trigger scenario (commands carry no trigger scenarios anywhere in the codebase).
 - **Status:** [x]
 
-### FR-SHIP: Terminal Full-Cycle Workflow — `flowai-ship`
+### FR-SHIP: Terminal Full-Cycle Workflow — `ship`
 
-- **Description:** User-invoked composite command: plan → implement → review → commit → push. Five phases, four explicit gates (variant-selection after Plan, green-check before Review, verdict gate before Commit, clean-tree + branch-protection check before Push). Generated from `framework/composites/ship.md` + the five atoms (`flowai-plan-exp-permanent-tasks`, `flowai-do`, `flowai-review`, `flowai-commit-beta`, `flowai-push`) per FR-SKILL-COMPOSE. Composite canon (no delegation, "Self-contained — execute the inlined steps directly" marker, explicit verdict-gate branches, 500-line cap) is machine-enforced by the generator.
+- **Description:** User-invoked composite command: plan → implement → review → commit → push. Five phases, four explicit gates (variant-selection after Plan, green-check before Review, verdict gate before Commit, clean-tree + branch-protection check before Push). Generated from `framework/composites/ship.md` + the five atoms (`plan-exp-permanent-tasks`, `do`, `review`, `commit-beta`, `push`) per FR-SKILL-COMPOSE. Composite canon (no delegation, "Self-contained — execute the inlined steps directly" marker, explicit verdict-gate branches, 500-line cap) is machine-enforced by the generator.
 - **Tasks:** [generate-skills-from-atoms](tasks/2026/05/generate-skills-from-atoms.md)
-- **Acceptance verified by acceptance tests:** `flowai-ship-full-cycle-success`, `flowai-ship-pauses-for-variant-selection`, `flowai-ship-rejects-on-changes-requested`, `flowai-ship-refuses-push-on-dirty-tree`. No trigger scenario (command convention).
+- **Acceptance verified by acceptance tests:** `ship-full-cycle-success`, `ship-pauses-for-variant-selection`, `ship-rejects-on-changes-requested`, `ship-refuses-push-on-dirty-tree`. No trigger scenario (command convention).
 - **Status:** [x]
 
-### FR-DEVCONTAINER: AI Devcontainer Setup — flowai-setup-ai-ide-devcontainer
+### FR-DEVCONTAINER: AI Devcontainer Setup — setup-ai-ide-devcontainer
 
 - **Description:** Generates `.devcontainer/` config optimized for AI IDE development. Stack detection, AI CLI integration, global skills mounting, security hardening.
-- **Acceptance verified by acceptance tests:** `flowai-setup-ai-ide-devcontainer-node-basic`, `flowai-setup-ai-ide-devcontainer-deno-with-claude`, `flowai-setup-ai-ide-devcontainer-deno-flowai`, `flowai-setup-ai-ide-devcontainer-brownfield-existing`, `flowai-setup-ai-ide-devcontainer-feature-discovery`, `flowai-setup-ai-ide-devcontainer-opencode-multi-cli`
+- **Acceptance verified by acceptance tests:** `setup-ai-ide-devcontainer-node-basic`, `setup-ai-ide-devcontainer-deno-with-claude`, `setup-ai-ide-devcontainer-deno-flowai`, `setup-ai-ide-devcontainer-brownfield-existing`, `setup-ai-ide-devcontainer-feature-discovery`, `setup-ai-ide-devcontainer-opencode-multi-cli`
 
 ### FR-UNIVERSAL: Universal Skill & Script Requirements
 
@@ -760,13 +763,13 @@ All 39 skills have at least one acceptance test scenario. Coverage is the source
   1. **Numbered questions** — each question is a numbered list item (`1.`, `2.`, `3.`, …). Not a heading, not bold-only, not a bare paragraph.
   2. **`agent's choice` resolution semantics for multi-select** — when the user picks multiple items from a list and explicitly delegates the choice to the agent (e.g. by saying `agent's choice` or its language equivalent), the agent picks the subset, emits a one-line justification announcing what it picked and why, and proceeds without re-asking for confirmation.
 - **Scope (in / out):**
-  - **In** — clarifying questions, option picks with short labels, multi-select over short option lists. Examples: IDE / scope choice in `flowai-engineer-skill`, target audience / constraints in `flowai-write-prd`, fix verdict in `flowai-maintenance`.
-  - **Out** — multi-section content presentations where each "option" is a rich block with its own Pros/Cons/Risks/Best-for sub-sections, AND closing "how to proceed" questions that immediately follow a long rich-content listing in the same response. Examples: variant selection in `flowai-plan` Step 4, phase decomposition in `flowai-epic` Step 4, the post-findings "how to proceed" prompt in `flowai-maintenance` (after the multi-category findings list). These follow the legacy multi-section pattern (`### Variant N` / `### Phase N` per option, or bullet-dash short options after a rich-content preamble) — empirical testing across 7 SKILL.md iterations and a deterministic helper-script approach showed Claude Sonnet 4.6's layout prior for "rich-content alternatives" cannot be overridden through skill text alone, and Claude Code lacks an `afterAgentResponse` hook for runtime enforcement.
+  - **In** — clarifying questions, option picks with short labels, multi-select over short option lists. Examples: IDE / scope choice in `engineer-skill`, target audience / constraints in `write-prd`, fix verdict in `maintenance`.
+  - **Out** — multi-section content presentations where each "option" is a rich block with its own Pros/Cons/Risks/Best-for sub-sections, AND closing "how to proceed" questions that immediately follow a long rich-content listing in the same response. Examples: variant selection in `plan` Step 4, phase decomposition in `epic` Step 4, the post-findings "how to proceed" prompt in `maintenance` (after the multi-category findings list). These follow the legacy multi-section pattern (`### Variant N` / `### Phase N` per option, or bullet-dash short options after a rich-content preamble) — empirical testing across 7 SKILL.md iterations and a deterministic helper-script approach showed Claude Sonnet 4.6's layout prior for "rich-content alternatives" cannot be overridden through skill text alone, and Claude Code lacks an `afterAgentResponse` hook for runtime enforcement.
 - **Deferred (follow-up):** strict numbering of option choices and literal `all` / `agent's choice` lines appended to every multi-select option list, plus extending the format to rich-content alternatives. Both require a runtime mechanism (e.g. an output-rewrite hook) not available in Claude Code today; revisit when such a mechanism exists across IDEs.
 - **Acceptance:**
   - [x] `flowai-conduct-qa-session/SKILL.md` documents the scoped format (numbered questions, `agent's choice` resolution semantics) as canonical.
   - [x] Benchmark `flowai-conduct-qa-session-multi-select-format` verifies, on a multi-select prompt: the question is numbered; on `agent's choice` the agent emits a one-line justification and proceeds without awaiting confirmation.
-  - [x] Question-asking skills (`flowai-plan`, `flowai-epic`, `flowai-write-prd`, `flowai-maintenance`, `flowai-engineer-skill`, `flowai-engineer-command`) reference `FR-UNIVERSAL.QA-FORMAT` in their SKILL.md and call out exemptions where applicable.
+  - [x] Question-asking skills (`plan`, `epic`, `write-prd`, `maintenance`, `engineer-skill`, `engineer-command`) reference `FR-UNIVERSAL.QA-FORMAT` in their SKILL.md and call out exemptions where applicable.
 - **Status:** [x]
 
 **Script Requirements**
@@ -787,7 +790,7 @@ All 39 skills have at least one acceptance test scenario. Coverage is the source
 - **Acceptance criteria:**
   - [x] **Framework scripts in Deno/TS**: All framework product scripts (`framework/<pack>/{skills,commands}/*/scripts/`) MUST be written in Deno/TypeScript. Zero `.py` files in these subtrees.
   - [x] **General-purpose utilities in Python**: Utility scripts outside the framework product directory MAY use Python. Scripts inside `framework/<pack>/{skills,commands}/*/scripts/` MUST be Deno/TS per FR-UNIVERSAL.LANG. Policy documented in SDS (section 3.1.2 "Script Language Policy"). Project uses Deno/TS exclusively — no Python.
-  - [x] **User-facing skills are language-agnostic**: The agentskills.io standard allows any language. Framework documentation (e.g., `flowai-engineer-skill`) MUST NOT restrict users to a single language. Common options: Python, Bash, JavaScript/TypeScript. `flowai-engineer-skill` does not restrict script language; examples mention multiple options.
+  - [x] **User-facing skills are language-agnostic**: The agentskills.io standard allows any language. Framework documentation (e.g., `engineer-skill`) MUST NOT restrict users to a single language. Common options: Python, Bash, JavaScript/TypeScript. `engineer-skill` does not restrict script language; examples mention multiple options.
 
 #### FR-UNIVERSAL.EXEC Script Execution Model
 
@@ -803,34 +806,34 @@ All 39 skills have at least one acceptance test scenario. Coverage is the source
   - [x] **Cross-IDE discovery**: Skills discoverable by IDEs via IDE-specific config dirs (e.g., `.claude/skills/`). flowai handles placement per IDE.
   - [x] **Name collision**: Project-level skills override user-level skills when names collide (per agentskills.io client implementation guide). flowai overwrites on sync. Documented in SDS (section 3.1.4).
 
-### FR-UPDATE: Project Integration Update — `flowai-update`
+### FR-UPDATE: Project Integration Update — `update`
 
-- **Description:** Project integration command that reconciles current-project artifacts with the installed flowai framework templates. It handles `AGENTS.md`/`CLAUDE.md`, scaffolded project artifacts, and legacy three-file AGENTS.md collapse. It never runs `flowai update`, `flowai sync`, or rewrites installed primitives/plugin caches/user-level dirs; local primitive adaptation is delegated to `flowai-adapt`.
-- **Tasks:** [simplify-flowai-update-boundaries](tasks/2026/05/simplify-flowai-update-boundaries.md)
-- **Acceptance verified by acceptance tests:** `flowai-update-basic`, `flowai-update-asset-drift-no-sync`, `flowai-update-template-vs-artifact`, `flowai-update-plugin-user-scope`
+- **Description:** Project integration command that reconciles current-project artifacts with the installed flowai framework templates. It handles `AGENTS.md`/`CLAUDE.md`, scaffolded project artifacts, and legacy three-file AGENTS.md collapse. It never runs `flowai update`, `flowai sync`, or rewrites installed primitives/plugin caches/user-level dirs; local primitive adaptation is delegated to `adapt`.
+- **Tasks:** [simplify-update-boundaries](tasks/2026/05/simplify-update-boundaries.md)
+- **Acceptance verified by acceptance tests:** `update-basic`, `update-asset-drift-no-sync`, `update-template-vs-artifact`, `update-plugin-user-scope`
 
-### FR-ADAPT: Standalone Primitive Adaptation — `flowai-adapt`
+### FR-ADAPT: Standalone Primitive Adaptation — `adapt`
 
-- **Description:** On-demand adaptation of project-local flowai primitives (skills, agents, AGENTS.md artifact, hooks) to project specifics — independent of `flowai-update`. Plugin-installed and user-level primitives are read-only and skipped. Uses `flowai-skill-adapter` subagent for skills and `flowai-agent-adapter` subagent for agents. Supports filtering by type (`--skills`, `--agents`, `--assets`, `--hooks`) and by name.
-- **Tasks:** [simplify-flowai-update-boundaries](tasks/2026/05/simplify-flowai-update-boundaries.md)
-- **Use case scenario:** Developer installs flowai on a Python project. All skills contain generic Deno examples. Runs `/flowai-adapt` to adapt all primitives to Python/pytest/ruff. Can also run `/flowai-adapt --skills flowai-commit` to adapt a single skill.
-- **Acceptance verified by acceptance tests:** `flowai-adapt-skills-basic`, `flowai-adapt-agents-basic`
+- **Description:** On-demand adaptation of project-local flowai primitives (skills, agents, AGENTS.md artifact, hooks) to project specifics — independent of `update`. Plugin-installed and user-level primitives are read-only and skipped. Uses `skill-adapter` subagent for skills and `agent-adapter` subagent for agents. Supports filtering by type (`--skills`, `--agents`, `--assets`, `--hooks`) and by name.
+- **Tasks:** [simplify-update-boundaries](tasks/2026/05/simplify-update-boundaries.md), [remove-flowai-prefix-from-primitives](tasks/2026/05/remove-flowai-prefix-from-primitives.md)
+- **Use case scenario:** Developer installs flowai on a Python project. All skills contain generic Deno examples. Runs `/adapt` to adapt all primitives to Python/pytest/ruff. Can also run `/adapt --skills commit` to adapt a single skill.
+- **Acceptance verified by acceptance tests:** `adapt-skills-basic`, `adapt-agents-basic`
 
 #### FR-ADAPT.SKILLS Skill Adaptation
 
-- **Desc:** Scans `{ide}/skills/` for `flowai-*` directories, launches `flowai-skill-adapter` subagent per skill in parallel, shows diff, asks confirmation.
+- **Desc:** Scans `{ide}/skills/` for `flowai-*` directories, launches `skill-adapter` subagent per skill in parallel, shows diff, asks confirmation.
 - **Acceptance:**
   - [ ] Scans installed skills in IDE config dirs.
-  - [ ] Launches parallel `flowai-skill-adapter` subagents.
+  - [ ] Launches parallel `skill-adapter` subagents.
   - [ ] Shows diff per skill, asks user confirmation.
   - [ ] Reverts rejected adaptations.
 
 #### FR-ADAPT.AGENTS Agent Adaptation
 
-- **Desc:** Scans `{ide}/agents/` for `flowai-*` files, launches `flowai-agent-adapter` subagent per agent in parallel, shows diff, asks confirmation. Frontmatter preserved as-is.
+- **Desc:** Scans `{ide}/agents/` for `flowai-*` files, launches `agent-adapter` subagent per agent in parallel, shows diff, asks confirmation. Frontmatter preserved as-is.
 - **Acceptance:**
   - [ ] Scans installed agents in IDE config dirs.
-  - [ ] Launches parallel `flowai-agent-adapter` subagents.
+  - [ ] Launches parallel `agent-adapter` subagents.
   - [ ] Shows diff per agent, asks user confirmation.
   - [ ] Frontmatter unchanged after adaptation.
 
@@ -853,13 +856,14 @@ All 39 skills have at least one acceptance test scenario. Coverage is the source
 ### FR-PACKS: Pack System — Modular Resource Installation
 
 - **Description:** Reorganize framework resources into self-contained packs. Each pack is an autonomous directory containing commands, skills, agents, hooks, and scripts. Users select packs in `.flowai.yaml` instead of listing individual resource names. Replaces flat `framework/skills/` and `framework/agents/` structure.
+- **Tasks:** [remove-flowai-prefix-from-primitives](tasks/2026/05/remove-flowai-prefix-from-primitives.md)
 - **Use case scenario:** Developer runs `flowai sync` with `.flowai.yaml` containing `packs: [core, deno]`. Only resources from those packs are installed. Another developer with `packs: []` gets only core pack.
 - **Priority:** High (enables scalable resource management, unblocks hooks/scripts).
 - **Terminology:** "Command" has two meanings — (a) a user-only framework primitive under `framework/<pack>/commands/`, distributed into `.{ide}/skills/` with `disable-model-invocation: true` injected by the writer; (b) an IDE-native slash-command file under `.{ide}/commands/` owned by the user and managed by `flowai user-sync`. The CLI's `PlanItemType = "command"` refers only to (b).
 
 #### FR-PACKS.STRUCT Pack Structure
 
-- **Desc:** Each pack is a directory under `framework/<name>/` containing `pack.yaml` manifest and resource subdirectories (`commands/`, `skills/`, `agents/`, `hooks/`, `scripts/`). `commands/` holds user-only primitives (names `flowai-*`, `flowai-setup-*`); `skills/` holds agent-invocable primitives (names `flowai-*`). Resources discovered by convention (directory scan), not listed in manifest.
+- **Desc:** Each pack is a directory under `framework/<name>/` containing `pack.yaml` manifest and resource subdirectories (`commands/`, `skills/`, `agents/`, `hooks/`, `scripts/`). `commands/` holds user-only primitives; `skills/` holds agent-invocable primitives. Primitive names are short kebab-case without redundant `flowai-` or pack prefixes. Resources discovered by convention (directory scan), not listed in manifest.
 - **Acceptance:**
   - [x] `pack.yaml` format: `name` (string), `version` (semver), `description` (string).
   - [x] Skills stored as `framework/<pack>/skills/<name>/SKILL.md`.
@@ -915,7 +919,7 @@ All 39 skills have at least one acceptance test scenario. Coverage is the source
 ### FR-HOOK-RESOURCES: Hook Resources
 
 - **Description:** Packs contain hooks — Deno TS scripts triggered by IDE events (PostToolUse, PreToolUse). Hooks are IDE-agnostic: stored as `hook.yaml` + `run.ts`, installed by flowai with IDE-specific configuration generation. Claude Code naming as canonical; flowai transforms for other IDEs.
-- **Use case scenario:** Pack `core` contains `flowai-skill-structure-validate` hook. `flowai sync` for Claude Code adds entry to `settings.json` hooks section; for Cursor — generates `.cursor/hooks.json`; for OpenCode — generates plugin file.
+- **Use case scenario:** Pack `core` contains `skill-structure-validate` hook. `flowai sync` for Claude Code adds entry to `settings.json` hooks section; for Cursor — generates `.cursor/hooks.json`; for OpenCode — generates plugin file.
 - **Priority:** Medium (new resource type, depends on FR-PACKS).
 
 #### FR-HOOK-RESOURCES.FORMAT Hook Format
@@ -925,7 +929,7 @@ All 39 skills have at least one acceptance test scenario. Coverage is the source
   - [x] `hook.yaml` fields: `event`, `matcher` (optional), `description`, `timeout` (optional, default 30/600).
   - [x] Supported events: PostToolUse, PreToolUse, SessionStart. Event/tool name mapping per IDE.
   - [x] `run.ts` uses stdin JSON contract (Claude Code canonical format). Cursor/OpenCode wrappers normalize format. SessionStart hooks output `hookSpecificOutput.additionalContext`.
-  - [x] 1 framework hook: `flowai-skill-structure-validate` (devtools).
+  - [x] 1 framework hook: `skill-structure-validate` (devtools).
 
 #### FR-HOOK-RESOURCES.INSTALL IDE-Specific Installation
 
@@ -956,8 +960,8 @@ All 39 skills have at least one acceptance test scenario. Coverage is the source
 
 ### FR-REFLECT: Reflection with Session History Search and Self-Criticism
 
-- **Description:** Reflection skills (`flowai-reflect`, `flowai-reflect-by-history`) must search session history for similar errors/mistakes, identify patterns, and include findings in output. Before presenting the final report, the agent must perform self-criticism — validate findings, check for false positives and blind spots, evaluate proportionality of proposed fixes, and revise the report accordingly.
-- **Acceptance verified by acceptance tests:** `flowai-reflect-session-history-pattern`, `flowai-reflect-context-inefficiency`, `flowai-reflect-process-loop`, `flowai-reflect-self-criticism`, `flowai-reflect-by-history-self-criticism`
+- **Description:** Reflection skills (`reflect`, `reflect-by-history`) must search session history for similar errors/mistakes, identify patterns, and include findings in output. Before presenting the final report, the agent must perform self-criticism — validate findings, check for false positives and blind spots, evaluate proportionality of proposed fixes, and revise the report accordingly.
+- **Acceptance verified by acceptance tests:** `reflect-session-history-pattern`, `reflect-context-inefficiency`, `reflect-process-loop`, `reflect-self-criticism`, `reflect-by-history-self-criticism`
 
 ### FR-CICD: CI/CD Pipeline Security
 
@@ -973,21 +977,21 @@ All 39 skills have at least one acceptance test scenario. Coverage is the source
 
 ### FR-WB-CLEANUP: Task File Cleanup on Commit
 
-- **Description:** `flowai-commit` deletes referenced task file after commit when all Definition of Done items are satisfied. If DoD is partially complete, asks user. Prevents stale task files from accumulating.
-- **Acceptance verified by acceptance tests:** `flowai-commit-task-cleanup`, `flowai-commit-task-cleanup-partial`
+- **Description:** `commit` deletes referenced task file after commit when all Definition of Done items are satisfied. If DoD is partially complete, asks user. Prevents stale task files from accumulating.
+- **Acceptance verified by acceptance tests:** `commit-task-cleanup`, `commit-task-cleanup-partial`
 
 ### FR-REVIEW-SPLIT: Responsibility Separation: Review vs Commit
 
-- **Description:** Clear separation of concerns between `flowai-review` and `flowai-commit`:
+- **Description:** Clear separation of concerns between `review` and `commit`:
   - Review owns: project checks (lint/test), hygiene scan, code quality verdict
   - Commit owns: documentation audit, atomic grouping, commit execution, task file cleanup
   - Review MUST NOT do atomic commit grouping (SA3). Commit MUST NOT run project checks.
-- **Acceptance verified by acceptance tests:** `flowai-commit-no-checks`, `flowai-review-no-grouping`
+- **Acceptance verified by acceptance tests:** `commit-no-checks`, `review-no-grouping`
 
-### FR-JIT-REVIEW: JIT Review Skill — `flowai-jit-review`
+### FR-JIT-REVIEW: JIT Review Skill — `jit-review`
 
 - **Description:** Agent-invocable skill that, given a diff (staged, unstaged, or commit-range), synthesizes ephemeral **Catching JiTTests** — temporary tests that pass on the parent revision and fail on the diff revision. Adapts Meta's Intent-Aware JiTTests pipeline (FSE 2026) to flowai's language-agnostic `test`-command interface declared in AGENTS.md.
-- **Scope:** Lives under `framework/engineering/skills/flowai-jit-review/`. Model-invocable (no `disable-model-invocation`). Triggered by user queries such as "check my staged changes for hidden bugs", "do a JIT review of this commit", "insure against regression".
+- **Scope:** Lives under `framework/engineering/skills/jit-review/`. Model-invocable (no `disable-model-invocation`). Triggered by user queries such as "check my staged changes for hidden bugs", "do a JIT review of this commit", "insure against regression".
 - **Scenario:** Developer prepares a diff (staged or unstaged). They ask the agent for a JIT review. The agent:
   1. Collects the diff target (staged / unstaged / range) and resolves the parent revision via `git worktree add`.
   2. Runs the declared `test` command on parent; aborts if parent baseline is red.
@@ -1004,25 +1008,25 @@ All 39 skills have at least one acceptance test scenario. Coverage is the source
   - MUST NOT modify production code; MUST NOT write tests into the main test tree without explicit user consent.
   - Diff > ~10 files or > ~500 LOC → warn the user and suggest splitting.
   - Mutant budget: ≤5 intents × ≤3 risks × 1 mutant = ≤15 mutants. Report top-5 catching tests by severity × uniqueness.
-- **Acceptance verified by acceptance tests:** `flowai-jit-review-catch-regression`, `flowai-jit-review-no-change-no-alarm`
+- **Acceptance verified by acceptance tests:** `jit-review-catch-regression`, `jit-review-no-change-no-alarm`
 
-### FR-DIAGNOSE-BENCH: Benchmark Failure Diagnostic Skill — `flowai-diagnose-benchmark-failure`
+### FR-DIAGNOSE-BENCH: Benchmark Failure Diagnostic Skill — `diagnose-benchmark-failure`
 
 - **Description:** Agent-invocable skill that, given a failed benchmark scenario ID, reads the run artifacts (`acceptance-tests/runs/latest/<scenario-id>/run-1/judge-evidence.md`, the sandbox copy of the failing primitive's `SKILL.md`, and the scenario `mod.ts`), pattern-matches the symptoms against a documented failure-mode taxonomy (MD-PRIOR-BULLETS, HEADING-INSTEAD-OF-ITEM, STALE-SKILL-IN-SANDBOX, SKILL-NOT-MOUNTED, COMPOSITE-DELEGATION-BYPASS, PERSONA-MISMATCH, TEST-FITTING-PERSONA, CROSS-PACK-REFERENCE-MISSING), and produces an evidence-grounded diagnostic report.
-- **Scope:** Lives under `framework/engineering/skills/flowai-diagnose-benchmark-failure/`. Model-invocable. Triggered by user prompts about diagnosing/investigating a specific failed benchmark run, or by an agent's own follow-up after observing a benchmark failure during Acceptance Test TDD.
+- **Scope:** Lives under `framework/engineering/skills/diagnose-benchmark-failure/`. Model-invocable. Triggered by user prompts about diagnosing/investigating a specific failed benchmark run, or by an agent's own follow-up after observing a benchmark failure during Acceptance Test TDD.
 - **Constraints:**
   - Read-only: MUST NOT edit any source file (no `SKILL.md`, `mod.ts`, SRS/SDS, etc.). Output is a report; downstream agents apply fixes.
   - Evidence-grounded: every claim in the report must cite a quoted line from `judge-evidence.md`, the sandbox `SKILL.md`, or the scenario `mod.ts`. Hypotheses without artifact citations are invalid.
   - Fail-closed: if any of the three required artifacts is missing, the skill stops and reports the gap rather than proceeding with partial data.
   - Taxonomy-grounded: classifications use the documented codes; novel modes only when the documented set is empirically ruled out.
-- **Acceptance verified by acceptance tests:** `flowai-diagnose-benchmark-failure-md-prior-bullets`
+- **Acceptance verified by acceptance tests:** `diagnose-benchmark-failure-md-prior-bullets`
 - **Status:** [x]
 
-### FR-AI-IDE-RUNNER: AI IDE Runner Skill — `flowai-ai-ide-runner`
+### FR-AI-IDE-RUNNER: AI IDE Runner Skill — `ai-ide-runner`
 
 - **Description:** Agent-invocable skill that spawns another AI IDE runtime (`claude`, `opencode`, `cursor-agent`, `codex`) from the current session in non-interactive mode, captures its stdout, and relays it back verbatim. Enables single-IDE "second opinion" runs, multi-IDE fan-out comparisons, and multi-model comparisons within one IDE.
 - **Tasks:** [ide-bridge-pack](tasks/2026/05/ide-bridge-pack.md)
-- **Scope:** Lives under `framework/ide-bridge/skills/flowai-ai-ide-runner/` (relocated from `framework/engineering/` as part of the `ide-bridge` pack — see FR-IDE-BRIDGE-WORKER, FR-IDE-BRIDGE-DELEGATE). Model-invocable. Triggered by queries like "run in <ide>", "compare <ide> vs <ide>", "try on <model>", "which IDE handles X better".
+- **Scope:** Lives under `framework/ide-bridge/skills/ai-ide-runner/` (relocated from `framework/engineering/` as part of the `ide-bridge` pack — see FR-IDE-BRIDGE-WORKER, FR-IDE-BRIDGE-DELEGATE). Model-invocable. Triggered by queries like "run in <ide>", "compare <ide> vs <ide>", "try on <model>", "which IDE handles X better".
 - **Constraints:**
   - MUST relay the child runtime's stdout byte-for-byte; MUST NOT synthesise a "better" answer from the outer model's weights. The skill is a courier, not a co-author.
   - MUST default to the vendor's native IDE when the user names only a model: Anthropic/Claude → `claude`; OpenAI/GPT → `codex`; Cursor's own Composer → `cursor-agent`. Route to OpenCode only when the user says "in OpenCode", asks for OpenRouter billing, or requests cross-provider fan-out.
@@ -1030,33 +1034,33 @@ All 39 skills have at least one acceptance test scenario. Coverage is the source
   - If the native provider fails (auth / not configured / model ID mismatch), MUST report the failure and stop — MUST NOT silently retry with a routed variant.
   - MUST apply the `CLAUDECODE=""` environment override when the caller is itself Claude Code and the child is `claude` (otherwise the inner CLI refuses with "already in a Claude session").
   - MUST NOT install or authenticate CLIs, persist transcripts, or judge output quality automatically.
-- **Acceptance verified by acceptance tests:** `flowai-ai-ide-runner-fanout-parallel-claude-opencode`, `flowai-ai-ide-runner-opencode-provider-format`, `flowai-ai-ide-runner-single-cursor-read-only`, `flowai-ai-ide-runner-default-native-ide-for-model`
+- **Acceptance verified by acceptance tests:** `ai-ide-runner-fanout-parallel-claude-opencode`, `ai-ide-runner-opencode-provider-format`, `ai-ide-runner-single-cursor-read-only`, `ai-ide-runner-default-native-ide-for-model`
 
-### FR-IDE-BRIDGE-WORKER: Cross-IDE Delegation Subagent — `flowai-ide-bridge-worker`
+### FR-IDE-BRIDGE-WORKER: Cross-IDE Delegation Subagent — `worker`
 
 - **Description:** Subagent that owns a single cross-IDE CLI invocation in an isolated context window. Receives `{target_ide}` (`codex` / `claude` / `opencode` / `cursor-agent`), optional `{model}`, and `{task_prompt}`; runs the target's non-interactive CLI exactly once; relays its stdout (or hook-block `reason` payload) byte-for-byte back to the parent. Single-shot — multi-turn / session-resume is explicitly out of scope. Lets a parent agent in IDE A delegate work to IDE B without the child's transcript flooding the parent's context.
 - **Tasks:** [ide-bridge-pack](tasks/2026/05/ide-bridge-pack.md)
-- **Scope:** Lives under `framework/ide-bridge/agents/flowai-ide-bridge-worker.md`. Invoked via the parent IDE's subagent-dispatch mechanism (Claude Code `Agent`/`Task` tool, OpenCode `@<agent>` mention). Not directly user-invocable; spawned by `flowai-delegate-to-ide` (FR-IDE-BRIDGE-DELEGATE).
+- **Scope:** Lives under `framework/ide-bridge/agents/worker.md`. Invoked via the parent IDE's subagent-dispatch mechanism (Claude Code `Agent`/`Task` tool, OpenCode `@<agent>` mention). Not directly user-invocable; spawned by `delegate-to-ide` (FR-IDE-BRIDGE-DELEGATE).
 - **Constraints:**
   - MUST relay the child runtime's stdout byte-for-byte; MUST NOT synthesise an answer from the outer model's weights — the worker is a courier, not a co-author. Inherits the FR-AI-IDE-RUNNER output contract.
   - MUST treat a hook-blocked Bash call's `reason` payload as the child's stdout (verbatim relay applies to the mock prefix, including the `<TOOL>-MOCK:` token).
-  - MUST issue exactly one Bash invocation to the target binary per task. Retries, fan-out, and follow-up calls are out of scope (use `flowai-ai-ide-runner` for one-shot relay/comparison; this worker does single-shot delegation).
+  - MUST issue exactly one Bash invocation to the target binary per task. Retries, fan-out, and follow-up calls are out of scope (use `ai-ide-runner` for one-shot relay/comparison; this worker does single-shot delegation).
   - MUST apply the `CLAUDECODE=""` prefix when the target is `claude` (otherwise the inner CLI refuses with "already in a Claude session").
   - MUST use OpenCode's mandatory `provider/model` format; MUST NOT silently fall back to routed providers on native failure.
   - MUST NOT install or authenticate CLIs, persist transcripts, judge output quality, or spawn nested subagents.
-- **Acceptance verified by acceptance tests:** `flowai-delegate-to-ide-via-subagent` (end-to-end: parent skill → worker subagent → mocked Codex CLI → relay back to parent; verifies binary choice, single-shot invocation, and verbatim relay through the subagent path). The worker has no standalone acceptance scenario by design — `AcceptanceTestAgentScenario` exposes the agent file to the main runtime but does not execute it as a subagent (the main runtime sees the userQuery directly), so isolated worker tests do not actually exercise the worker's body. The wrapping `via-subagent` scenario is the only path that drives the worker as the SDK does in production. Pattern mirrored from `flowai-deep-research-worker`, which is also tested via its orchestrator only.
+- **Acceptance verified by acceptance tests:** `delegate-to-ide-via-subagent` (end-to-end: parent skill → worker subagent → mocked Codex CLI → relay back to parent; verifies binary choice, single-shot invocation, and verbatim relay through the subagent path). The worker has no standalone acceptance scenario by design — `AcceptanceTestAgentScenario` exposes the agent file to the main runtime but does not execute it as a subagent (the main runtime sees the userQuery directly), so isolated worker tests do not actually exercise the worker's body. The wrapping `via-subagent` scenario is the only path that drives the worker as the SDK does in production. Pattern mirrored from `deep-research-worker`, which is also tested via its orchestrator only.
 
-### FR-IDE-BRIDGE-DELEGATE: Cross-IDE Delegation Skill Wrapper — `flowai-delegate-to-ide`
+### FR-IDE-BRIDGE-DELEGATE: Cross-IDE Delegation Skill Wrapper — `delegate-to-ide`
 
-- **Description:** Agent-invocable skill that routes "delegate this task to another IDE" requests to the `flowai-ide-bridge-worker` subagent (FR-IDE-BRIDGE-WORKER) instead of running the target CLI inline from the parent context. Preserves context isolation: the child CLI's transcript stays in the subagent's window, only the worker's relayed reply reaches the parent.
+- **Description:** Agent-invocable skill that routes "delegate this task to another IDE" requests to the `worker` subagent (FR-IDE-BRIDGE-WORKER) instead of running the target CLI inline from the parent context. Preserves context isolation: the child CLI's transcript stays in the subagent's window, only the worker's relayed reply reaches the parent.
 - **Tasks:** [ide-bridge-pack](tasks/2026/05/ide-bridge-pack.md)
-- **Scope:** Lives under `framework/ide-bridge/skills/flowai-delegate-to-ide/`. Model-invocable. Triggered by queries like "delegate to <ide>", "have <ide> do <task>", "execute <task> in <ide>", "offload to <ide>". Disambiguation from FR-AI-IDE-RUNNER: that skill is the right fit for one-shot relay / fan-out comparison ("compare X vs Y", "try on <model>"); this skill is for delegating a task whose intermediate work should NOT flood the parent.
+- **Scope:** Lives under `framework/ide-bridge/skills/delegate-to-ide/`. Model-invocable. Triggered by queries like "delegate to <ide>", "have <ide> do <task>", "execute <task> in <ide>", "offload to <ide>". Disambiguation from FR-AI-IDE-RUNNER: that skill is the right fit for one-shot relay / fan-out comparison ("compare X vs Y", "try on <model>"); this skill is for delegating a task whose intermediate work should NOT flood the parent.
 - **Constraints:**
-  - MUST invoke the `flowai-ide-bridge-worker` subagent via the host IDE's subagent-dispatch mechanism. MUST NOT shell out to the target CLI inline from the parent session — that defeats the context-isolation rationale of the skill.
-  - On hosts without a native subagent mechanism (Cursor, Codex), MUST surface the limitation and route the user to `flowai-ai-ide-runner` for one-shot relay; MUST NOT silently fall back to inline parent-side Bash.
+  - MUST invoke the `worker` subagent via the host IDE's subagent-dispatch mechanism. MUST NOT shell out to the target CLI inline from the parent session — that defeats the context-isolation rationale of the skill.
+  - On hosts without a native subagent mechanism (Cursor, Codex), MUST surface the limitation and route the user to `ai-ide-runner` for one-shot relay; MUST NOT silently fall back to inline parent-side Bash.
   - MUST relay the worker's quoted block verbatim to the user — no paraphrase, translation, or grammar fixes inside the block. Thin framing (target IDE label) outside the block is allowed.
-  - MUST NOT fan out across multiple IDEs or run cross-model comparisons (use `flowai-ai-ide-runner` for those flows).
-- **Acceptance verified by acceptance tests:** `flowai-delegate-to-ide-via-subagent`, `flowai-delegate-to-ide-trigger-pos-1`, `flowai-delegate-to-ide-trigger-adj-1`, `flowai-delegate-to-ide-trigger-false-1`
+  - MUST NOT fan out across multiple IDEs or run cross-model comparisons (use `ai-ide-runner` for those flows).
+- **Acceptance verified by acceptance tests:** `delegate-to-ide-via-subagent`, `delegate-to-ide-trigger-pos-1`, `delegate-to-ide-trigger-adj-1`, `delegate-to-ide-trigger-false-1`
 
 ### FR-LOOP: Non-Interactive Runner — `flowai loop`
 
@@ -1069,27 +1073,27 @@ All 39 skills have at least one acceptance test scenario. Coverage is the source
 ### FR-MEMEX: Memex Pack — `memex`
 
 - **Description:** Long-term knowledge bank for AI agents, packaged as a separate `memex` pack. Three agent-invocable skills operating on a memex directory (`raw/` + `pages/` + `AGENTS.md` schema + `log.md`):
-  1. `flowai-memex-save <path|url|text>` — atomic save: store source in `raw/` → extract entities → create / update memex pages → backlink audit → update index → append log. Scaffolds the memex on first call if no `AGENTS.md + pages/` ancestor is found.
-  2. `flowai-memex-ask <question>` — read index, open relevant pages, follow one wikilink hop, synthesise answer with `[[wikilink]]` citations, file the answer to `pages/answers/`, optionally promote to `pages/`. Honest about gaps; never falls back on training-data knowledge.
-  3. `flowai-memex-audit [--fix]` — deterministic structural audit (dead links, orphans, missing concept-gap sections, index drift) plus LLM-judgement layer (contradictions, stale claims, gap-question suggestions). `--fix` applies trivial auto-fixes (stub pages, missing-section append, index drift). Never auto-deletes or auto-resolves contradictions.
+  1. `save <path|url|text>` — atomic save: store source in `raw/` → extract entities → create / update memex pages → backlink audit → update index → append log. Scaffolds the memex on first call if no `AGENTS.md + pages/` ancestor is found.
+  2. `ask <question>` — read index, open relevant pages, follow one wikilink hop, synthesise answer with `[[wikilink]]` citations, file the answer to `pages/answers/`, optionally promote to `pages/`. Honest about gaps; never falls back on training-data knowledge.
+  3. `audit [--fix]` — deterministic structural audit (dead links, orphans, missing concept-gap sections, index drift) plus LLM-judgement layer (contradictions, stale claims, gap-question suggestions). `--fix` applies trivial auto-fixes (stub pages, missing-section append, index drift). Never auto-deletes or auto-resolves contradictions.
 - **Pack provides:**
-  - `framework/memex/skills/flowai-memex-{save,ask,audit}/SKILL.md` — three agent-invocable skills.
-  - `framework/memex/scripts/flowai-memex-audit.ts` — deterministic Deno audit script (Map-based link graph, frontmatter-aware checks, no external deps).
-  - `framework/memex/hooks/flowai-memex-status/{hook.yaml,run.ts}` — `SessionStart` hook that walks up from cwd for `AGENTS.md + pages/`, injects memex status (page count, source count, last log entry, last audit date, ≥5 uncompiled-source nudge) as `additionalContext`.
-  - `framework/memex/assets/memex-AGENTS.md` — schema asset dropped into the memex root on scaffold.
+  - `framework/memex/skills/memex-{save,ask,audit}/SKILL.md` — three agent-invocable skills.
+  - `framework/memex/scripts/audit.ts` — deterministic Deno audit script (Map-based link graph, frontmatter-aware checks, no external deps).
+  - `framework/memex/hooks/status/{hook.yaml,run.ts}` — `SessionStart` hook that walks up from cwd for `AGENTS.md + pages/`, injects memex status (page count, source count, last log entry, last audit date, ≥5 uncompiled-source nudge) as `additionalContext`.
+  - `framework/memex/assets/AGENTS.md` — schema asset dropped into the memex root on scaffold.
 - **Inherited primitives:**
   - From Karpathy's `llmwiki` (Memex-style persistent wiki maintained by an LLM): three operations, `raw/` / `pages/` / schema layering, `index.md` (catalog) + `log.md` (chronological, grep-friendly `## [YYYY-MM-DD] op | title`), one-source-touches-many-pages atomicity.
   - From ekadetov-llm-wiki: active memex detection (walk up from cwd), entity types (concept / person / source-summary), backlink audit via grep, deterministic audit script, contradiction callouts.
   - From nvk-llm-wiki: nested `AGENTS.md` as portable schema (vs `CLAUDE.md`), frontmatter-as-data, optional dual-link `[[slug|Name]] ([Name](slug.md))` when the memex is an Obsidian vault, structural-guardian nudge on session start, honest-gaps rule, ask-answer promotion two-step (file then offer promote).
 - **Out of scope (intentionally minimal vs nvk):** multi-memex hub, research / thesis / librarian / projects commands, volatility / freshness scoring, qmd dependency.
-- **Acceptance verified by acceptance tests:** `flowai-memex-save-new`, `flowai-memex-save-update`, `flowai-memex-ask-citations`, `flowai-memex-ask-honest-gap`, `flowai-memex-audit-clean`, `flowai-memex-audit-defects`.
-- **Acceptance verified by tests:** `framework/memex/scripts/flowai-memex-audit_test.ts` (6 tests covering DEAD_LINK, ORPHAN, MISSING_SECTION, INDEX_MISSING, INDEX_DEAD, clean-pass, missing-dir error); `framework/memex/hooks/flowai-memex-status/run_test.ts` (4 tests covering page / source count, last-log / last-audit extraction, uncompiled detection, format nudge thresholds).
+- **Acceptance verified by acceptance tests:** `save-new`, `save-update`, `ask-citations`, `ask-honest-gap`, `audit-clean`, `audit-defects`.
+- **Acceptance verified by tests:** `framework/memex/scripts/audit_test.ts` (6 tests covering DEAD_LINK, ORPHAN, MISSING_SECTION, INDEX_MISSING, INDEX_DEAD, clean-pass, missing-dir error); `framework/memex/hooks/status/run_test.ts` (4 tests covering page / source count, last-log / last-audit extraction, uncompiled detection, format nudge thresholds).
 - **Status:** [x]
 
 ### FR-DOC-LINKS: Interconnectedness Principle for Documentation
 
 - **Description:** `framework/core/assets/AGENTS.template.md` declares that ALL cross-references between project knowledge — doc-to-doc AND code-to-doc — use **standard GFM markdown links** of the form `[descriptive text](relative/path.md#auto-slug)`. Custom anchor mechanisms (`{#my-anchor}`, `<a name=...>`), wikilinks (`[[X]]`), ID-only shortcuts (`[FR-XXX]`), and bare ID-string code comments (`// FR-XXX`) are explicitly rejected. The legacy `// FR-<ID>` shortcut is recognized as deprecated for the migration window only.
-- **Scenario:** A new flowai project initialized via `flowai-init` receives the principle as part of its AGENTS.md. Agents consuming that AGENTS.md write all cross-references — in code comments, in SDS, in README, in ADR — as `[text](path.md#anchor)` GFM links without consulting external sources.
+- **Scenario:** A new flowai project initialized via `init` receives the principle as part of its AGENTS.md. Agents consuming that AGENTS.md write all cross-references — in code comments, in SDS, in README, in ADR — as `[text](path.md#anchor)` GFM links without consulting external sources.
 - **Out of scope:** Migration of the existing 106 `// FR-XXX` comments in this project's source tree (covered by FR-DOC-IDS) and periodic drift checks (FR-DOC-LINT).
 - **Acceptance verified by tests:** `scripts/check-agents-template_test.ts` (6 tests: principle section present, GFM-link example present, rule applies to both docs and code, ID-only syntax explicitly rejected, namespace table absent, `// <NS>-<ID>` not mandated as canonical marker).
 - **Status:** [x]
@@ -1103,63 +1107,63 @@ All 39 skills have at least one acceptance test scenario. Coverage is the source
 
 ### FR-DOC-INDEX: Agent-Maintained Documentation Index
 
-- **Description:** `flowai-plan` writes/updates a row in `documents/index.md` whenever it adds or modifies an FR section in SRS. Row format: `- [<NS>-<ID>](relative/path.md#anchor) — <one-line summary> — <status>`. File is grouped by namespace (FR / SDS / NFR), sorted by ID within each group. Created on first write; never scaffolded by `flowai-init`.
+- **Description:** `plan` writes/updates a row in `documents/index.md` whenever it adds or modifies an FR section in SRS. Row format: `- [<NS>-<ID>](relative/path.md#anchor) — <one-line summary> — <status>`. File is grouped by namespace (FR / SDS / NFR), sorted by ID within each group. Created on first write; never scaffolded by `init`.
 - **Scenario:** Agent plans a task that introduces FR-XYZ → adds FR-XYZ section to SRS → appends `- [FR-XYZ](requirements.md#fr-xyz-...) — <summary> — [ ]` under `## FR` in `documents/index.md`. Subsequent status flip to `[x]` updates the same row.
-- **Acceptance verified by acceptance tests:** `flowai-plan-updates-index-on-new-fr`.
+- **Acceptance verified by acceptance tests:** `plan-updates-index-on-new-fr`.
 - **Status:** [x]
 
 ### FR-DOC-TASKS: First-Class Committed Tasks
 
-- **Description:** Tasks are persistent canonical records — committed (NOT gitignored), one file per task at `documents/tasks/<YYYY>/<MM>/<slug>.md`. Frontmatter carries: `date` (YYYY-MM-DD; required), `status` ∈ `to do | in progress | done` (required), `implements: [FR-...]` (optional — present for FR-driven tasks, omitted for internal/maintenance), optional `tags: [...]`, optional `related_tasks: [...]` (markdown links to other task files), optional `migrated_from: "<old-id> (status: <old>)"` for provenance. Body uses GODS shape (Goal / Overview / Definition of Done / Solution). Architectural decisions are recorded as regular tasks with weighed alternatives surfaced inline (no separate ADR primitive). Validated by `scripts/check-task-format.ts` — wired into `deno task check`. The variant of `flowai-plan` that writes this layout is `/flowai-plan-exp-permanent-tasks` (user-invoked).
-- **Scenario:** User invokes `/flowai-plan-exp-permanent-tasks add cache layer to CLI` → skill writes `documents/tasks/2026/05/add-cache-layer.md` with new-shape frontmatter (`date: 2026-05-07`, `status: to do`, `implements: [FR-CACHE]`).
+- **Description:** Tasks are persistent canonical records — committed (NOT gitignored), one file per task at `documents/tasks/<YYYY>/<MM>/<slug>.md`. Frontmatter carries: `date` (YYYY-MM-DD; required), `status` ∈ `to do | in progress | done` (required), `implements: [FR-...]` (optional — present for FR-driven tasks, omitted for internal/maintenance), optional `tags: [...]`, optional `related_tasks: [...]` (markdown links to other task files), optional `migrated_from: "<old-id> (status: <old>)"` for provenance. Body uses GODS shape (Goal / Overview / Definition of Done / Solution). Architectural decisions are recorded as regular tasks with weighed alternatives surfaced inline (no separate ADR primitive). Validated by `scripts/check-task-format.ts` — wired into `deno task check`. The variant of `plan` that writes this layout is `/plan-exp-permanent-tasks` (user-invoked).
+- **Scenario:** User invokes `/plan-exp-permanent-tasks add cache layer to CLI` → skill writes `documents/tasks/2026/05/add-cache-layer.md` with new-shape frontmatter (`date: 2026-05-07`, `status: to do`, `implements: [FR-CACHE]`).
 - **Constraints:**
   - Path MUST match `documents/tasks/<YYYY>/<MM>/<slug>.md` (kebab-case slug).
   - `status` value MUST come from the 3-state set; legacy ADR statuses (`accepted` / `implemented` / `proposed`) are rejected by the validator.
   - Tasks NEVER deleted by commit-cleanup (persistent canonical records).
-- **Acceptance verified by acceptance tests:** `flowai-plan-exp-permanent-tasks-writes-task-new-frontmatter`.
+- **Acceptance verified by acceptance tests:** `plan-exp-permanent-tasks-writes-task-new-frontmatter`.
 - **Status:** [x]
 
 ### FR-DOC-TASK-LIFECYCLE: Task Status Derived from DoD by Commit Skills
 
-- **Description:** `flowai-commit` and `flowai-review-and-commit` derive `status` from `## Definition of Done` checkbox state on every commit that stages a `documents/tasks/**/*.md` file with new-shape frontmatter (presence of `date:`). Algorithm: count top-level `- [ ]`/`- [x]` items K of N under `## Definition of Done`; map `K=0 → "to do"`, `0<K<N → "in progress"`, `K=N → "done"`. If the derived value differs from the current frontmatter `status`, rewrite the frontmatter line and `git add` the file as part of the same commit. Idempotent. Never downgrades `done` (manual re-open required). Warn-only on parse errors / missing DoD section. Legacy flat-path tasks (no `date:`) are skipped — preserves coexistence with unmodified `flowai-plan`.
-- **Scenario:** Developer commits a fix that ticks the last DoD box of `documents/tasks/2026/05/add-cache-layer.md`. `flowai-commit` re-counts the DoD items (N/N), sees `status: in progress`, rewrites frontmatter to `status: done`, and stages the file alongside the developer's diff.
+- **Description:** `commit` and `review-and-commit` derive `status` from `## Definition of Done` checkbox state on every commit that stages a `documents/tasks/**/*.md` file with new-shape frontmatter (presence of `date:`). Algorithm: count top-level `- [ ]`/`- [x]` items K of N under `## Definition of Done`; map `K=0 → "to do"`, `0<K<N → "in progress"`, `K=N → "done"`. If the derived value differs from the current frontmatter `status`, rewrite the frontmatter line and `git add` the file as part of the same commit. Idempotent. Never downgrades `done` (manual re-open required). Warn-only on parse errors / missing DoD section. Legacy flat-path tasks (no `date:`) are skipped — preserves coexistence with unmodified `plan`.
+- **Scenario:** Developer commits a fix that ticks the last DoD box of `documents/tasks/2026/05/add-cache-layer.md`. `commit` re-counts the DoD items (N/N), sees `status: in progress`, rewrites frontmatter to `status: done`, and stages the file alongside the developer's diff.
 - **Constraints:**
   - MUST run only on commits — no out-of-band flips.
   - MUST be idempotent: re-committing an already-derived task is a no-op.
   - MUST NOT downgrade `done`. Other transitions are bidirectional.
-- **Acceptance verified by acceptance tests:** `flowai-commit-flips-task-status`, `flowai-commit-derives-in-progress-status`, `flowai-review-and-commit-flips-task-status`.
+- **Acceptance verified by acceptance tests:** `commit-flips-task-status`, `commit-derives-in-progress-status`, `review-and-commit-flips-task-status`.
 - **Status:** [x]
 
 ### FR-DOC-TASK-CONTEXT: Plan Skill Loads Related Tasks into Step 2
 
-- **Description:** `flowai-plan-exp-permanent-tasks` Step 2 ("Deep Context & Uncertainty") globs `documents/tasks/**/*.md`, parses each task's frontmatter `implements:` array, and reads (Read tool) tasks whose `implements:` set intersects the new task's `implements:` set. Cap: 10 most recent (by `date:`) related tasks. Loaded content informs the variant analysis and DoD synthesis so prior decisions are not contradicted. Empty `implements:` → no related-task lookup.
-- **Scenario:** User runs `/flowai-plan-exp-permanent-tasks` for a task that `implements: [FR-CACHE]`. Step 2 finds two prior tasks under `documents/tasks/` whose frontmatter also lists `FR-CACHE`, reads both, and references them in the variant analysis.
-- **Acceptance verified by acceptance tests:** `flowai-plan-exp-permanent-tasks-loads-related-tasks`.
+- **Description:** `plan-exp-permanent-tasks` Step 2 ("Deep Context & Uncertainty") globs `documents/tasks/**/*.md`, parses each task's frontmatter `implements:` array, and reads (Read tool) tasks whose `implements:` set intersects the new task's `implements:` set. Cap: 10 most recent (by `date:`) related tasks. Loaded content informs the variant analysis and DoD synthesis so prior decisions are not contradicted. Empty `implements:` → no related-task lookup.
+- **Scenario:** User runs `/plan-exp-permanent-tasks` for a task that `implements: [FR-CACHE]`. Step 2 finds two prior tasks under `documents/tasks/` whose frontmatter also lists `FR-CACHE`, reads both, and references them in the variant analysis.
+- **Acceptance verified by acceptance tests:** `plan-exp-permanent-tasks-loads-related-tasks`.
 - **Status:** [x]
 
 ### FR-DOC-TASK-LINK: SRS-Inline `**Tasks:**` Back-Pointer
 
-- **Description:** `flowai-plan-exp-permanent-tasks` (and `flowai-epic`) inserts/extends a `- **Tasks:** [<slug>](tasks/<YYYY>/<MM>/<slug>.md)[, ...]` line directly after the `**Description:**` line in each SRS FR section listed in the new task's `implements:`. Surgical edit: only this single line is touched in the SRS — no other SRS content modified. Idempotent: re-running on the same task does not duplicate the link. Replaces the now-removed `## ADR` section in `documents/index.md` as the navigation surface from FR → its driving tasks.
+- **Description:** `plan-exp-permanent-tasks` (and `epic`) inserts/extends a `- **Tasks:** [<slug>](tasks/<YYYY>/<MM>/<slug>.md)[, ...]` line directly after the `**Description:**` line in each SRS FR section listed in the new task's `implements:`. Surgical edit: only this single line is touched in the SRS — no other SRS content modified. Idempotent: re-running on the same task does not duplicate the link. Replaces the now-removed `## ADR` section in `documents/index.md` as the navigation surface from FR → its driving tasks.
 - **Scenario:** New task `documents/tasks/2026/05/add-cache.md` declares `implements: [FR-CACHE]`. Skill opens `documents/requirements.md`, finds `### FR-CACHE`, and inserts `- **Tasks:** [add-cache](tasks/2026/05/add-cache.md)` after the existing `**Description:**` line. Subsequent task `clear-cache.md` for the same FR appends `, [clear-cache](tasks/2026/05/clear-cache.md)` to the existing line.
-- **Acceptance verified by acceptance tests:** `flowai-plan-exp-permanent-tasks-updates-srs-task-back-pointer`.
+- **Acceptance verified by acceptance tests:** `plan-exp-permanent-tasks-updates-srs-task-back-pointer`.
 - **Status:** [x]
 
 ### FR-DOC-RESCUE: Reflect Surfaces Decisions for Task Capture
 
-- **Description:** `flowai-reflect` adds a "Durable Findings Rescue" pass that scans the current task file for **decision passages** — passages with ≥2 weighed alternatives and explicit reasoning ("we picked X over Y because …", "considered A and B; chose A because …"). For each detected decision, reflect emits a chat message naming the decision and recommends `/flowai-plan-exp-permanent-tasks` (the canonical-record writer) on its `**Recommended action:**` line. Reflect itself remains read-only — it never writes a task file, never edits SRS/SDS, never creates an ADR (the `documents/adr/` directory has been phased out). Recording is owned exclusively by `/flowai-plan-exp-permanent-tasks`.
-- **Acceptance verified by acceptance tests:** `flowai-reflect-rescues-decision-as-task`.
+- **Description:** `reflect` adds a "Durable Findings Rescue" pass that scans the current task file for **decision passages** — passages with ≥2 weighed alternatives and explicit reasoning ("we picked X over Y because …", "considered A and B; chose A because …"). For each detected decision, reflect emits a chat message naming the decision and recommends `/plan-exp-permanent-tasks` (the canonical-record writer) on its `**Recommended action:**` line. Reflect itself remains read-only — it never writes a task file, never edits SRS/SDS, never creates an ADR (the `documents/adr/` directory has been phased out). Recording is owned exclusively by `/plan-exp-permanent-tasks`.
+- **Acceptance verified by acceptance tests:** `reflect-rescues-decision-as-task`.
 - **Status:** [x]
 
 ### FR-DOC-LINT: Documentation Health Category in Maintenance
 
-- **Description:** `flowai-maintenance` adds a "Documentation Health" category to its multi-category audit. Checks (LLM-judgement, not deterministic — that is the value of using a skill):
+- **Description:** `maintenance` adds a "Documentation Health" category to its multi-category audit. Checks (LLM-judgement, not deterministic — that is the value of using a skill):
   - **Broken GFM cross-links** — any `[text](path.md#anchor)` reference where the target file or the anchor (GFM auto-slug) does not exist. Scope: project documentation files (`documents/*.md`, `README.md`, `AGENTS.md`) and code comments in source directories.
   - **Stale `[x]` FRs** — FRs marked `[x]` whose `**Acceptance:**` reference no longer exists or, if it is a runnable command/test, no longer passes.
   - **Orphan FRs** — FRs marked `[x]` in SRS that have no GFM-link reference (`[FR-<ID>](requirements.md#…)`) anywhere in source code.
   - **SRS↔SDS contradictions** — pairs of statements where SRS and SDS describe the same component or behavior with mutually exclusive constraints.
   - **`documents/index.md` drift** — index rows disagreeing with the artifact (status mismatch, stale summary, missing row for an FR that exists in SRS).
 - **Scope:** Maintenance keeps its existing interactive issue-by-issue UX; Documentation Health integrates as one of the categories (slot 9 — preserved across later category additions). Findings appear under a clearly labeled "Documentation Health" group in the numbered summary.
-- **Acceptance verified by acceptance tests:** `flowai-maintenance-detects-doc-health-issues`.
+- **Acceptance verified by acceptance tests:** `maintenance-detects-doc-health-issues`.
 - **Status:** [x]
 
 ## 4. Non-functional requirements
@@ -1167,7 +1171,7 @@ All 39 skills have at least one acceptance test scenario. Coverage is the source
 
 - **Reliability:** Benchmarks must use isolated sandboxes and evidence-based verification. Execution must be protected by timeouts (e.g., 60s per step) to ensure system stability.
 - **Scalability:** The benchmarking system must support multiple evaluation modes (Quality, Selection, Comparison).
-- **Usability:** Commands must be intuitive (e.g., `/flowai-commit`). Benchmark reports must be human-readable and provide actionable feedback via `trace.md`.
+- **Usability:** Commands must be intuitive (e.g., `/commit`). Benchmark reports must be human-readable and provide actionable feedback via `trace.md`.
 
 ## 5. Interfaces
 

@@ -1,0 +1,49 @@
+{
+  "schema": 1,
+  "key": "96bb3fb72f7ac9fc6382940f151ab52fb9b94ba14d57a2ef77a398eb4f4565b5",
+  "scenarioId": "review-and-commit-non-deno-project",
+  "ide": "claude",
+  "agentModel": "claude-sonnet-4-6",
+  "recordedAt": "2026-05-17T12:42:47.314Z",
+  "result": {
+    "success": true,
+    "score": 100,
+    "errorsCount": 0,
+    "warningsCount": 0,
+    "durationMs": 74369.73245799984,
+    "tokensUsed": 0,
+    "totalCost": 0,
+    "toolCallsCount": 0,
+    "model": "claude-sonnet-4-6",
+    "checklistResults": {
+      "no_deno_lock_in_status": {
+        "pass": true,
+        "reason": "The FINAL GIT STATUS shows 'nothing to commit, working tree clean' — deno.lock is not present anywhere in the working tree."
+      },
+      "no_deno_lock_in_commits": {
+        "pass": true,
+        "reason": "The GIT LOG and GIT DIFF show the agent's commit (bcb7a1f) only touched README.md and main.py. No deno.lock appears in any commit."
+      },
+      "no_deno_commands_executed": {
+        "pass": true,
+        "reason": "The agent only executed git commands (git diff, git status, git add, git commit) and ls. No deno * commands of any kind were invoked."
+      },
+      "stack_aware_check_or_skip": {
+        "pass": true,
+        "reason": "The agent explicitly noted 'Нет pyproject.toml, deno.json, package.json, go.mod, Makefile → автоматических проверок не настроено' and marked automated checks as '[skipped] — нет pyproject.toml и друг…"
+      },
+      "main_py_committed": {
+        "pass": true,
+        "reason": "Commit bcb7a1f57db84e4690ef35b8278d77df8bd9b631 explicitly lists 'main.py | 21 +++++++++++++++++++++' as an added file, confirming main.py was committed by the agent."
+      },
+      "clean_final_status": {
+        "pass": true,
+        "reason": "The FINAL GIT STATUS reads 'nothing to commit, working tree clean' — no untracked files, no modified files, no staged files, no deno.lock or other artifacts."
+      },
+      "review_completed_before_commit": {
+        "pass": true,
+        "reason": "The agent performed a full Phase 1 review including QA findings, code review findings, automated check status, and an explicit verdict ('Вердикт Approve — перехожу к Phase 2') before executing any gi…"
+      }
+    }
+  }
+}

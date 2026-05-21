@@ -9,18 +9,18 @@ import {
 } from "./check-pack-refs.ts";
 
 const primitiveMap = new Map([
-  ["flowai-commit", "core"],
-  ["flowai-plan", "core"],
-  ["flowai-fix-tests", "engineering"],
-  ["flowai-deep-research", "engineering"],
-  ["flowai-engineer-skill", "devtools"],
-  ["flowai-deno-cli", "deno"],
+  ["commit", "core"],
+  ["plan", "core"],
+  ["fix-tests", "engineering"],
+  ["deep-research", "engineering"],
+  ["engineer-skill", "devtools"],
+  ["cli", "deno"],
 ]);
 
 // --- Allowed references ---
 
 Deno.test("pack-refs: intra-pack reference is OK", () => {
-  const content = "See `flowai-fix-tests` for details.";
+  const content = "See `fix-tests` for details.";
   const errors = findCrossPackRefs(
     content,
     "engineering",
@@ -31,7 +31,7 @@ Deno.test("pack-refs: intra-pack reference is OK", () => {
 });
 
 Deno.test("pack-refs: non-core referencing core is OK", () => {
-  const content = "Works with `flowai-commit` command.";
+  const content = "Works with `commit` command.";
   const errors = findCrossPackRefs(
     content,
     "engineering",
@@ -44,7 +44,7 @@ Deno.test("pack-refs: non-core referencing core is OK", () => {
 // --- Forbidden references ---
 
 Deno.test("pack-refs: core referencing non-core is ERROR", () => {
-  const content = "Delegate to `flowai-fix-tests`.";
+  const content = "Delegate to `fix-tests`.";
   const errors = findCrossPackRefs(
     content,
     "core",
@@ -52,14 +52,14 @@ Deno.test("pack-refs: core referencing non-core is ERROR", () => {
     primitiveMap,
   );
   assertEquals(errors.length, 1);
-  assertEquals(errors[0].referencedName, "flowai-fix-tests");
+  assertEquals(errors[0].referencedName, "fix-tests");
   assertEquals(errors[0].referencedPack, "engineering");
   assertEquals(errors[0].pack, "core");
   assertEquals(errors[0].line, 1);
 });
 
 Deno.test("pack-refs: non-core-A referencing non-core-B is ERROR", () => {
-  const content = "Use `flowai-engineer-skill` to create skills.";
+  const content = "Use `engineer-skill` to create skills.";
   const errors = findCrossPackRefs(
     content,
     "engineering",
@@ -67,12 +67,12 @@ Deno.test("pack-refs: non-core-A referencing non-core-B is ERROR", () => {
     primitiveMap,
   );
   assertEquals(errors.length, 1);
-  assertEquals(errors[0].referencedName, "flowai-engineer-skill");
+  assertEquals(errors[0].referencedName, "engineer-skill");
   assertEquals(errors[0].referencedPack, "devtools");
 });
 
 Deno.test("pack-refs: multiple violations on different lines", () => {
-  const content = "Line 1\nUse `flowai-fix-tests`.\nAlso `flowai-deno-cli`.";
+  const content = "Line 1\nUse `fix-tests`.\nAlso `deep-research`.";
   const errors = findCrossPackRefs(
     content,
     "devtools",
@@ -83,7 +83,22 @@ Deno.test("pack-refs: multiple violations on different lines", () => {
   assertEquals(errors[0].line, 2);
   assertEquals(errors[0].referencedPack, "engineering");
   assertEquals(errors[1].line, 3);
-  assertEquals(errors[1].referencedPack, "deno");
+  assertEquals(errors[1].referencedPack, "engineering");
+});
+
+Deno.test("pack-refs: one-word backticked names are ignored", () => {
+  const content = "Set permission to `ask`; do not auto-`save` results.";
+  const map = new Map([
+    ["ask", "memex"],
+    ["save", "memex"],
+  ]);
+  const errors = findCrossPackRefs(
+    content,
+    "devtools",
+    "framework/devtools/skills/x/SKILL.md",
+    map,
+  );
+  assertEquals(errors, []);
 });
 
 Deno.test("pack-refs: no references means no errors", () => {
@@ -97,8 +112,19 @@ Deno.test("pack-refs: no references means no errors", () => {
   assertEquals(errors, []);
 });
 
+Deno.test("pack-refs: bare short names in prose are ignored", () => {
+  const content = "Do a review, then commit the work. Do not pre-scaffold.";
+  const errors = findCrossPackRefs(
+    content,
+    "core",
+    "framework/core/skills/x/SKILL.md",
+    primitiveMap,
+  );
+  assertEquals(errors, []);
+});
+
 Deno.test("pack-refs: core referencing core is OK", () => {
-  const content = "See `flowai-plan` for planning.";
+  const content = "See `plan` for planning.";
   const errors = findCrossPackRefs(
     content,
     "core",

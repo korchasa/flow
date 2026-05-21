@@ -1,0 +1,37 @@
+{
+  "schema": 1,
+  "key": "35973947b5ba2d3d3907cf3ab95e8f1c951764e92d6fc53a6fbf2d659c9413ad",
+  "scenarioId": "commit-task-cleanup-partial",
+  "ide": "claude",
+  "agentModel": "claude-sonnet-4-6",
+  "recordedAt": "2026-05-08T01:26:28.183Z",
+  "result": {
+    "success": true,
+    "score": 100,
+    "errorsCount": 0,
+    "warningsCount": 0,
+    "durationMs": 153073.107291,
+    "tokensUsed": 0,
+    "totalCost": 0,
+    "toolCallsCount": 0,
+    "model": "claude-sonnet-4-6",
+    "checklistResults": {
+      "code_committed": {
+        "pass": true,
+        "reason": "The git log shows commit d3a07687 which explicitly includes 'api.ts | 7 +++++++' in its diff. The file was staged and committed successfully."
+      },
+      "task_file_not_deleted": {
+        "pass": true,
+        "reason": "The agent asked the user about the task file, the user responded 'Оставить, POST ещё не реализован.' The agent confirmed it was left unchanged. The file 'documents/tasks/2026-03-28-add-users-api.md' …"
+      },
+      "asked_user_about_task_file": {
+        "pass": true,
+        "reason": "The agent explicitly used AskUserQuestion with the message: 'Задача documents/tasks/2026-03-28-add-users-api.md содержит невыполненный пункт DoD: «POST /users endpoint creates a new user with validat…"
+      },
+      "clean_status": {
+        "pass": true,
+        "reason": "The final git status output shows 'On branch main / nothing to commit, working tree clean', confirming the repository is in a clean state after the commit."
+      }
+    }
+  }
+}

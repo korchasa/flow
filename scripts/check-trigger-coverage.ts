@@ -1,6 +1,6 @@
 // [FR-ACCEPT.TRIGGER](../documents/requirements.md#fr-accept.trigger-skill-description-matching-verification) — every skill MUST have 3 trigger scenarios (1 pos + 1 adj + 1 false).
 /**
- * Validates that every skill in `framework/<pack>/skills/flowai-*` has
+ * Validates that every skill in `framework/<pack>/skills/*` has
  * the full set of 3 trigger benchmark scenarios required by FR-ACCEPT.TRIGGER.
  *
  * For each skill the following 3 directories must exist with a `mod.ts`:
@@ -104,9 +104,8 @@ export async function validateSkillTriggerCoverage(
 }
 
 /**
- * Walks `frameworkDir/<pack>/skills/flowai-*` and validates each.
- * Skips packs without a `skills/` subdir, and skill dirs that don't match
- * the `flowai-*` prefix.
+ * Walks `frameworkDir/<pack>/skills/*` and validates each.
+ * Skips packs without a `skills/` subdir.
  */
 export async function validateAllTriggerCoverage(
   frameworkDir: string,
@@ -127,7 +126,7 @@ export async function validateAllTriggerCoverage(
     const skills: Deno.DirEntry[] = [];
     try {
       for await (const entry of Deno.readDir(skillsDir)) {
-        if (entry.isDirectory && entry.name.startsWith("flowai-")) {
+        if (entry.isDirectory) {
           skills.push(entry);
         }
       }

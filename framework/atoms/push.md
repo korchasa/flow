@@ -1,12 +1,12 @@
 ---
-name: flowai-push
+name: push
 description: "User-invoked safe git push. Sets upstream on first push only after user confirmation; refuses --force; permits --force-with-lease only with explicit per-push authorization; pauses before pushing to main/master when the remote has diverged. Self-contained — execute the inlined steps directly."
 argument-hint: optional branch name (defaults to current branch)
 _params:
   TERMINATION:
     choices: [TOTAL_STOP, HAND_OFF_TO_NEXT]
     default: TOTAL_STOP
-    description: Final-step behaviour — TOTAL_STOP for standalone /flowai-push; HAND_OFF_TO_NEXT when consumed inside a composite (flowai-ship) so the agent signals completion to the next phase.
+    description: Final-step behaviour — TOTAL_STOP for standalone /push; HAND_OFF_TO_NEXT when consumed inside a composite (ship) so the agent signals completion to the next phase.
 ---
 
 # Task: Safe Git Push
@@ -18,7 +18,7 @@ Push the current branch to its remote with a strict safety contract that reflect
 ## Context
 
 <context>
-`git push` is one of the few operations that has side effects outside the local working tree. This skill encodes the project's safety expectations: pre-flight checks, explicit user gates on irreversible actions, and post-push verification that local `HEAD` actually matches the remote tracking ref. Consumed standalone via `/flowai-push` and as the final phase of the `flowai-ship` composite.
+`git push` is one of the few operations that has side effects outside the local working tree. This skill encodes the project's safety expectations: pre-flight checks, explicit user gates on irreversible actions, and post-push verification that local `HEAD` actually matches the remote tracking ref. Consumed standalone via `/push` and as the final phase of the `ship` composite.
 </context>
 
 ## Rules & Constraints

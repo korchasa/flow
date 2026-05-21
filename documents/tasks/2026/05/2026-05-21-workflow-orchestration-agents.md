@@ -42,8 +42,8 @@ The workflow pack can scaffold/adapt workflows and supervise a run, but it lacks
   - Evidence: `NO_COLOR=1 deno task acceptance-tests --no-cache -f flowai-orchestrate`
 - [x] FR-WORKFLOW-SUPERVISOR: Public supervision skill delegates one run to the supervisor agent; the supervisor diagnoses failed runs from artifacts, patches root cause, resumes the same run, and ignores orchestration policy.
   - Test: `framework/workflow/skills/flowai-supervise/acceptance-tests/delegates-supervisor/mod.ts`
-  - Test: `framework/workflow/agents/flowai-workflow-supervisor/acceptance-tests/failed-run-resume/mod.ts`
-  - Test: `framework/workflow/agents/flowai-workflow-supervisor/acceptance-tests/no-orchestration-policy/mod.ts`
+  - Test: `framework/workflow/agents/flowai-supervisor/acceptance-tests/failed-run-resume/mod.ts`
+  - Test: `framework/workflow/agents/flowai-supervisor/acceptance-tests/no-orchestration-policy/mod.ts`
   - Evidence: `NO_COLOR=1 deno task acceptance-tests --no-cache -f flowai-supervise`
 - [x] FR-WORKFLOW-ORCH, FR-WORKFLOW-SUPERVISOR: README, SRS, SDS, and workflow pack metadata describe the new generic primitives.
   - Test: `NO_COLOR=1 deno task check`
@@ -51,9 +51,9 @@ The workflow pack can scaffold/adapt workflows and supervise a run, but it lacks
 
 ## Solution
 
-1. Add RED acceptance scenarios for `flowai-orchestrate`, `flowai-supervise` delegation, and `flowai-workflow-supervisor`.
+1. Add RED acceptance scenarios for `flowai-orchestrate`, `flowai-supervise` delegation, and `flowai-supervisor`.
 2. Add `flowai-orchestrate` as the public policy entry skill.
-3. Convert `flowai-supervise` into a public wrapper that delegates exactly one workflow/run to `flowai-workflow-supervisor`.
-4. Add `flowai-workflow-orchestrator` and `flowai-workflow-supervisor` agents under the workflow pack.
+3. Convert `flowai-supervise` into a public wrapper that delegates exactly one workflow/run to `flowai-supervisor`.
+4. Add `flowai-orchestrator` and `flowai-supervisor` agents under the workflow pack.
 5. Update `framework/workflow/pack.yaml`, README, SRS, and SDS.
 6. Run targeted acceptance tests without cache, then `deno task check`.

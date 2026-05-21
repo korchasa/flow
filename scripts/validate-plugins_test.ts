@@ -125,7 +125,7 @@ Deno.test("rejects-plugin-manifest-name-mismatch", async () => {
     const manifestPath = join(
       out,
       "plugins",
-      "flowai-core",
+      "flowai",
       ".claude-plugin",
       "plugin.json",
     );
@@ -145,7 +145,7 @@ Deno.test("rejects-skill-with-broken-frontmatter", async () => {
     const skillPath = join(
       out,
       "plugins",
-      "flowai-core",
+      "flowai",
       "skills",
       "plan",
       "SKILL.md",
@@ -162,7 +162,7 @@ Deno.test("rejects-skill-dir-with-unstripped-flowai-prefix", async () => {
   const out = await freshBuild();
   try {
     // Rename one skill dir to retain the flowai- prefix.
-    const skills = join(out, "plugins", "flowai-core", "skills");
+    const skills = join(out, "plugins", "flowai", "skills");
     await Deno.rename(join(skills, "plan"), join(skills, "flowai-plan"));
     const issues = await validateMarketplaceTree(out);
     assert(
@@ -177,7 +177,7 @@ Deno.test("rejects-skill-dir-with-unstripped-flowai-prefix", async () => {
 Deno.test("rejects-agent-with-missing-description", async () => {
   const out = await freshBuild();
   try {
-    const agentsDir = join(out, "plugins", "flowai-core", "agents");
+    const agentsDir = join(out, "plugins", "flowai", "agents");
     let firstAgent: string | undefined;
     for await (const e of Deno.readDir(agentsDir)) {
       if (e.isFile && e.name.endsWith(".md")) {
@@ -232,7 +232,7 @@ Deno.test("codex rejects-invalid-codex-plugin-manifest", async () => {
     const manifestPath = join(
       out,
       "plugins",
-      "flowai-core",
+      "flowai",
       ".codex-plugin",
       "plugin.json",
     );

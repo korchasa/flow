@@ -1,0 +1,41 @@
+{
+  "schema": 1,
+  "key": "773247fc798d23056a49d257ee86695812e99ef53f7fd2864f06a5a178860da7",
+  "scenarioId": "review-and-commit-auto-docs",
+  "ide": "claude",
+  "agentModel": "claude-sonnet-4-6",
+  "recordedAt": "2026-05-17T12:33:03.025Z",
+  "result": {
+    "success": true,
+    "score": 100,
+    "errorsCount": 0,
+    "warningsCount": 0,
+    "durationMs": 72911.66841699998,
+    "tokensUsed": 0,
+    "totalCost": 0,
+    "toolCallsCount": 0,
+    "model": "claude-sonnet-4-6",
+    "checklistResults": {
+      "review_executed": {
+        "pass": true,
+        "reason": "The agent explicitly performed a review phase: it ran `git diff math.ts`, checked for hygiene markers (TODO/FIXME/console.log etc.), read requirements.md and design.md, and produced a structured revi…"
+      },
+      "review_approved": {
+        "pass": true,
+        "reason": "The agent explicitly declared '## Review: Approve' and 'Вердикт **Approve**', reporting 0 critical issues, 0 warnings, and only 1 nit (no tests, but no test infrastructure exists in the project)."
+      },
+      "docs_updated": {
+        "pass": true,
+        "reason": "The agent edited documents/design.md, changing the math.ts description from 'Math utility module with `add` function.' to 'Math utility module with `add` and `subtract` functions.' This is confirmed …"
+      },
+      "docs_committed": {
+        "pass": true,
+        "reason": "The git log shows commit 9024e77 includes 'documents/design.md | 2 +-' (1 insertion, 1 deletion), confirming the documentation change was staged with `git add documents/design.md` and included in the…"
+      },
+      "code_committed": {
+        "pass": true,
+        "reason": "The git log shows commit 9024e77 includes 'math.ts | 1 +', and the git diff confirms the subtract function line was added. The final git status shows 'nothing to commit, working tree clean', confirmi…"
+      }
+    }
+  }
+}

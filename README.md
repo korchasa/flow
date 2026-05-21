@@ -68,7 +68,7 @@ flowai
 
 **Opting a project into local install:** create a `<cwd>/.flowai.yaml` (or run `flowai --local` to generate one). The mere presence of that file is the opt-in marker — subsequent runs without flags will use it.
 
-Framework primitives MAY declare `scope: project-only` or `scope: global-only` in their SKILL.md frontmatter; the filter runs automatically. `/flowai-update` has no scope field because it is plugin/user-level installable and writes only current-project artifacts.
+Framework primitives MAY declare `scope: project-only` or `scope: global-only` in their SKILL.md frontmatter; the filter runs automatically. `/update` has no scope field because it is plugin/user-level installable and writes only current-project artifacts.
 
 `flowai migrate <from> <to>` requires an explicit `--global` or `--local` flag — it never auto-resolves, since cross-IDE migrations have different semantics in each scope.
 
@@ -79,7 +79,7 @@ In addition to the `flowai` CLI, Claude Code and Codex users can install any pac
 ```sh
 # Inside a Claude Code session:
 /plugin marketplace add korchasa/flowai-plugins
-/plugin install flowai-core@flowai-plugins
+/plugin install flowai@flowai-plugins
 # Optional, pick whichever stacks you use:
 /plugin install flowai-deno@flowai-plugins
 /plugin install flowai-typescript@flowai-plugins
@@ -93,10 +93,10 @@ In addition to the `flowai` CLI, Claude Code and Codex users can install any pac
 ```sh
 # From a shell with Codex CLI installed:
 codex plugin marketplace add korchasa/flowai-plugins
-# Then open Codex /plugins and install flowai-core or any pack you use.
+# Then open Codex /plugins and install flowai or any pack you use.
 ```
 
-Skills are invoked under the `/flowai-<pack>:` namespace, e.g. `/flowai-core:commit`, `/flowai-core:plan`, `/flowai-core:update`, `/flowai-engineering:deep-research`, `/flowai-memex:memex-save`, `/flowai-workflow:scaffold`. The `flowai-` prefix is stripped from the namespaced part to avoid a `/flowai-core:flowai-commit` double prefix. Cross-skill references inside skill bodies are rewritten to the namespaced form during build, and pack-level assets (e.g. `AGENTS.template.md`) ship inside each consuming skill — `/flowai-core:update` and `/flowai-core:init` work out of the box without a separate `flowai sync` step. Hooks declared by `devtools` and `memex` are translated to Claude Code's `hooks.json` format automatically.
+Skills are invoked under the plugin namespace: core uses `/flowai:`, while optional packs use `/flowai-<pack>:`, e.g. `/flowai:commit`, `/flowai:plan`, `/flowai:update`, `/flowai-engineering:deep-research`, `/flowai-memex:save`, `/flowai-workflow:scaffold`. Source primitive names are short kebab-case names; the plugin namespace carries the `flowai` brand. Cross-skill references inside skill bodies are rewritten to the namespaced form during build, and pack-level assets (e.g. `AGENTS.template.md`) ship inside each consuming skill — `/flowai:update` and `/flowai:init` work out of the box without a separate `flowai sync` step. Hooks declared by `devtools` and `memex` are translated to Claude Code's `hooks.json` format automatically.
 
 Codex receives the same generated `skills/` payload through `.agents/plugins/marketplace.json` and per-pack `.codex-plugin/plugin.json`. Codex hook execution is feature-gated; enable `[features].plugin_hooks = true` in Codex before relying on plugin hooks.
 
@@ -109,18 +109,18 @@ Local marketplace smoke:
 deno task build-plugins
 
 # Claude Code, one-session smoke without installation:
-claude --plugin-dir ./dist/claude-plugins/plugins/flowai-core
+claude --plugin-dir ./dist/claude-plugins/plugins/flowai
 
 # Claude Code, persistent local user install:
 claude plugin validate ./dist/claude-plugins
 claude plugin marketplace add ./dist/claude-plugins
-claude plugin install flowai-core@flowai-plugins --scope user
+claude plugin install flowai@flowai-plugins --scope user
 
 # Codex, local marketplace registration:
 codex plugin marketplace add ./dist/claude-plugins
 ```
 
-After the Codex command, open Codex `/plugins`, choose the `flowai-plugins` marketplace, install `flowai-core` or another needed pack, then start a new Codex thread. `codex plugin` currently exposes marketplace management only (`marketplace add|upgrade|remove`), not `plugin install`; adding `[plugins."flowai-core@flowai-plugins"] enabled = true` to `~/.codex/config.toml` is not a supported substitute until a new Codex release proves that path loads plugin skills.
+After the Codex command, open Codex `/plugins`, choose the `flowai-plugins` marketplace, install `flowai` or another needed pack, then start a new Codex thread. `codex plugin` currently exposes marketplace management only (`marketplace add|upgrade|remove`), not `plugin install`; adding `[plugins."flowai@flowai-plugins"] enabled = true` to `~/.codex/config.toml` is not a supported substitute until a new Codex release proves that path loads plugin skills.
 
 > **CLI and plugin install are mutually exclusive:** if you install via the plugin marketplace, do NOT also run `flowai sync` for the same IDE in the same project — the CLI detects an installed flowai plugin and aborts to avoid dual installs. Pick one channel.
 
@@ -134,24 +134,24 @@ Copy and paste the following prompt into your AI IDE (Claude Code, Cursor, OpenC
 > 1. Check if Deno v2.x is installed (`deno --version`). If not, ask the user which OS they are on and install Deno using the official method for their platform (macOS: `brew install deno` or `curl -fsSL https://deno.land/install.sh | sh`, Windows: `irm https://deno.land/install.ps1 | iex`, Linux: `curl -fsSL https://deno.land/install.sh | sh`).
 > 2. Run `deno install -g -A jsr:@korchasa/flowai` to install the CLI (skip if already installed).
 > 3. Run `flowai` in the project root to sync skills and agents into the IDE config directory.
-> 4. Run `/flowai-init` to analyze the codebase and generate AGENTS.md files, documentation scaffolding, and development commands.
+> 4. Run `/init` to analyze the codebase and generate AGENTS.md files, documentation scaffolding, and development commands.
 
 ## Updating
 
-Run `/flowai-update` (or plugin namespaced `/flowai-core:update`) in your AI IDE. It reconciles the current project with the installed framework templates:
+Run `/update` (or plugin namespaced `/flowai:update`) in your AI IDE. It reconciles the current project with the installed framework templates:
 
 1. Reads framework templates from project-local assets, plugin-local assets, or user-level assets
 2. Compares them with project-owned artifacts (`AGENTS.md`, `CLAUDE.md`, scaffolded docs/config)
 3. Proposes per-file migrations with diffs and confirmation
 4. Leaves installed skills, agents, plugin caches, and user-level dirs untouched
 
-To update the CLI binary or sync project-local primitives, use the standalone `flowai` CLI. To adapt project-local installed primitives, run `/flowai-adapt`.
+To update the CLI binary or sync project-local primitives, use the standalone `flowai` CLI. To adapt project-local installed primitives, run `/adapt`.
 
 ## How It Works
 
 flowai is a set of **Commands**, **Skills**, and **Agents** — markdown instruction files that AI coding assistants (Cursor, Claude Code, OpenCode, OpenAI Codex, etc.) load into context to follow structured workflows.
 
-- **Commands** (`framework/<pack>/commands/<name>/SKILL.md`) — user-invoked workflows (e.g. `/flowai-commit`). The agent does not auto-discover them.
+- **Commands** (`framework/<pack>/commands/<name>/SKILL.md`) — user-invoked workflows (e.g. `/commit`). The agent does not auto-discover them.
 - **Skills** (`framework/<pack>/skills/<name>/SKILL.md`) — agent-invocable capabilities. The agent picks them up automatically when relevant.
 - **Agents** (`framework/<pack>/agents/<name>/SUBAGENT.md`) — role definitions with specialized capabilities.
 - **Documentation** (`documents/`) — persistent project memory across sessions.
@@ -176,109 +176,109 @@ The framework is organized into **packs** — modular groups of skills, agents, 
 Base commands for development workflows (commit, plan, review, init, etc.).
 
 **Commands:**
-- `flowai-init` — project initialization (AGENTS.md, docs scaffolding, dev commands)
-- `flowai-commit` — atomic commits with QA and self-reflection
-- `flowai-commit-beta` — streamlined commit (targeted doc sync, inline grouping)
-- `flowai-review-and-commit` — streamlined review + commit (reuses diff across phases)
-- `flowai-do-with-plan` — full plan → implement → review-and-commit cycle (user-only composite, **deprecated** — prefer `flowai-ship`)
-- `flowai-push` — safe git push (no `--force`, explicit upstream confirmation, post-push `@{u}==HEAD` verification)
-- `flowai-ship` — terminal full-cycle composite: plan → implement → review → commit → push (4 explicit gates)
-- `flowai-update` — reconcile project AGENTS.md/CLAUDE.md/scaffolded artifacts with framework templates
-- `flowai-adapt` — adapt project-local skills/agents/hooks/assets to project specifics (standalone)
+- `init` — project initialization (AGENTS.md, docs scaffolding, dev commands)
+- `commit` — atomic commits with QA and self-reflection
+- `commit-beta` — streamlined commit (targeted doc sync, inline grouping)
+- `review-and-commit` — streamlined review + commit (reuses diff across phases)
+- `do-with-plan` — full plan → implement → review-and-commit cycle (user-only composite, **deprecated** — prefer `ship`)
+- `push` — safe git push (no `--force`, explicit upstream confirmation, post-push `@{u}==HEAD` verification)
+- `ship` — terminal full-cycle composite: plan → implement → review → commit → push (4 explicit gates)
+- `update` — reconcile project AGENTS.md/CLAUDE.md/scaffolded artifacts with framework templates
+- `adapt` — adapt project-local skills/agents/hooks/assets to project specifics (standalone)
 
 **Skills:**
-- `flowai-do` — TDD implement skill (RED → GREEN → REFACTOR → CHECK over a written plan)
-- `flowai-plan` — task planning (GODS format, gitignored task file)
-- `/flowai-plan-exp-permanent-tasks` (command) — experimental committed-tasks variant; writes a persistent task at `documents/tasks/<YYYY>/<MM>/<slug>.md` with new-shape frontmatter (`date`, `status: to do | in progress | done`, `implements`, `tags`, `related_tasks`); status auto-derives from DoD by commit skills
-- `flowai-epic` — structured feature specification for multi-session features
-- `flowai-review` — QA + code review of current changes
-- `flowai-reflect` — self-analysis of the current session
-- `flowai-reflect-by-history` — cross-session analysis of past IDE transcripts
-- `flowai-investigate` — deep bug investigation via hypothesis-driven experiments
-- `flowai-maintenance` — project health audit (16-category scan + interactive resolution)
-- `flowai-setup-ai-ide-devcontainer` — AI IDE devcontainer setup
-- `flowai-configure-deno-commands` — configure Deno tasks
+- `do` — TDD implement skill (RED → GREEN → REFACTOR → CHECK over a written plan)
+- `plan` — task planning (GODS format, gitignored task file)
+- `/plan-exp-permanent-tasks` (command) — experimental committed-tasks variant; writes a persistent task at `documents/tasks/<YYYY>/<MM>/<slug>.md` with new-shape frontmatter (`date`, `status: to do | in progress | done`, `implements`, `tags`, `related_tasks`); status auto-derives from DoD by commit skills
+- `epic` — structured feature specification for multi-session features
+- `review` — QA + code review of current changes
+- `reflect` — self-analysis of the current session
+- `reflect-by-history` — cross-session analysis of past IDE transcripts
+- `investigate` — deep bug investigation via hypothesis-driven experiments
+- `maintenance` — project health audit (16-category scan + interactive resolution)
+- `setup-ai-ide-devcontainer` — AI IDE devcontainer setup
+- `configure-deno-commands` — configure Deno tasks
 
 **Agents:**
-- `flowai-console-expert` — complex console tasks and command execution
-- `flowai-diff-specialist` — git diff analysis and atomic commit preparation
-- `flowai-skill-adapter` — adapts a single skill to project specifics after upstream update
-- `flowai-agent-adapter` — adapts a single agent to project specifics after upstream update
+- `console-expert` — complex console tasks and command execution
+- `diff-specialist` — git diff analysis and atomic commit preparation
+- `skill-adapter` — adapts a single skill to project specifics after upstream update
+- `agent-adapter` — adapts a single agent to project specifics after upstream update
 
 ### engineering
 
 Procedural engineering knowledge (research, diagrams, writing, testing, etc.).
 
 **Skills:**
-- `flowai-deep-research` — multi-source web research with sub-agents
-- `flowai-draw-mermaid-diagrams` — Mermaid diagrams
-- `flowai-fix-tests` — fix failing tests
-- `flowai-jit-review` — JIT review: synthesize ephemeral tests that pass on parent and fail on diff
-- `flowai-write-prd` — Product Requirements Documents
-- `flowai-write-dep` — Development Enhancement Proposals
-- `flowai-write-gods-tasks` — GODS-format tasks
-- `flowai-write-in-informational-style` — informational writing style
-- `flowai-manage-github-tickets` — GitHub issue management
-- `flowai-browser-automation` — browser automation
-- `flowai-analyze-context` — token usage analysis
-- `flowai-engineer-prompts-for-instant` — prompts for fast models
-- `flowai-engineer-prompts-for-reasoning` — prompts for reasoning models
-- `flowai-interactive-teaching-materials` — interactive HTML teaching materials
+- `deep-research` — multi-source web research with sub-agents
+- `draw-mermaid-diagrams` — Mermaid diagrams
+- `fix-tests` — fix failing tests
+- `jit-review` — JIT review: synthesize ephemeral tests that pass on parent and fail on diff
+- `write-prd` — Product Requirements Documents
+- `write-dep` — Development Enhancement Proposals
+- `write-gods-tasks` — GODS-format tasks
+- `write-in-informational-style` — informational writing style
+- `manage-github-tickets` — GitHub issue management
+- `browser-automation` — browser automation
+- `analyze-context` — token usage analysis
+- `engineer-prompts-for-instant` — prompts for fast models
+- `engineer-prompts-for-reasoning` — prompts for reasoning models
+- `interactive-teaching-materials` — interactive HTML teaching materials
 
 **Agents:**
-- `flowai-deep-research-worker` — research worker for deep research sub-tasks
+- `deep-research-worker` — research worker for deep research sub-tasks
 
 ### ide-bridge
 
 Cross-IDE delegation: run a task in another AI IDE's CLI from the current session.
 
 **Skills:**
-- `flowai-ai-ide-runner` — one-shot relay / fan-out comparison across Claude Code / OpenCode / Cursor / Codex CLIs; child's stdout relayed verbatim
-- `flowai-delegate-to-ide` — delegate a task to another IDE via an isolated-context subagent so the child's transcript stays out of the parent's context
+- `ai-ide-runner` — one-shot relay / fan-out comparison across Claude Code / OpenCode / Cursor / Codex CLIs; child's stdout relayed verbatim
+- `delegate-to-ide` — delegate a task to another IDE via an isolated-context subagent so the child's transcript stays out of the parent's context
 
 **Agents:**
-- `flowai-ide-bridge-worker` — single-shot cross-IDE CLI worker; spawned by `flowai-delegate-to-ide`
+- `worker` — single-shot cross-IDE CLI worker; spawned by `delegate-to-ide`
 
 ### devtools
 
 Skill and agent authoring tools.
 
 **Skills:**
-- `flowai-engineer-skill` — create/modify a skill
-- `flowai-engineer-command` — create/modify a command
-- `flowai-engineer-rule` — create/modify a rule
-- `flowai-engineer-hook` — create/modify a hook
-- `flowai-engineer-subagent` — create/modify a subagent
-- `flowai-write-agent-benchmarks` — agent acceptance tests
+- `engineer-skill` — create/modify a skill
+- `engineer-command` — create/modify a command
+- `engineer-rule` — create/modify a rule
+- `engineer-hook` — create/modify a hook
+- `engineer-subagent` — create/modify a subagent
+- `write-agent-benchmarks` — agent acceptance tests
 
 ### deno
 
 Deno-specific skills.
 
 **Skills:**
-- `flowai-deno-cli` — Deno CLI operations
-- `flowai-deno-deploy` — Deno Deploy management
+- `cli` — Deno CLI operations
+- `deploy` — Deno Deploy management
 
 ### typescript
 
 TypeScript-specific setup skills.
 
 **Skills:**
-- `flowai-setup-agent-code-style-ts-deno` — Deno/TS code style
-- `flowai-setup-agent-code-style-ts-strict` — strict TypeScript
+- `setup-agent-code-style-deno` — Deno/TS code style
+- `setup-agent-code-style-strict` — strict TypeScript
 
 ### workflow
 
 flowai-workflow setup, existing workflow adaptation, policy orchestration, and live-run supervision.
 
 **Skills:**
-- `flowai-scaffold` — scaffold a bundled flowai-workflow DAG or adapt an existing `.flowai-workflow/<name>` with project-specific config, prompts, scripts, and dry-run validation
-- `flowai-orchestrate` — run the `.flowai-workflow/ORCHESTRATION.md` policy loop, choose the next workflow from append-only history, and dispatch each selected run to the supervisor
-- `flowai-supervise` — delegate one live flowai-workflow run to the supervisor, diagnose failures from journal/state/log artifacts, patch root causes, and resume the same run
+- `scaffold` — scaffold a bundled flowai-workflow DAG or adapt an existing `.flowai-workflow/<name>` with project-specific config, prompts, scripts, and dry-run validation
+- `orchestrate` — run the `.flowai-workflow/ORCHESTRATION.md` policy loop, choose the next workflow from append-only history, and dispatch each selected run to the supervisor
+- `supervise` — delegate one live flowai-workflow run to the supervisor, diagnose failures from journal/state/log artifacts, patch root causes, and resume the same run
 
 **Agents:**
-- `flowai-workflow-orchestrator` — context-isolated policy loop owner for workflow selection, decision history, and supervisor delegation requests
-- `flowai-workflow-supervisor` — context-isolated one-run recovery owner for diagnose-and-resume supervision
+- `orchestrator` — context-isolated policy loop owner for workflow selection, decision history, and supervisor delegation requests
+- `supervisor` — context-isolated one-run recovery owner for diagnose-and-resume supervision
 
 ## CLI Commands
 
@@ -329,13 +329,13 @@ Run Claude Code non-interactively with real-time stream-json output. Base primit
 flowai loop "read deno.json and tell me the version"
 
 # Invoke a skill via prompt
-flowai loop "/flowai-analyze-context"
+flowai loop "/analyze-context"
 
 # With agent and auto-approve
 flowai loop --yolo --agent console-expert "list all TODO comments"
 
 # Repeated execution with pause
-flowai loop --yolo --interval 5m --max-iterations 10 "/flowai-maintenance"
+flowai loop --yolo --interval 5m --max-iterations 10 "/maintenance"
 ```
 
 Options: `--agent`, `--model`, `--cwd`, `--yolo`, `--timeout`, `--interval`, `--max-iterations`. Run `flowai loop --help` for details.
@@ -346,7 +346,7 @@ Options: `--agent`, `--model`, `--cwd`, `--yolo`, `--timeout`, `--interval`, `--
 
 Initialize the project structure and documentation:
 
-- Run `flowai-init` to analyze the codebase and generate `AGENTS.md`, SRS, SDS
+- Run `init` to analyze the codebase and generate `AGENTS.md`, SRS, SDS
 - Configure development commands for your stack
 
 ### 2. Task Cycle
@@ -354,15 +354,15 @@ Initialize the project structure and documentation:
 Every task follows the same supervised loop:
 
 1. **Task** — describe what needs to be done
-2. **Plan** (`flowai-plan`) — AI proposes a plan in GODS format. You review, adjust, approve
+2. **Plan** (`plan`) — AI proposes a plan in GODS format. You review, adjust, approve
 3. **Execute** — AI implements the approved plan. You watch the diffs
 4. **Verify** — `deno task check` (or your project's equivalent) must pass. No exceptions
-5. **Review & Commit** (`flowai-review-and-commit`) — AI reviews changes, then prepares atomic commits. You review before push
+5. **Review & Commit** (`review-and-commit`) — AI reviews changes, then prepares atomic commits. You review before push
 
 ### 3. Maintenance
 
-- `flowai-maintenance` — project health audit
-- `flowai-investigate` — root cause analysis for complex bugs
+- `maintenance` — project health audit
+- `investigate` — root cause analysis for complex bugs
 
 ## Key Principles
 

@@ -1,5 +1,5 @@
 ---
-name: flowai-review-and-commit
+name: review-and-commit
 description: "Streamlined two-phase workflow: review, then commit. Verdict gate between phases. Self-contained — execute the inlined steps directly, do NOT invoke other skills via the Skill tool."
 ---
 
@@ -66,7 +66,7 @@ Output a combined summary:
 [ ] Commits executed with Conventional Commits format.
 [ ] Task lifecycle: every staged new-shape task had `status:` auto-derived from DoD checkboxes (`to do | in progress | done`) and rewritten if it differed. Never downgrades `done`. Warn-only on parse errors.
 [ ] Task file cleanup: legacy flat-path tasks — completed deleted, partial confirmed with user. New-shape tasks NEVER deleted.
-[ ] Session complexity check performed; `/flowai-reflect` auto-invoked if signals detected.
+[ ] Session complexity check performed; `/reflect` auto-invoked if signals detected.
 [ ] Post-reflect cleanup commit created when reflect left uncommitted edits to project instructions; otherwise skipped.
 [ ] Both review and commit results reported to user.
 </verification>

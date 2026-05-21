@@ -9,7 +9,6 @@ acceptance-tests/acceptance-tests.lock
 framework/*/skills/*/acceptance-tests/runs/
 framework/*/commands/*/acceptance-tests/runs/
 framework/*/agents/*/acceptance-tests/runs/
-framework/**/flowai-example/
 .env
 __pycache__/
 _research_tmp/
@@ -35,14 +34,14 @@ dist/
 # Every consumer regenerates via `deno run -A scripts/generate-skill-composites.ts --write`
 # before reading. Keep this list in lock-step with `--list-targets` output;
 # scripts/check-skills.ts enforces parity.
-framework/core/commands/flowai-commit-beta/SKILL.md
-framework/core/commands/flowai-do-with-plan/SKILL.md
-framework/core/commands/flowai-plan-exp-permanent-tasks/SKILL.md
-framework/core/commands/flowai-push/SKILL.md
-framework/core/commands/flowai-review-and-commit/SKILL.md
-framework/core/commands/flowai-ship/SKILL.md
-framework/core/skills/flowai-do/SKILL.md
-framework/core/skills/flowai-review/SKILL.md
+framework/core/commands/commit-beta/SKILL.md
+framework/core/commands/do-with-plan/SKILL.md
+framework/core/commands/plan-exp-permanent-tasks/SKILL.md
+framework/core/commands/push/SKILL.md
+framework/core/commands/review-and-commit/SKILL.md
+framework/core/commands/ship/SKILL.md
+framework/core/skills/do/SKILL.md
+framework/core/skills/review/SKILL.md
 
 .flowai/runs/
 .claude/scheduled_tasks.lock

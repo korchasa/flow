@@ -1,0 +1,33 @@
+{
+  "schema": 1,
+  "key": "fb0ce1db0aae04944e048a0fb5d7021c101f3dd30b1ed19fdb2f2dac8c3dc071",
+  "scenarioId": "plan-exp-permanent-tasks-loads-related-tasks",
+  "ide": "claude",
+  "agentModel": "claude-sonnet-4-6",
+  "recordedAt": "2026-05-08T01:39:46.554Z",
+  "result": {
+    "success": true,
+    "score": 100,
+    "errorsCount": 0,
+    "warningsCount": 0,
+    "durationMs": 300141.457916,
+    "tokensUsed": 0,
+    "totalCost": 0,
+    "toolCallsCount": 0,
+    "model": "claude-sonnet-4-6",
+    "checklistResults": {
+      "loads_related_login_task": {
+        "pass": true,
+        "reason": "The agent explicitly identified and named `documents/tasks/2026/04/add-login-form.md` as a related prior task in chat output: 'Связанные предыдущие задачи по FR-AUTH-LOGIN: - `documents/tasks/2026/04…"
+      },
+      "skips_unrelated_profile_task": {
+        "pass": true,
+        "reason": "The agent explicitly stated 'Задача `documents/tasks/2026/04/add-profile-edit.md` не пересекается (только `FR-PROFILE-EDIT`).' — correctly identifying it as unrelated due to no intersection with FR-A…"
+      },
+      "task_file_at_new_path": {
+        "pass": true,
+        "reason": "The agent created the task file at `documents/tasks/2026/05/add-password-reset.md`, which matches the required date-hierarchy pattern `documents/tasks/<YYYY>/<MM>/<slug>.md`. The slug `add-password-r…"
+      }
+    }
+  }
+}

@@ -4,15 +4,15 @@ description: Base commands and skills for development workflows (commit, plan, r
 assets:
   AGENTS.template.md: AGENTS.md
 scaffolds:
-  flowai-init:
+  init:
     - CLAUDE.md
     - documents/requirements.md
     - documents/design.md
-  flowai-setup-ai-ide-devcontainer:
+  setup-ai-ide-devcontainer:
     - .devcontainer/devcontainer.json
     - .devcontainer/Dockerfile
     - .devcontainer/init-firewall.sh
     - .devcontainer/setup-container.sh
-  flowai-configure-deno-commands:
+  configure-deno-commands:
     - deno.json
     - scripts/check.ts

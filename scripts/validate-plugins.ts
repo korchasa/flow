@@ -295,8 +295,8 @@ async function validateClaudeMarketplace(
 }
 
 function resolveSource(pluginRoot: string, source: string): string {
-  // marketplace.json: source = "./flowai-core"; pluginRoot = "./plugins" →
-  // resolves to "./plugins/flowai-core" relative to marketplace root.
+  // marketplace.json: source = "./flowai"; pluginRoot = "./plugins" →
+  // resolves to "./plugins/flowai" relative to marketplace root.
   const stripDot = (s: string) => s.replace(/^\.\//, "");
   const root = stripDot(pluginRoot).replace(/\/$/, "");
   const src = stripDot(source).replace(/^\//, "");
@@ -630,7 +630,7 @@ async function validateAssetReferences(
   // surviving `../assets/...` reference (build pass should have rewritten
   // it to local `assets/...`). Per-file existence is enforced fail-fast by
   // the build itself; doc-style mentions of `assets/<example>` inside meta
-  // skills (e.g. `flowai-engineer-command`) are not real refs and must not
+  // skills (e.g. `engineer-command`) are not real refs and must not
   // false-positive here.
   if (/\.\.\/(?:\.\.\/)*assets\//.test(text)) {
     ctx.add(

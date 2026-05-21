@@ -211,9 +211,9 @@ Deno.test("FR-UNIVERSAL.DISCLOSURE: file exceeding 5000 tokens is error", () => 
 
 Deno.test("FR-UNIVERSAL.DISCLOSURE: composite skills are exempt from 5000-token cap", () => {
   const content = "x".repeat(40000); // 10000 tokens — would fail for non-composite
-  const fm = { name: "flowai-do-with-plan", description: "y" };
+  const fm = { name: "do-with-plan", description: "y" };
   const errors = validateProgressiveDisclosure(
-    "flowai-do-with-plan",
+    "do-with-plan",
     content,
     fm,
   );
@@ -226,9 +226,9 @@ Deno.test("FR-UNIVERSAL.DISCLOSURE: composite skills are exempt from 5000-token 
 
 Deno.test("FR-UNIVERSAL.DISCLOSURE: composite skills still hit the 500-line cap", () => {
   const content = "x\n".repeat(500); // 500 lines exactly
-  const fm = { name: "flowai-do-with-plan", description: "y" };
+  const fm = { name: "do-with-plan", description: "y" };
   const errors = validateProgressiveDisclosure(
-    "flowai-do-with-plan",
+    "do-with-plan",
     content,
     fm,
   );
@@ -242,11 +242,11 @@ Deno.test("FR-UNIVERSAL.DISCLOSURE: composite skills still hit the 500-line cap"
 Deno.test("FR-UNIVERSAL.DISCLOSURE: composite skills still hit the catalog (frontmatter) cap", () => {
   const content = "short";
   const fm = {
-    name: "flowai-do-with-plan",
+    name: "do-with-plan",
     description: "x".repeat(500), // > 100 tokens
   };
   const errors = validateProgressiveDisclosure(
-    "flowai-do-with-plan",
+    "do-with-plan",
     content,
     fm,
   );
@@ -384,16 +384,16 @@ Deno.test("inferKind: skills/ directory → skill", () => {
 // --- validateKindInvariants (FR-PACKS.{CMD,SKILL}-INVARIANT) ---
 
 Deno.test("validateKindInvariants: command without flag passes", () => {
-  const errors = validateKindInvariants("flowai-commit", "command", {
-    name: "flowai-commit",
+  const errors = validateKindInvariants("commit", "command", {
+    name: "commit",
     description: "x",
   });
   assertEquals(errors, []);
 });
 
 Deno.test("validateKindInvariants: command WITH flag fails", () => {
-  const errors = validateKindInvariants("flowai-commit", "command", {
-    name: "flowai-commit",
+  const errors = validateKindInvariants("commit", "command", {
+    name: "commit",
     description: "x",
     "disable-model-invocation": true,
   });

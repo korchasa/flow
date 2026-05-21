@@ -46,7 +46,7 @@ Explicit non-goals (this task):
 - Decisions already locked with the user (chat, 2026-05-16):
   - **Coexistence:** additive — both CLI and marketplace channels live.
   - **Pilot scope:** one pack, `core`.
-  - **Skill names inside plugins:** strip the `flowai-` prefix so invocations look like `/flowai-core:commit`, not `/flowai-core:flowai-commit`.
+  - **Skill names inside plugins:** strip the `flowai-` prefix so invocations look like `/flowai:commit`, not `/flowai:flowai-commit`.
   - **Source layout:** still open — decided in the Variants section of this plan.
 
 ### Current State
@@ -72,32 +72,32 @@ Explicit non-goals (this task):
 - **Trust + security**: marketplaces execute arbitrary code at user privilege; docs are explicit ("Only install plugins and add marketplaces from sources you trust"). README + plugin description must surface the same warning we already give for the CLI.
 - **Reproducibility**: marketplace adds via direct `marketplace.json` URL DO NOT resolve relative paths; the pilot must work as a **git-cloned marketplace** (`\plugin marketplace add korchasa/flowai`), not a URL-only marketplace.
 - **Pack manifest scaffolds**: `pack.yaml` `scaffolds:` is read by flowai CLI at sync time; plugin install does not run scaffolds. Skills that *invoke* scaffolds at runtime (`flowai-init`, `flowai-configure-deno-commands`, `flowai-setup-ai-ide-devcontainer`) keep working under plugin install — they write project files when the user invokes them, not at install. Scaffolds-as-install-side-effect is **not** brought to the marketplace path.
-- **Hook count today**: only the `devtools` pack ships a hook (`flowai-skill-structure-validate`). The pilot pack `core` has zero hooks, so the hook transform path is exercised by future packs, not the pilot. Plan must still specify the contract so multi-pack rollout is unblocked.
+- **Hook count today**: only the `devtools` pack ships a hook (`skill-structure-validate`). The pilot pack `core` has zero hooks, so the hook transform path is exercised by future packs, not the pilot. Plan must still specify the contract so multi-pack rollout is unblocked.
 - **Existing `flowai-cli` repo** owns CLI-side transforms; the marketplace build can reuse those modules (vendor or re-publish as a Deno library) OR re-implement minimally in this repo. Decision deferred to Solution step.
-- **`disable-model-invocation` semantics carry over verbatim.** Primitives under `framework/<pack>/commands/` are user-only by definition (FR-PACKS.CMD-INVARIANT). The marketplace build injects `disable-model-invocation: true` into the emitted SKILL.md exactly as flowai CLI does today (FR-DIST.SYNC). Effect in Claude Code: the model cannot auto-invoke commands; the user invokes them as `/flowai-core:<short>`. This is deliberate parity with the CLI path; if pilot feedback says "let the model invoke `flowai-plan` automatically", that is a separate change to FR-PACKS.CMD-INVARIANT, not a marketplace-layer tweak.
+- **`disable-model-invocation` semantics carry over verbatim.** Primitives under `framework/<pack>/commands/` are user-only by definition (FR-PACKS.CMD-INVARIANT). The marketplace build injects `disable-model-invocation: true` into the emitted SKILL.md exactly as flowai CLI does today (FR-DIST.SYNC). Effect in Claude Code: the model cannot auto-invoke commands; the user invokes them as `/flowai:<short>`. This is deliberate parity with the CLI path; if pilot feedback says "let the model invoke `flowai-plan` automatically", that is a separate change to FR-PACKS.CMD-INVARIANT, not a marketplace-layer tweak.
 - **Pre-conditions for local smoke-test:** the manual install smoke (`/plugin marketplace add ./dist/claude-plugins` + `/plugin install`) requires Claude Code CLI installed locally. If the maintainer works only through the web UI, the smoke step is performed in a sandbox VM with `claude` CLI installed once. Documented in the SDS subsection.
 - **Marketplace name is configurable but defaults to repo name.** Build script exposes `--marketplace-name`; default `flowai-plugins` matches the downstream repo name. Single source of truth lives in `scripts/build-claude-plugins.ts` as an exported constant `DEFAULT_MARKETPLACE_NAME`. CI passes the flag explicitly so the value is visible in the workflow file.
 
 ## Definition of Done
 
-- [ ] FR-DIST.MARKETPLACE: `scripts/build-claude-plugins.ts` reads `framework/core/` and emits a Claude-plugin-shaped tree under `dist/claude-plugins/` containing `.claude-plugin/marketplace.json` and `plugins/flowai-core/.claude-plugin/plugin.json` + payload dirs.
+- [ ] FR-DIST.MARKETPLACE: `scripts/build-claude-plugins.ts` reads `framework/core/` and emits a Claude-plugin-shaped tree under `dist/claude-plugins/` containing `.claude-plugin/marketplace.json` and `plugins/flowai/.claude-plugin/plugin.json` + payload dirs.
   - Test: `scripts/build-claude-plugins_test.ts::emits-marketplace-and-plugin-manifest-for-core`
   - Evidence: `deno test -A scripts/build-claude-plugins_test.ts --filter 'emits-marketplace-and-plugin-manifest-for-core'` exits 0
-- [ ] FR-DIST.MARKETPLACE: skill and command directory names inside the generated plugin payload have the `flowai-` prefix stripped (e.g. `framework/core/skills/flowai-plan/` → `plugins/flowai-core/skills/plan/`). Plugin invocations therefore appear as `/flowai-core:<short-name>`, not `/flowai-core:flowai-<short-name>`.
+- [ ] FR-DIST.MARKETPLACE: skill and command directory names inside the generated plugin payload have the `flowai-` prefix stripped (e.g. `framework/core/skills/flowai-plan/` → `plugins/flowai/skills/plan/`). Plugin invocations therefore appear as `/flowai:<short-name>`, not `/flowai:flowai-<short-name>`.
   - Test: `scripts/build-claude-plugins_test.ts::skill-and-command-dirs-have-prefix-stripped`
-  - Evidence: `deno task build-plugins && find dist/claude-plugins/plugins/flowai-core -type d -name 'flowai-*'` returns empty
+  - Evidence: `deno task build-plugins && find dist/claude-plugins/plugins/flowai -type d -name 'flowai-*'` returns empty
 - [ ] FR-DIST.MARKETPLACE: `disable-model-invocation: true` is injected into `SKILL.md` frontmatter for every primitive sourced from `framework/core/commands/`, and absent for every primitive sourced from `framework/core/skills/`.
   - Test: `scripts/build-claude-plugins_test.ts::commands-get-disable-model-invocation-injected-skills-do-not`
   - Evidence: `deno test -A scripts/build-claude-plugins_test.ts --filter 'disable-model-invocation'` exits 0
-- [ ] FR-DIST.MARKETPLACE: Agent frontmatter in `plugins/flowai-core/agents/*.md` is Claude-native — fields outside the Claude-supported set (per FR-DIST.MAPPING universal→Claude column) are stripped; supported fields preserved verbatim. Agent body unchanged.
+- [ ] FR-DIST.MARKETPLACE: Agent frontmatter in `plugins/flowai/agents/*.md` is Claude-native — fields outside the Claude-supported set (per FR-DIST.MAPPING universal→Claude column) are stripped; supported fields preserved verbatim. Agent body unchanged.
   - Test: `scripts/build-claude-plugins_test.ts::agent-frontmatter-matches-claude-native-mapping`
   - Evidence: `deno test -A scripts/build-claude-plugins_test.ts --filter 'agent-frontmatter'` exits 0
 - [ ] FR-DIST.MARKETPLACE: Marketplace + plugin manifest JSON validates against the official schema fields documented in `documents/design.md` (see Solution step 5). Required fields present, no unknown top-level fields, plugin `name` is kebab-case.
   - Test: `scripts/build-claude-plugins_test.ts::marketplace-and-plugin-json-schema-valid`
   - Evidence: `deno test -A scripts/build-claude-plugins_test.ts --filter 'schema-valid'` exits 0; additionally `claude plugin validate ./dist/claude-plugins` exits 0 (manual smoke).
-- [ ] FR-DIST.MARKETPLACE: Local smoke install end-to-end. From a fresh clone: `deno task build-plugins`, then in Claude Code `/plugin marketplace add ./dist/claude-plugins` followed by `/plugin install flowai-core@flowai-plugins`, then `/flowai-core:commit` (or any other `flowai-core` skill) invokes successfully.
+- [ ] FR-DIST.MARKETPLACE: Local smoke install end-to-end. From a fresh clone: `deno task build-plugins`, then in Claude Code `/plugin marketplace add ./dist/claude-plugins` followed by `/plugin install flowai@flowai-plugins`, then `/flowai:commit` (or any other `flowai` skill) invokes successfully.
   - Test: `manual — korchasa`
-  - Evidence: transcript saved in PR description showing `/help` output listing `flowai-core:*` skills.
+  - Evidence: transcript saved in PR description showing `/help` output listing `flowai:*` skills.
 - [ ] FR-DIST.MARKETPLACE: CI job `release-claude-plugins` on a `framework-v*` tag builds the plugin tree, force-pushes to `korchasa/flowai-plugins` with a commit message `release: framework-vX.Y.Z`, and tags the same SHA `framework-vX.Y.Z` in the downstream repo.
   - Test: `manual — korchasa` (one preview tag, then one real tag)
   - Evidence: `gh api repos/korchasa/flowai-plugins/git/refs/tags/framework-vX.Y.Z --jq '.object.sha'` returns a non-empty SHA after the tagged framework release.
@@ -116,7 +116,7 @@ Explicit non-goals (this task):
 - [ ] FR-DIST.MARKETPLACE: SDS gains a `### 3.X Claude Code plugin marketplace` subsection describing the build script, the `dist/claude-plugins/` layout, the CI release job, and the contract with `korchasa/flowai-plugins`.
   - Test: `manual — korchasa`
   - Evidence: `grep -n 'Claude Code plugin marketplace' documents/design.md` returns ≥`1`.
-- [ ] FR-DIST.MARKETPLACE: README §Installation gains a "Claude Code plugin marketplace (pilot)" subsection showing the two-step `/plugin marketplace add korchasa/flowai-plugins` + `/plugin install flowai-core@flowai-plugins` flow, with an explicit trust-and-security note.
+- [ ] FR-DIST.MARKETPLACE: README §Installation gains a "Claude Code plugin marketplace (pilot)" subsection showing the two-step `/plugin marketplace add korchasa/flowai-plugins` + `/plugin install flowai@flowai-plugins` flow, with an explicit trust-and-security note.
   - Test: `manual — korchasa`
   - Evidence: `grep -n 'plugin marketplace add' README.md` returns ≥`1` line inside the Installation section; `grep -n 'execute arbitrary code' README.md` returns ≥`1`.
 - [ ] FR-DIST.MARKETPLACE: Build fails fast when a source primitive violates `FR-PACKS.CMD-INVARIANT` (a `framework/<pack>/commands/*/SKILL.md` already carrying `disable-model-invocation` in source) or `FR-PACKS.SKILL-INVARIANT` (a `framework/<pack>/skills/*/SKILL.md` carrying it). Error message names the offending file path and the violated invariant.
@@ -144,7 +144,7 @@ Selected variant: **C-refined** — generated `dist/claude-plugins/` tree (not c
     - `README.md` (hand-authored once, refers users back to this repo for issues and source).
     - `LICENSE` (mirror of framework repo's license).
     - `.claude-plugin/marketplace.json` (generated).
-    - `plugins/flowai-core/...` (generated; future packs land alongside).
+    - `plugins/flowai/...` (generated; future packs land alongside).
   - No CI of its own. No tests. No `.gitignore` beyond standard editor files.
 
 ### Sub-decision — transform code: vendor for pilot
@@ -184,8 +184,8 @@ Outputs (deterministic; sorted-keys JSON, stable file ordering):
      "metadata": { "pluginRoot": "./plugins" },
      "plugins": [
        {
-         "name": "flowai-core",
-         "source": "./flowai-core",
+         "name": "flowai",
+         "source": "./flowai",
          "description": "<copied from framework/core/pack.yaml description>"
        }
      ]
@@ -196,7 +196,7 @@ Outputs (deterministic; sorted-keys JSON, stable file ordering):
 2. `<out>/plugins/flowai-<pack>/.claude-plugin/plugin.json`:
    ```json
    {
-     "name": "flowai-core",
+     "name": "flowai",
      "description": "<from pack.yaml>",
      "author": { "name": "korchasa" },
      "repository": "https://github.com/korchasa/flowai",
@@ -209,7 +209,7 @@ Outputs (deterministic; sorted-keys JSON, stable file ordering):
    `version` deliberately omitted (per pilot policy — commit SHA = version, no manual bumping). Bump strategy revisited before multi-pack rollout. Version-resolution implication: Claude Code uses the SHA of the **downstream** `korchasa/flowai-plugins` commit. Because CI only pushes downstream on `framework-v*` tag (B3 trigger), users with auto-update on receive exactly one update per framework release — not one per upstream commit.
 
 3. `<out>/plugins/flowai-<pack>/skills/<stripped>/SKILL.md` — one per source file under `framework/<pack>/{commands,skills}/`:
-   - Source dir name `framework/core/skills/flowai-investigate/` → stripped name `investigate` → emitted at `plugins/flowai-core/skills/investigate/SKILL.md`. If a source dir name does not start with `flowai-`, the name is preserved unchanged (defensive — currently every source dir does start with `flowai-`).
+   - Source dir name `framework/core/skills/flowai-investigate/` → stripped name `investigate` → emitted at `plugins/flowai/skills/investigate/SKILL.md`. If a source dir name does not start with `flowai-`, the name is preserved unchanged (defensive — currently every source dir does start with `flowai-`).
    - Stripping rule applied to the **outermost** directory name only. Nested files (`scripts/`, `references/`) preserved verbatim under the stripped parent.
    - Commands (source path under `commands/`) get `disable-model-invocation: true` injected into frontmatter at top level. Skills get nothing injected. Existing frontmatter merged via YAML round-trip (parse → mutate → serialize, key order preserved).
    - Body bytes preserved verbatim (no whitespace normalisation).
@@ -232,7 +232,7 @@ Determinism contract:
 
 Test scenarios (Deno test framework, all hermetic — no network, no global `~/.claude/`):
 - `emits-marketplace-and-plugin-manifest-for-core`: smoke test, build core, assert the two manifest files exist with required fields.
-- `skill-and-command-dirs-have-prefix-stripped`: assert no directory under `plugins/flowai-core/skills/` starts with `flowai-`.
+- `skill-and-command-dirs-have-prefix-stripped`: assert no directory under `plugins/flowai/skills/` starts with `flowai-`.
 - `commands-get-disable-model-invocation-injected-skills-do-not`: for each emitted SKILL.md, frontmatter must contain `disable-model-invocation: true` iff source path was under `framework/core/commands/`.
 - `agent-frontmatter-matches-claude-native-mapping`: feed a fixture agent with universal frontmatter (all fields populated); assert transformed frontmatter matches FR-DIST.MAPPING universal→Claude column exactly.
 - `marketplace-and-plugin-json-schema-valid`: run a hand-written Zod schema for marketplace.json and plugin.json against generated output. Schema mirrors the table from `documents/design.md` §3.X.
@@ -311,9 +311,9 @@ One-time, manual:
    ```markdown
    #### FR-DIST.MARKETPLACE Claude Code Plugin Marketplace (Pilot)
 
-   - **Desc:** Additional distribution channel for Claude Code users. The framework publishes a Claude-Code-native plugin marketplace at `korchasa/flowai-plugins`. Catalog (`marketplace.json`) and plugin payloads are generated from `framework/<pack>/` on every `framework-v*` tag by CI; no plugin artefacts are committed to this repo. Pilot ships only the `core` pack as plugin `flowai-core`; remaining packs follow as separate tasks. flowai CLI distribution (FR-DIST.SYNC) is unaffected and remains the channel for Cursor/OpenCode/Codex.
+   - **Desc:** Additional distribution channel for Claude Code users. The framework publishes a Claude-Code-native plugin marketplace at `korchasa/flowai-plugins`. Catalog (`marketplace.json`) and plugin payloads are generated from `framework/<pack>/` on every `framework-v*` tag by CI; no plugin artefacts are committed to this repo. Pilot ships only the `core` pack as plugin `flowai`; remaining packs follow as separate tasks. flowai CLI distribution (FR-DIST.SYNC) is unaffected and remains the channel for Cursor/OpenCode/Codex.
    - **Tasks:** [claude-code-plugin-marketplace-pilot](tasks/2026/05/claude-code-plugin-marketplace-pilot.md)
-   - **Scenario:** User on Claude Code runs `/plugin marketplace add korchasa/flowai-plugins` once, then `/plugin install flowai-core@flowai-plugins`. Skills become available as `/flowai-core:<short-name>` (the `flowai-` prefix is stripped from skill directory names during build to avoid `/flowai-core:flowai-commit`-style double prefix). Updates arrive via Claude Code's built-in `/plugin update` / auto-update flow tied to the downstream repo's commit SHA.
+   - **Scenario:** User on Claude Code runs `/plugin marketplace add korchasa/flowai-plugins` once, then `/plugin install flowai@flowai-plugins`. Skills become available as `/flowai:<short-name>` (the `flowai-` prefix is stripped from skill directory names during build to avoid `/flowai:flowai-commit`-style double prefix). Updates arrive via Claude Code's built-in `/plugin update` / auto-update flow tied to the downstream repo's commit SHA.
    - **Acceptance:**
      - [ ] `scripts/build-claude-plugins.ts` emits a deterministic plugin tree under `dist/claude-plugins/`.
        Evidence: `scripts/build-claude-plugins_test.ts::byte-deterministic-rerun`.
@@ -364,13 +364,13 @@ In addition to the `flowai` CLI, Claude Code users can install the `core` pack a
 
 \```shell
 /plugin marketplace add korchasa/flowai-plugins
-/plugin install flowai-core@flowai-plugins
+/plugin install flowai@flowai-plugins
 /reload-plugins
 \```
 
 > **Security:** Claude Code plugins execute arbitrary code at your user privilege. Only install marketplaces and plugins from sources you trust. The `korchasa/flowai-plugins` repository is a CI-generated mirror of this framework's `core` pack and contains no human-authored code beyond `README.md` and `LICENSE`.
 
-Skills are then invoked under the `/flowai-core:` namespace, e.g. `/flowai-core:commit`. The remaining packs (devtools, engineering, deno, typescript, memex) continue to ship via the `flowai` CLI; multi-pack marketplace rollout follows after the pilot validates the pipeline.
+Skills are then invoked under the `/flowai:` namespace, e.g. `/flowai:commit`. The remaining packs (devtools, engineering, deno, typescript, memex) continue to ship via the `flowai` CLI; multi-pack marketplace rollout follows after the pilot validates the pipeline.
 ```
 
 ### Execution order
@@ -382,7 +382,7 @@ Skills are then invoked under the `/flowai-core:` namespace, e.g. `/flowai-core:
 5. Edit README (Installation subsection).
 6. Commit with `feat(dist): claude code plugin marketplace pilot (FR-DIST.MARKETPLACE)`.
 7. Tag preview release `framework-vX.Y.Z-pilot.1`; verify CI round-trip into `flowai-plugins`.
-8. Manual smoke install: `/plugin marketplace add korchasa/flowai-plugins` + `/plugin install flowai-core@flowai-plugins` + invoke a skill. Capture transcript in PR description.
+8. Manual smoke install: `/plugin marketplace add korchasa/flowai-plugins` + `/plugin install flowai@flowai-plugins` + invoke a skill. Capture transcript in PR description.
 9. Cut real `framework-vX.Y.Z` release. Flip SRS `FR-DIST.MARKETPLACE` `Status` to `[x]`.
 10. Trigger `flowai-cli` repo CI against this framework HEAD; verify green.
 
@@ -415,7 +415,7 @@ After the pilot landed, several core skills broke or degraded under plugin insta
   - Evidence: `deno task validate-plugins`
 - [x] **FR-DIST.MARKETPLACE**: `version` injected into plugin.json and marketplace entry from upstream `deno.json` (semver-validated by validator).
   - Test: `scripts/build-claude-plugins_test.ts::injects-version-from-upstream-deno-json`
-  - Evidence: `jq '.version' dist/claude-plugins/plugins/flowai-core/.claude-plugin/plugin.json`
+  - Evidence: `jq '.version' dist/claude-plugins/plugins/flowai/.claude-plugin/plugin.json`
 - [x] **FR-DIST.MARKETPLACE**: skill `tags:` unioned, sorted, capped at 8, emitted on marketplace entry only.
   - Test: `scripts/build-claude-plugins_test.ts::collects-tags-into-marketplace-entry-only`
   - Evidence: synthetic-fixture test (core skills declare no tags yet)

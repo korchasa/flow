@@ -24,18 +24,18 @@ Deno.test("autoInstallEnabled: only exact true enables auto-install", () => {
 
 Deno.test("installedClaudeFlowaiPluginIds: returns enabled user flowai marketplace plugins", () => {
   const installed = installedClaudeFlowaiPluginIds([
-    { id: "flowai-core@flowai-plugins", scope: "user", enabled: true },
+    { id: "flowai@flowai-plugins", scope: "user", enabled: true },
     { id: "flowai-deno@flowai-plugins", scope: "user", enabled: false },
     { id: "flowai-devtools@flowai-plugins", scope: "project", enabled: true },
     { id: "playground@claude-plugins-official", scope: "user", enabled: true },
   ]);
 
-  assertEquals(installed, ["flowai-core@flowai-plugins"]);
+  assertEquals(installed, ["flowai@flowai-plugins"]);
 });
 
 Deno.test("codexInstalledFlowaiPluginsFromConfig: reads enabled flowai plugin tables", () => {
   const installed = codexInstalledFlowaiPluginsFromConfig(`
-[plugins."flowai-core@flowai-plugins"]
+[plugins."flowai@flowai-plugins"]
 enabled = true
 
 [plugins."flowai-deno@flowai-plugins"]
@@ -45,5 +45,5 @@ enabled = false
 enabled = true
 `);
 
-  assertEquals(installed, ["flowai-core@flowai-plugins"]);
+  assertEquals(installed, ["flowai@flowai-plugins"]);
 });

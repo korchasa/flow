@@ -1,0 +1,33 @@
+{
+  "schema": 1,
+  "key": "f9fe19ca2d75e4ef7820245efe1c8ef877f8b7ea49e44f05b549f41df92c12e4",
+  "scenarioId": "ship-pauses-for-variant-selection",
+  "ide": "claude",
+  "agentModel": "claude-sonnet-4-6",
+  "recordedAt": "2026-05-17T12:15:15.340Z",
+  "result": {
+    "success": true,
+    "score": 100,
+    "errorsCount": 0,
+    "warningsCount": 0,
+    "durationMs": 146397.803084,
+    "tokensUsed": 0,
+    "totalCost": 0,
+    "toolCallsCount": 0,
+    "model": "claude-sonnet-4-6",
+    "checklistResults": {
+      "variants_presented": {
+        "pass": true,
+        "reason": "The agent explicitly presented two implementation variants in chat: Variant A (thin wrapper over native .trim()) and Variant B (trim with optional character set using regex). Each variant included pr…"
+      },
+      "stopped_at_gate": {
+        "pass": true,
+        "reason": "After the user said 'None of these match — let me rethink. Please STOP.', the agent responded with an explicit STOP message: 'STOP — відповідно до правила «Plan → Implement Gate»: варіант не обрано, …"
+      },
+      "no_implementation_changes": {
+        "pass": true,
+        "reason": "The git status shows only 'Untracked files: documents/' with no staged or modified source files. The git diff (init..HEAD) is empty — no commits were made after init. The only file created was the pl…"
+      }
+    }
+  }
+}

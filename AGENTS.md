@@ -68,8 +68,8 @@ Assumes users will follow the defined workflows and keep documentation up-to-dat
 
 All workflows are implemented as **Skills** according to the [agentskills.io](https://agentskills.io/home) standard (folders with `SKILL.md`). At the framework source level they are split into two sibling directories per pack, which is the **primary classifier**:
 
-- **Commands** — `framework/<pack>/commands/<name>/SKILL.md`. User-only workflows. Invoked by the user (e.g. `/flowai-commit`); the agent does not auto-discover them. Name: `flowai-*` (e.g. `flowai-commit`, `flowai-review-and-commit`, `flowai-update`). Source SKILL.md MUST NOT declare `disable-model-invocation` — the CLI writer injects `disable-model-invocation: true` at sync time based on directory placement.
-- **Skills** — `framework/<pack>/skills/<name>/SKILL.md`. Agent-invocable capabilities (e.g. `flowai-draw-mermaid-diagrams`). Name: `flowai-*`; command-vs-skill classification is determined by source directory. Source SKILL.md MUST NOT declare `disable-model-invocation`.
+- **Commands** — `framework/<pack>/commands/<name>/SKILL.md`. User-only workflows. Invoked by the user (e.g. `/commit` or plugin `/flowai:commit`); the agent does not auto-discover them. Name: short kebab-case without the legacy `flowai-` prefix (e.g. `commit`, `review-and-commit`, `update`). Source SKILL.md MUST NOT declare `disable-model-invocation` — the CLI writer injects `disable-model-invocation: true` at sync time based on directory placement.
+- **Skills** — `framework/<pack>/skills/<name>/SKILL.md`. Agent-invocable capabilities (e.g. `draw-mermaid-diagrams`). Name: short kebab-case without the legacy `flowai-` prefix; command-vs-skill classification is determined by source directory. Source SKILL.md MUST NOT declare `disable-model-invocation`.
 
 ### Two meanings of "command" — don't confuse them
 
@@ -93,9 +93,9 @@ All workflows are implemented as **Skills** according to the [agentskills.io](ht
 ## Documentation Map
 
 Maps source-code paths to documentation sections that describe them. Used by
-`flowai-commit-beta` / `flowai-review-and-commit-beta` to find the section to
-compare-and-update when each file changes. If a change touches a path below and
-the mapped section contradicts new code → update the section.
+`commit-beta` / `review-and-commit` to find the section to compare-and-update
+when each file changes. If a change touches a path below and the mapped section
+contradicts new code → update the section.
 
 - `framework/<pack>/commands/<name>/SKILL.md` → [README §Packs](README.md#packs), [FR-CMD-EXEC](documents/requirements.md#fr-cmd-exec-command-execution) / any `FR-*<NAME>*` clause, [SDS §3.1.1 Product Packs](documents/design.md#3.1.1-product-packs-framework). **If the path is listed as a target in `framework/composites.yaml`, the SKILL.md is a gitignored generator build artefact — do NOT hand-edit and do NOT expect it in git; edit `framework/atoms/<name>.md` or `framework/composites/<name>.md` and let any consumer (`deno task check`, etc.) regenerate on next run, or manually `deno run -A scripts/generate-skill-composites.ts --write` (FR-SKILL-COMPOSE).**
 - `framework/<pack>/skills/<name>/SKILL.md` → [README §Packs](README.md#packs), [FR-HOWTO](documents/requirements.md#fr-howto-automation-how-to) / any `FR-*<NAME>*` clause, [SDS §3.1.1 Product Packs](documents/design.md#3.1.1-product-packs-framework). **Same gitignored-build-artefact rule as commands above.**
@@ -129,7 +129,7 @@ Your memory resets between sessions. Documentation is the only link to past deci
   2. **Non-code evidence** (acceptance tests, URLs, config files without comment support, file/dir existence):
      Placed directly in SRS/SDS next to the criterion.
   Without evidence of either type, the criterion stays `[ ]`.
-- **Acceptance-as-gate**: Every FR in SRS MUST declare a runnable `**Acceptance:**` reference — a benchmark scenario ID (flowai's own idiom, matched by `check-fr-coverage.ts`), a test `path::name`, a verification command, or `manual — <reviewer>`. Prose-only acceptance is not sufficient. An FR stays `[ ]` until its acceptance reference exists and passes on the current commit. Enforced by `flowai-plan` (DoD tuple), `flowai-review` / `flowai-review-and-commit` (FR Coverage Audit — blocking), and `flowai-commit` / `flowai-review-and-commit` (FR Acceptance Gate on SRS edits).
+- **Acceptance-as-gate**: Every FR in SRS MUST declare a runnable `**Acceptance:**` reference — a benchmark scenario ID (flowai's own idiom, matched by `check-fr-coverage.ts`), a test `path::name`, a verification command, or `manual — <reviewer>`. Prose-only acceptance is not sufficient. An FR stays `[ ]` until its acceptance reference exists and passes on the current commit. Enforced by `plan` (DoD tuple), `review` / `review-and-commit` (FR Coverage Audit — blocking), and `commit` / `review-and-commit` (FR Acceptance Gate on SRS edits).
 
 ### SRS Format (`documents/requirements.md`)
 
@@ -207,8 +207,8 @@ Your memory resets between sessions. Documentation is the only link to past deci
 
 When a task creates a new framework primitive, decide the subdir FIRST:
 
-- **User-invoked via `/<name>`** (no model auto-discovery) → `framework/<pack>/commands/` with `flowai-*` names. Examples: `/flowai-commit`, `/flowai-update`, `/flowai-review-and-commit`.
-- **Model auto-invocable** (skill activation by description match) → `framework/<pack>/skills/` with `flowai-*` names. Examples: `flowai-fix-tests`, `flowai-deep-research`.
+- **User-invoked via `/<name>`** (no model auto-discovery) → `framework/<pack>/commands/` with short kebab-case names. Examples: `/commit`, `/update`, `/review-and-commit`.
+- **Model auto-invocable** (skill activation by description match) → `framework/<pack>/skills/` with short kebab-case names. Examples: `fix-tests`, `deep-research`.
 
 Picking the wrong subdir fails `check-naming-prefix.ts` (NP-3) and requires a file move + SRS/SDS location edits. The CLI writer injects `disable-model-invocation: true` automatically for `commands/` — do NOT set it in source.
 

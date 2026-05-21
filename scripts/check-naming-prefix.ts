@@ -1,11 +1,12 @@
 /**
- * Validates that all framework primitives (skills, commands, agents, hooks) use the expected name prefix.
+ * Validates framework primitive source names.
  *
  * Checks:
- * - NP-1: All primitives must start with "flowai-".
- * - NP-2: Commands under `<pack>/commands/` must match `/^flowai-/` AND must not use the retired skill-name infix.
- * - NP-3: Skills under `<pack>/skills/` must match `/^flowai-/` AND must not use the retired skill-name infix.
+ * - NP-1: Commands, skills, and agents must NOT use the retired "flowai-" source prefix.
+ * - NP-2: Commands under `<pack>/commands/` must not use the retired skill-name infix.
+ * - NP-3: Skills under `<pack>/skills/` must not use the retired skill-name infix.
  * - NP-4: Installed names must be unique across commands and skills because both install into `.{ide}/skills/`.
+ * - NP-5: Primitive names must not repeat their owning pack prefix.
  *
  * NP-2 and NP-3 keep the retired skill-name namespace out of new
  * primitives after the naming migration.
@@ -14,11 +15,12 @@
  */
 import { join } from "@std/path";
 
-const REQUIRED_PREFIX = "flowai-";
 const RETIRED_SKILL_PREFIX = "flowai-" + "skill-";
-// Command and skill names share `flowai-`; their kind is determined by path.
-const COMMAND_PREFIX_RE = /^flowai-/;
-const SKILL_PREFIX_RE = /^flowai-/;
+const RETIRED_SOURCE_PREFIX = "flowai-";
+const SHORT_NAME_RE = /^[a-z0-9][a-z0-9-]*$/;
+const PACK_ALIAS_SEGMENTS: Readonly<Record<string, readonly string[]>> = {
+  typescript: ["ts"],
+};
 
 export type NamingError = {
   name: string;
@@ -28,12 +30,13 @@ export type NamingError = {
 };
 
 /**
- * Validates that a primitive name starts with the required prefix and matches
- * the kind-specific convention.
+ * Validates that a primitive source name is short and matches the
+ * kind-specific convention.
  */
 export function validateNamingPrefix(
   name: string,
   kind: "skill" | "command" | "agent" | "hook",
+  packName?: string,
 ): NamingError[] {
   if (name.length === 0) {
     return [{
@@ -44,46 +47,73 @@ export function validateNamingPrefix(
     }];
   }
 
-  if (!name.startsWith(REQUIRED_PREFIX)) {
+  if (!SHORT_NAME_RE.test(name)) {
     return [{
       name,
       kind,
       criterion: "NP-1",
-      message: `${kind} '${name}' must start with '${REQUIRED_PREFIX}' prefix`,
+      message:
+        `${kind} '${name}' must be kebab-case lowercase alphanumeric with hyphens`,
     }];
   }
 
-  // NP-2 / NP-3: kind-specific prefix conventions for commands vs skills.
+  // NP-2 / NP-3: kind-specific retired namespace checks for commands vs skills.
   // Commands are user-invoked workflows; skills are agent-invocable capabilities.
   // A name in the wrong shape for its directory is almost always a misplaced
   // primitive — surface it loudly at validation time.
-  if (
-    kind === "command" &&
-    (!COMMAND_PREFIX_RE.test(name) || name.startsWith(RETIRED_SKILL_PREFIX))
-  ) {
+  if (kind === "command" && name.startsWith(RETIRED_SKILL_PREFIX)) {
     return [{
       name,
       kind,
       criterion: "NP-2",
-      message:
-        `command '${name}' must start with 'flowai-' without the retired ` +
-        `skill-name infix ` +
+      message: `command '${name}' must not use the retired skill-name infix ` +
         `(retired skill-name prefix)`,
     }];
   }
-  if (
-    kind === "skill" &&
-    (!SKILL_PREFIX_RE.test(name) || name.startsWith(RETIRED_SKILL_PREFIX))
-  ) {
+  if (kind === "skill" && name.startsWith(RETIRED_SKILL_PREFIX)) {
     return [{
       name,
       kind,
       criterion: "NP-3",
-      message:
-        `skill '${name}' must start with 'flowai-' without the retired ` +
-        `skill-name infix ` +
+      message: `skill '${name}' must not use the retired skill-name infix ` +
         `(agent-invocable capability; kind is determined by skills/)`,
     }];
+  }
+
+  if (
+    name.startsWith(RETIRED_SOURCE_PREFIX)
+  ) {
+    return [{
+      name,
+      kind,
+      criterion: "NP-1",
+      message:
+        `${kind} '${name}' must not use retired source prefix '${RETIRED_SOURCE_PREFIX}'`,
+    }];
+  }
+
+  if (packName && name.startsWith(`${packName}-`)) {
+    return [{
+      name,
+      kind,
+      criterion: "NP-5",
+      message:
+        `${kind} '${name}' must not repeat owning pack prefix '${packName}-'`,
+    }];
+  }
+
+  const aliases = packName ? PACK_ALIAS_SEGMENTS[packName] ?? [] : [];
+  const nameSegments = name.split("-");
+  for (const alias of aliases) {
+    if (nameSegments.includes(alias)) {
+      return [{
+        name,
+        kind,
+        criterion: "NP-5",
+        message:
+          `${kind} '${name}' must not repeat owning pack alias '${alias}'`,
+      }];
+    }
   }
 
   return [];
@@ -116,7 +146,7 @@ export async function validateAllNamingPrefixes(
     try {
       for await (const entry of Deno.readDir(skillsDir)) {
         if (entry.isDirectory) {
-          errors.push(...validateNamingPrefix(entry.name, "skill"));
+          errors.push(...validateNamingPrefix(entry.name, "skill", pack.name));
           const owners = installedSkillNames.get(entry.name) ?? [];
           owners.push(`${pack.name}/skills`);
           installedSkillNames.set(entry.name, owners);
@@ -129,7 +159,9 @@ export async function validateAllNamingPrefixes(
     try {
       for await (const entry of Deno.readDir(commandsDir)) {
         if (entry.isDirectory) {
-          errors.push(...validateNamingPrefix(entry.name, "command"));
+          errors.push(
+            ...validateNamingPrefix(entry.name, "command", pack.name),
+          );
           const owners = installedSkillNames.get(entry.name) ?? [];
           owners.push(`${pack.name}/commands`);
           installedSkillNames.set(entry.name, owners);
@@ -143,7 +175,7 @@ export async function validateAllNamingPrefixes(
       for await (const entry of Deno.readDir(agentsDir)) {
         if (entry.isFile && entry.name.endsWith(".md")) {
           const stem = entry.name.replace(/\.md$/, "");
-          errors.push(...validateNamingPrefix(stem, "agent"));
+          errors.push(...validateNamingPrefix(stem, "agent", pack.name));
         }
       }
     } catch { /* no agents/ */ }
@@ -153,7 +185,7 @@ export async function validateAllNamingPrefixes(
     try {
       for await (const entry of Deno.readDir(hooksDir)) {
         if (entry.isDirectory) {
-          errors.push(...validateNamingPrefix(entry.name, "hook"));
+          errors.push(...validateNamingPrefix(entry.name, "hook", pack.name));
         }
       }
     } catch { /* no hooks/ */ }
@@ -176,7 +208,7 @@ export async function validateAllNamingPrefixes(
 
 if (import.meta.main) {
   console.log(
-    "Checking naming prefix (NP-1: all primitives must use 'flowai-' prefix)...",
+    "Checking primitive source names (NP-1/NP-5: primitives must be unprefixed)...",
   );
 
   const errors = await validateAllNamingPrefixes("framework");
@@ -188,6 +220,8 @@ if (import.meta.main) {
     console.error(`\n${errors.length} violation(s) found.`);
     Deno.exit(1);
   } else {
-    console.log("✅ All primitives use 'flowai-' prefix.");
+    console.log(
+      "✅ All primitive source names follow the short-name contract.",
+    );
   }
 }

@@ -1,5 +1,5 @@
 ---
-name: flowai-commit-beta
+name: commit-beta
 description: Streamlined commit workflow — fewer tool calls, targeted doc sync
 _params:
   DIFF_SOURCE:
@@ -43,7 +43,7 @@ The project follows Conventional Commits 1.0.0 and uses a structured documentati
      - **Scope**: Files in `framework/agents/`, `framework/skills/`, `**/AGENTS.md`, `**/CLAUDE.md`, IDE agent/skill directories (`.claude/agents/`, `.claude/skills/`).
      - **Auto-detection**: When ALL staged files match the `agent:` scope paths above, automatically use `agent:` type without asking.
      - **Mixed changes**: If staged files include both agent/skill files AND application code, use the appropriate application type (`feat:`, `fix:`, etc.) — NOT `agent:`.
-     - **Example**: `agent: update flowai-commit skill with atomic grouping rules` or `agent(flowai-init): add brownfield detection logic`.
+     - **Example**: `agent: update commit skill with atomic grouping rules` or `agent(init): add brownfield detection logic`.
    - **Scope**: MAY use optional scope in parentheses to provide context, e.g., `feat(llm): add retry logic`.
    - **Breaking Changes**: MUST indicate breaking changes by adding a `!` before the colon (e.g., `feat!: change API contract`) OR by adding `BREAKING CHANGE:` in the footer.
    - **CRITICAL**: Commits without these prefixes are STRICTLY FORBIDDEN.
@@ -111,13 +111,13 @@ The project follows Conventional Commits 1.0.0 and uses a structured documentati
      - Workarounds or non-obvious solutions were applied.
    - Also check the **user's invocation message** for explicit complexity descriptors: phrases like "rough session", "had to retry", "wrong approach", "failed", "had to correct you". These count as direct signals.
    - If **any** of these signals are detected:
-     a. Announce briefly which signals fired (one line, e.g., "Detected retries and user correction — running /flowai-reflect").
+     a. Announce briefly which signals fired (one line, e.g., "Detected retries and user correction — running /reflect").
      b. **Pre-command signal check**: if the signals appear only in the invocation message (i.e., the problematic interactions predated this command and are not visible in the conversation history), output: "You mentioned a rough session — briefly describe what went wrong and what you corrected. This will be included as reflect context." Use the user's answer as additional context when invoking reflect.
-     c. Invoke the `flowai-reflect` skill directly (via the Skill tool, native slash-command execution, or inline execution of its `SKILL.md` instructions — whichever the host IDE supports).
+     c. Invoke the `reflect` skill directly (via the Skill tool, native slash-command execution, or inline execution of its `SKILL.md` instructions — whichever the host IDE supports).
      d. Do NOT ask the user for confirmation before invoking; proceed autonomously (the context question in step b is not a confirmation request — it gathers missing information).
    - If none detected, skip silently.
 7. **Post-Reflect Cleanup Commit** _(skip if reflect produced no edits)_
-   - Run `git status`. If reflect left working-tree edits (typically `AGENTS.md`, `**/CLAUDE.md`, `framework/**`, `.claude/**`, `documents/**`): stage them and commit as `agent: apply reflect-suggested improvements` (or narrower scope, e.g. `agent(flowai-commit-beta): tighten doc-audit gate`). Do NOT amend earlier commits — keep reflect-driven edits as a separate commit. If `git status` is clean, skip.
+   - Run `git status`. If reflect left working-tree edits (typically `AGENTS.md`, `**/CLAUDE.md`, `framework/**`, `.claude/**`, `documents/**`): stage them and commit as `agent: apply reflect-suggested improvements` (or narrower scope, e.g. `agent(commit-beta): tighten doc-audit gate`). Do NOT amend earlier commits — keep reflect-driven edits as a separate commit. If `git status` is clean, skip.
 8. **Verify Clean State**
    - Run `git status` to confirm all changes are committed.
    - If uncommitted changes remain, investigate and report to the user.
@@ -132,7 +132,7 @@ The project follows Conventional Commits 1.0.0 and uses a structured documentati
 - [ ] Commits executed automatically without user prompt.
 - [ ] Conventional Commits format used.
 - [ ] Task file cleanup: completed task files deleted, partial task files confirmed with user.
-- [ ] Session complexity check performed; `/flowai-reflect` auto-invoked if signals detected.
+- [ ] Session complexity check performed; `/reflect` auto-invoked if signals detected.
 - [ ] Post-reflect cleanup commit created when reflect left uncommitted edits to project instructions; otherwise skipped.
 </verification>
 

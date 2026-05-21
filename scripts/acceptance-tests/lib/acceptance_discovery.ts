@@ -107,7 +107,7 @@ export function selectScenarios(
     : allScenarios;
 
   // Apply skill override: repoint filtered scenarios to a different skill.
-  // Useful for A/B testing (e.g., run flowai-commit acceptance tests against flowai-commit-beta).
+  // Useful for A/B testing (e.g., run commit acceptance tests against commit-beta).
   if (skillOverride) {
     scenariosToRun = scenariosToRun
       .filter((s) => s.skill) // only skill-based scenarios

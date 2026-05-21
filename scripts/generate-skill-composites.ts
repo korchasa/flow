@@ -551,8 +551,7 @@ function extractStepByStepBlock(body: string, source: string): string {
  * documented in framework/AGENTS.md § Composite Skill Authoring:
  *   1. **No delegation** rule present in <rules>.
  *   2. Description contains "Self-contained — execute the inlined steps directly".
- *   3. Description does NOT name any source skill (lexical check against the
- *      manifest's atoms map).
+ *   3. Description does NOT name source skills as explicit invocations.
  *   4. Every verdict gate has both Approve and Reject branches (heuristic:
  *      "Approve" + ("Request Changes" OR "Reject") in the same gate body).
  *   5. 500-line cap on the emitted file.
@@ -573,7 +572,11 @@ export function validateCompositeCanon(
     );
   }
   for (const atomId of Object.keys(manifest.atoms)) {
-    if (desc.includes(atomId)) {
+    const explicitSourceName = new RegExp(
+      String.raw`(?:flowai-${escapeRegExp(atomId)}|` + "`" +
+        escapeRegExp(atomId) + "`" + String.raw`)`,
+    );
+    if (explicitSourceName.test(desc)) {
       throw new Error(
         `[generate-skill-composites] composite '${id}' (${target}): description MUST NOT name source skill '${atomId}'`,
       );
@@ -599,6 +602,10 @@ export function validateCompositeCanon(
       `[generate-skill-composites] composite '${id}' (${target}): ${lineCount} lines exceeds 500-line cap`,
     );
   }
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 /** Compare rendered targets against on-disk; return per-target unified diffs. */

@@ -114,11 +114,11 @@ export function findCrossPackRefs(
       if (refPack === filePack) continue;
       if (refPack === "core" && filePack !== "core") continue;
 
-      // Match word-boundary references in any context (code, prose, comments).
-      // NOTE: This catches references in prose text too, not just code/imports.
-      // To avoid false positives, do not mention other packs' skill/agent names
-      // verbatim — use generic descriptions instead.
-      const pattern = new RegExp(`\\b${escapeRegex(name)}\\b`);
+      // Match explicit primitive mentions only. Short unprefixed names such as
+      // "review", "plan", or "scaffold" are common prose words, so bare text
+      // is not a reliable cross-pack reference signal.
+      if (!name.includes("-")) continue;
+      const pattern = new RegExp("`" + escapeRegex(name) + "`");
       if (pattern.test(line)) {
         errors.push({
           file: filePath,

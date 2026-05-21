@@ -81,7 +81,7 @@ Business value:
   - Evidence: `deno task build-plugins && deno task check` exits 0
 - [x] FR-DIST.MARKETPLACE: CI downstream sync preserves `README.md` and `LICENSE`, publishes both `.claude-plugin/` and `.agents/plugins/` catalog files, and keeps one release commit/tag per framework release.
   - Test: manual — korchasa
-  - Evidence: GitHub Actions run `26005062103` succeeded; downstream `korchasa/flowai-plugins` main is `d80cb59a016a6773912ffa6ddc6f61b6e23c658e` (`release: framework-v0.12.17`); GitHub contents API returns `.agents/plugins/marketplace.json` and `plugins/flowai-core/.codex-plugin/plugin.json`.
+  - Evidence: GitHub Actions run `26005062103` succeeded; downstream `korchasa/flowai-plugins` main is `d80cb59a016a6773912ffa6ddc6f61b6e23c658e` (`release: framework-v0.12.17`); GitHub contents API returns `.agents/plugins/marketplace.json` and `plugins/flowai/.codex-plugin/plugin.json`.
 - [x] FR-DIST.MARKETPLACE: README documents Codex installation through the plugin marketplace and warns that plugin installs and `flowai sync` should not be mixed for the same Codex project.
   - Test: manual — korchasa
   - Evidence: `grep -n 'codex plugin marketplace add korchasa/flowai-plugins' README.md` returns a non-empty match
@@ -93,7 +93,7 @@ Business value:
   - Evidence: README documents `codex plugin marketplace add ./dist/claude-plugins`, interactive `/plugins` install, and the current lack of `codex plugin install`.
 - [ ] FR-DIST.MARKETPLACE: Codex local smoke proves installed plugin skills load from the plugin cache.
   - Test: manual — korchasa
-  - Evidence: transcript shows `/plugins` installs `flowai-core`, a new Codex thread sees a skill source under `.codex/plugins/cache/flowai-plugins/.../skills/...`, and no old `~/.codex/skills` or `.agents/skills` source shadows it.
+  - Evidence: transcript shows `/plugins` installs `flowai`, a new Codex thread sees a skill source under `.codex/plugins/cache/flowai-plugins/.../skills/...`, and no old `~/.codex/skills` or `.agents/skills` source shadows it.
 
 ## Solution
 
@@ -101,7 +101,7 @@ Selected variant: **1 — shared generator, shared downstream repository**.
 
 Implementation status: local build, validation, tests, docs, push, CI, downstream publication, and local install instructions are done. Interactive Codex `/plugins` install smoke remains open.
 
-Smoke note (2026-05-18): `codex plugin marketplace add /Users/korchasa/www/flowai/flowai/dist/claude-plugins` succeeds against a clean temporary Codex home and writes `[marketplaces.flowai-plugins]`. `codex plugin` currently exposes marketplace management only (`marketplace add|upgrade|remove`), not a non-interactive plugin install command. A full smoke still requires opening Codex `/plugins`, installing `flowai-core`, and starting a new thread. A `codex exec` attempt with temporary `-c` marketplace/plugin overrides reached the model, but the visible `flowai-plan` source was the existing global `r0/flowai-plan/SKILL.md`, so it does not prove plugin-store loading.
+Smoke note (2026-05-18): `codex plugin marketplace add /Users/korchasa/www/flowai/flowai/dist/claude-plugins` succeeds against a clean temporary Codex home and writes `[marketplaces.flowai-plugins]`. `codex plugin` currently exposes marketplace management only (`marketplace add|upgrade|remove`), not a non-interactive plugin install command. A full smoke still requires opening Codex `/plugins`, installing `flowai`, and starting a new thread. A `codex exec` attempt with temporary `-c` marketplace/plugin overrides reached the model, but the visible `flowai-plan` source was the existing global `r0/flowai-plan/SKILL.md`, so it does not prove plugin-store loading.
 
 ### Architecture
 
@@ -112,7 +112,7 @@ dist/claude-plugins/
   .claude-plugin/marketplace.json
   .agents/plugins/marketplace.json
   plugins/
-    flowai-core/
+    flowai/
       .claude-plugin/plugin.json
       .codex-plugin/plugin.json
       skills/
@@ -173,10 +173,10 @@ The payload under `plugins/flowai-<pack>/` remains shared. Only the top-level ma
        },
        "plugins": [
          {
-           "name": "flowai-core",
+           "name": "flowai",
            "source": {
              "source": "local",
-             "path": "./plugins/flowai-core"
+             "path": "./plugins/flowai"
            },
            "policy": {
              "installation": "AVAILABLE",
@@ -190,7 +190,7 @@ The payload under `plugins/flowai-<pack>/` remains shared. Only the top-level ma
    - Write `.codex-plugin/plugin.json` inside every plugin root:
      ```json
      {
-       "name": "flowai-core",
+       "name": "flowai",
        "version": "0.12.15",
        "description": "...",
        "author": { "name": "korchasa" },
@@ -269,10 +269,10 @@ Manual smoke after a preview downstream publish:
 codex plugin marketplace add korchasa/flowai-plugins
 ```
 
-Then open Codex `/plugins`, select the flowai marketplace, install `flowai-core`, start a new thread, and verify an installed flowai skill can be invoked or auto-loaded.
+Then open Codex `/plugins`, select the flowai marketplace, install `flowai`, start a new thread, and verify an installed flowai skill can be invoked or auto-loaded.
 
 Smoke pass criteria:
 - Codex lists the custom `flowai-plugins` marketplace.
-- Codex shows `flowai-core` as installable.
-- Installing `flowai-core` copies the plugin into Codex's plugin cache without schema errors.
-- A new Codex thread can access at least one installed flowai skill from `flowai-core`.
+- Codex shows `flowai` as installable.
+- Installing `flowai` copies the plugin into Codex's plugin cache without schema errors.
+- A new Codex thread can access at least one installed flowai skill from `flowai`.

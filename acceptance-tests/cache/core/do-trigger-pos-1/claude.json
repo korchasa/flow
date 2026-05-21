@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "key": "80ae6724da75756f54fcba5f9920d71782f9de880362b88d8d33397a1e62e3c3",
+  "scenarioId": "do-trigger-pos-1",
+  "ide": "claude",
+  "agentModel": "claude-sonnet-4-6",
+  "recordedAt": "2026-05-17T09:56:39.069Z",
+  "result": {
+    "success": true,
+    "score": 100,
+    "errorsCount": 0,
+    "warningsCount": 0,
+    "durationMs": 42015.24575,
+    "tokensUsed": 0,
+    "totalCost": 0,
+    "toolCallsCount": 0,
+    "model": "claude-sonnet-4-6",
+    "checklistResults": {
+      "skill_invoked": {
+        "pass": true,
+        "reason": "The agent explicitly invoked the `do` skill via a `Skill` tool call (`{\"skill\": \"do\"}`) as its very first action. The final result message also confirms: 'Навык `do` успешно вызв…"
+      }
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "schema": 1,
+  "key": "2f6129469e0e031a0ae15c0462dc63829ff917533b8423035a01d6347b0a7cb2",
+  "scenarioId": "review-and-commit-reads-docs",
+  "ide": "claude",
+  "agentModel": "claude-sonnet-4-6",
+  "recordedAt": "2026-05-17T12:35:04.008Z",
+  "result": {
+    "success": true,
+    "score": 100,
+    "errorsCount": 0,
+    "warningsCount": 0,
+    "durationMs": 93990.06095900002,
+    "tokensUsed": 0,
+    "totalCost": 0,
+    "toolCallsCount": 0,
+    "model": "claude-sonnet-4-6",
+    "checklistResults": {
+      "read_srs": {
+        "pass": true,
+        "reason": "The agent explicitly used the Read tool on 'documents/requirements.md' (full sandbox path: /Users/korchasa/www/flowai/flowai/acceptance-tests/runs/2026-05-17T12-15-44/review-and-commit-reads-d…"
+      },
+      "read_sds": {
+        "pass": true,
+        "reason": "The agent explicitly used the Read tool on 'documents/design.md' (full sandbox path: /Users/korchasa/www/flowai/flowai/acceptance-tests/runs/2026-05-17T12-15-44/review-and-commit-reads-docs/ru…"
+      }
+    }
+  }
+}

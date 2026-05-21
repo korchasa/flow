@@ -1,5 +1,5 @@
 ---
-name: flowai-review
+name: review
 description: Use when the user asks to review CURRENT uncommitted changes (staged, unstaged, or branch diff) as QA + lead engineer before committing — verdict on task completion, code quality, architecture, cleanup. Requires an existing diff. Do NOT trigger on generic "is this code good?" questions without a diff, or on post-merge code review of historical commits.
 ---
 
@@ -34,7 +34,7 @@ Input sources:
 
 <rules>
 1. **Scope**: Review ONLY changed/added files. Do NOT audit the whole project
-   (that is `flowai-maintenance`'s job).
+   (that is `maintenance`'s job).
 2. **Diff-first**: Start from `git diff`. Every finding must reference a
    specific file and line in the diff.
 3. **Two roles, one pass**: Produce findings under two categories (QA, Code
@@ -117,7 +117,7 @@ Input sources:
        run the project check command **chosen via the same manifest-detection
        rule from step 2** (MUST NOT run stack-specific commands without the
        corresponding manifest). Delegate to a console/shell-capable agent
-       (e.g., `flowai-console-expert`). Return pass/fail + full output.
+       (e.g., `console-expert`). Return pass/fail + full output.
      - **SA2**: Run hygiene grep scan on diff output — search for `TODO`,
        `FIXME`, `HACK`, `XXX`, `console.log`, `temp_*`, `*.tmp`, `*.bak`,
        hardcoded secrets patterns. Delegate to a console/shell-capable agent.

@@ -6,75 +6,75 @@
 # Never shipped to user IDE configs.
 schema_version: 1
 atoms:
-  flowai-plan-exp-permanent-tasks:
+  plan-exp-permanent-tasks:
     source: framework/atoms/plan-exp-permanent-tasks.md
-    target: framework/core/commands/flowai-plan-exp-permanent-tasks/SKILL.md
+    target: framework/core/commands/plan-exp-permanent-tasks/SKILL.md
     default_params:
       TERMINATION: TOTAL_STOP
-  flowai-review:
+  review:
     source: framework/atoms/review.md
-    target: framework/core/skills/flowai-review/SKILL.md
-  flowai-commit-beta:
+    target: framework/core/skills/review/SKILL.md
+  commit-beta:
     source: framework/atoms/commit-beta.md
-    target: framework/core/commands/flowai-commit-beta/SKILL.md
+    target: framework/core/commands/commit-beta/SKILL.md
     default_params:
       DIFF_SOURCE: FRESH_READ
-  flowai-do:
+  do:
     source: framework/atoms/do.md
-    target: framework/core/skills/flowai-do/SKILL.md
+    target: framework/core/skills/do/SKILL.md
     default_params:
       TERMINATION: TOTAL_STOP
-  flowai-push:
+  push:
     source: framework/atoms/push.md
-    target: framework/core/commands/flowai-push/SKILL.md
+    target: framework/core/commands/push/SKILL.md
     default_params:
       TERMINATION: TOTAL_STOP
 composites:
-  flowai-review-and-commit:
-    target: framework/core/commands/flowai-review-and-commit/SKILL.md
+  review-and-commit:
+    target: framework/core/commands/review-and-commit/SKILL.md
     wrapper: framework/composites/review-and-commit.md
     phases:
       - title: Phase 1 — Review
-        atom: flowai-review
+        atom: review
       - title: Phase 2 — Commit
-        atom: flowai-commit-beta
+        atom: commit-beta
         params:
           DIFF_SOURCE: REUSE_PRIOR_PHASE
-  flowai-do-with-plan:
-    target: framework/core/commands/flowai-do-with-plan/SKILL.md
+  do-with-plan:
+    target: framework/core/commands/do-with-plan/SKILL.md
     wrapper: framework/composites/do-with-plan.md
     phases:
       - title: Plan Phase
-        atom: flowai-plan-exp-permanent-tasks
+        atom: plan-exp-permanent-tasks
         params:
           TERMINATION: HAND_OFF_TO_NEXT
       - title: Implement Phase
         inline: true
       - title: Review-and-Commit Phase (review)
-        atom: flowai-review
+        atom: review
       - title: Commit Steps (continuation of Review-and-Commit Phase)
-        atom: flowai-commit-beta
+        atom: commit-beta
         params:
           DIFF_SOURCE: REUSE_PRIOR_PHASE
-  flowai-ship:
-    target: framework/core/commands/flowai-ship/SKILL.md
+  ship:
+    target: framework/core/commands/ship/SKILL.md
     wrapper: framework/composites/ship.md
     phases:
       - title: Plan Phase
-        atom: flowai-plan-exp-permanent-tasks
+        atom: plan-exp-permanent-tasks
         params:
           TERMINATION: HAND_OFF_TO_NEXT
       - title: Implement Phase
-        atom: flowai-do
+        atom: do
         params:
           TERMINATION: HAND_OFF_TO_NEXT
       - title: Review Phase
-        atom: flowai-review
+        atom: review
       - title: Commit Phase
-        atom: flowai-commit-beta
+        atom: commit-beta
         params:
           DIFF_SOURCE: REUSE_PRIOR_PHASE
       - title: Push Phase
-        atom: flowai-push
+        atom: push
         params:
           TERMINATION: TOTAL_STOP

@@ -91,8 +91,7 @@ export function installedClaudeFlowaiPluginIds(
   return entries
     .filter((entry) =>
       typeof entry.id === "string" &&
-      entry.id.startsWith("flowai-") &&
-      entry.id.endsWith("@flowai-plugins") &&
+      isFlowaiMarketplacePluginId(entry.id) &&
       entry.scope === "user" &&
       entry.enabled === true
     )
@@ -120,6 +119,12 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+function isFlowaiMarketplacePluginId(pluginId: string): boolean {
+  if (!pluginId.endsWith("@flowai-plugins")) return false;
+  const name = pluginId.slice(0, -"@flowai-plugins".length);
+  return name === "flowai" || name.startsWith("flowai-");
+}
+
 export function codexInstalledFlowaiPluginsFromConfig(
   configToml: string,
 ): string[] {
@@ -127,8 +132,7 @@ export function codexInstalledFlowaiPluginsFromConfig(
   const plugins = isRecord(parsed.plugins) ? parsed.plugins : {};
   return Object.entries(plugins)
     .filter(([pluginId, config]) =>
-      pluginId.startsWith("flowai-") &&
-      pluginId.endsWith("@flowai-plugins") &&
+      isFlowaiMarketplacePluginId(pluginId) &&
       isRecord(config) &&
       config.enabled === true
     )

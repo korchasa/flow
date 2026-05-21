@@ -27,7 +27,7 @@ Let a parent agent in IDE A delegate a multi-step task to IDE B (e.g. Claude →
 `flowai-ai-ide-runner` (FR-AI-IDE-RUNNER) is a courier-style skill: it spawns one or more external CLIs (`claude -p`, `codex exec`, `opencode run`, `cursor-agent -p`) inline from the parent's session and relays stdout verbatim. Every byte of the child runtime's output lands in the parent's context. For one-shot second-opinion / fan-out comparisons that is fine. For "have Codex implement this whole feature for me" it floods the parent.
 
 Variant B (user-selected): create a dedicated `framework/ide-bridge/` pack, move the existing relay skill into it, and add:
-1. A subagent `flowai-ide-bridge-worker` whose sole job is to own the cross-IDE invocation in its own isolated context.
+1. A subagent `flowai-worker` whose sole job is to own the cross-IDE invocation in its own isolated context.
 2. A skill wrapper `flowai-delegate-to-ide` that the parent triggers on delegation queries; the skill instructs the parent to call the worker via the Agent/Task tool rather than running the child CLI inline.
 
 The existing relay skill stays in scope but moves home (path-only refactor, no semantic change). Its 7 acceptance scenarios travel with it.
@@ -58,10 +58,10 @@ The existing relay skill stays in scope but moves home (path-only refactor, no s
 - [x] FR-AI-IDE-RUNNER: skill moved to `framework/ide-bridge/skills/flowai-ai-ide-runner/` with all 7 acceptance-test scenarios; old path is gone; SRS + SDS + README references updated.
   - Test: 7 existing scenarios (4 execution + 3 trigger) discoverable under the new path (auto-discovery via `targetAgentPath` scans `framework/<pack>/{skills,commands}/`).
   - Evidence: `test -f framework/ide-bridge/skills/flowai-ai-ide-runner/SKILL.md && ! test -e framework/engineering/skills/flowai-ai-ide-runner && deno run -A scripts/check-trigger-coverage.ts && deno run -A scripts/check-pack-refs.ts` exits 0 ✅.
-- [x] FR-IDE-BRIDGE-WORKER: subagent `framework/ide-bridge/agents/flowai-ide-bridge-worker.md` exists with canonical frontmatter (`mode: subagent`, `tools: Bash`, `model: smart`, `maxTurns: 12`) and body specifying single-shot delegation + verbatim-relay contract.
+- [x] FR-IDE-BRIDGE-WORKER: subagent `framework/ide-bridge/agents/flowai-worker.md` exists with canonical frontmatter (`mode: subagent`, `tools: Bash`, `model: smart`, `maxTurns: 12`) and body specifying single-shot delegation + verbatim-relay contract.
   - Benchmark: covered end-to-end by `flowai-delegate-to-ide-via-subagent` (the wrapping scenario is the only honest test path: `AcceptanceTestAgentScenario` does not actually execute a subagent's body in isolation — the main runtime sees the userQuery directly, so a standalone worker scenario tests the wrong thing). Pattern mirrors `flowai-deep-research-worker`, which has no standalone acceptance scenarios either.
   - Evidence: `deno task acceptance-tests -f flowai-delegate-to-ide-via-subagent` exits 0 with `worker_subagent_invoked` and `mock_content_relayed` both green — proves the worker was dispatched, ran `codex` once, and relayed the distinctive mock phrase verbatim through the subagent → parent path.
-- [x] FR-IDE-BRIDGE-DELEGATE: skill `framework/ide-bridge/skills/flowai-delegate-to-ide/SKILL.md` exists; body instructs the parent to invoke the `flowai-ide-bridge-worker` subagent via Agent/Task tool and forbids inline child-CLI Bash calls; description distinguishes the skill from `flowai-ai-ide-runner` along the relay-vs-delegate axis.
+- [x] FR-IDE-BRIDGE-DELEGATE: skill `framework/ide-bridge/skills/flowai-delegate-to-ide/SKILL.md` exists; body instructs the parent to invoke the `flowai-worker` subagent via Agent/Task tool and forbids inline child-CLI Bash calls; description distinguishes the skill from `flowai-ai-ide-runner` along the relay-vs-delegate axis.
   - Benchmark: `flowai-delegate-to-ide-via-subagent` (execution) + `flowai-delegate-to-ide-trigger-pos-1` / `-trigger-adj-1` (points at `flowai-ai-ide-runner` relay) / `-trigger-false-1`.
   - Evidence: `deno task acceptance-tests -f flowai-delegate-to-ide` ran all 4 scenarios — 4 PASSED ✅; `deno run -A scripts/check-trigger-coverage.ts` exits 0 ✅.
 - [x] New pack manifest exists: `framework/ide-bridge/pack.yaml` with `name: ide-bridge`, `version`, `description`. No `scaffolds:` block (none needed in v1).
@@ -101,13 +101,13 @@ Path-only move; the acceptance scenarios are the regression net.
    Expect: pass. `targetAgentPath` (`scripts/acceptance-tests/lib/types.ts`) already iterates packs, so no infra change is needed.
 3. Verify check passes: `deno run -A scripts/check-trigger-coverage.ts` exits 0; `deno run -A scripts/check-skills.ts` exits 0.
 
-### Step 3 — Add `flowai-ide-bridge-worker` subagent (RED → GREEN)
+### Step 3 — Add `flowai-worker` subagent (RED → GREEN)
 
 RED: write the agent benchmark first, watch it fail because the agent file does not exist.
 
 1. Create benchmark scenario directory:
-   - `framework/ide-bridge/agents/flowai-ide-bridge-worker/acceptance-tests/delegate-to-codex/mod.ts`
-   - Subclass `AcceptanceTestAgentScenario` (field `agent: "flowai-ide-bridge-worker"`).
+   - `framework/ide-bridge/agents/flowai-worker/acceptance-tests/delegate-to-codex/mod.ts`
+   - Subclass `AcceptanceTestAgentScenario` (field `agent: "flowai-worker"`).
    - `userQuery`: a delegation prompt naming Codex as the target ("Have Codex tell me one rule of thumb for writing maintainable TypeScript and quote its answer verbatim.").
    - `mocks: { codex: "[benchmock-cx9p] CODEX-MOCK: prefer immutability and reject any-typed inputs." }`.
    - Checklist (all critical except the last):
@@ -116,12 +116,12 @@ RED: write the agent benchmark first, watch it fail because the agent file does 
      - `mock_content_relayed_verbatim` — final message contains the literal `[benchmock-cx9p]` token; agent did NOT paraphrase or synthesise from its weights.
      - `no_extra_synthesis` — agent's own commentary, if any, is clearly outside the quoted block; the substantive answer comes from the mock string.
      - `single_shot` (non-critical) — agent did not spawn additional `codex` calls; one invocation is enough for this prompt.
-2. Run it: `deno task acceptance-tests -f flowai-ide-bridge-worker-delegate-to-codex`. Expect failure (agent file missing → adapter cannot locate the agent).
-3. GREEN: write `framework/ide-bridge/agents/flowai-ide-bridge-worker.md`:
+2. Run it: `deno task acceptance-tests -f flowai-worker-delegate-to-codex`. Expect failure (agent file missing → adapter cannot locate the agent).
+3. GREEN: write `framework/ide-bridge/agents/flowai-worker.md`:
    - Frontmatter (canonical superset, modelled on `flowai-deep-research-worker.md`):
      ```yaml
      ---
-     name: flowai-ide-bridge-worker
+     name: flowai-worker
      description: Cross-IDE delegation worker. Receives a task description + target IDE (codex / claude / opencode / cursor-agent), spawns the target's non-interactive CLI once, relays its stdout/stderr verbatim back to the parent. Single-shot. Spawned by `flowai-delegate-to-ide` — do NOT invoke directly for one-shot relay (use `flowai-ai-ide-runner` instead).
      tools: Bash
      disallowedTools: Write, Edit, Read
@@ -157,7 +157,7 @@ RED first.
      - `userQuery`: "Delegate this task to Codex: write me one TS rule of thumb and quote it verbatim."
      - `mocks: { codex: "[benchmock-dl4r] CODEX-MOCK: prefer pure functions for testable cores." }`.
      - Checklist (critical):
-       - `worker_subagent_invoked` — trace shows the parent called the Agent/Task tool with `subagent_type` (or IDE equivalent) of `flowai-ide-bridge-worker`. If the parent IDE has no Agent tool, the skill's text MUST nonetheless instruct invocation of the worker, and the parent at minimum reads the worker's `.md` file (visible in trace).
+       - `worker_subagent_invoked` — trace shows the parent called the Agent/Task tool with `subagent_type` (or IDE equivalent) of `flowai-worker`. If the parent IDE has no Agent tool, the skill's text MUST nonetheless instruct invocation of the worker, and the parent at minimum reads the worker's `.md` file (visible in trace).
        - `no_inline_codex_in_parent` — there is NO direct `Bash("codex …")` call in the parent's own tool trace (only inside the worker's child trace, which is fine).
        - `mock_content_relayed` — final answer contains `[benchmock-dl4r]`.
    - `framework/ide-bridge/skills/flowai-delegate-to-ide/acceptance-tests/trigger-pos-1/mod.ts` — `userQuery`: "Have Codex implement a small TS helper for me and show me its answer." Checklist: `skill_invoked` (critical).
@@ -169,15 +169,15 @@ RED first.
      ```yaml
      ---
      name: flowai-delegate-to-ide
-     description: Delegate a task to another AI IDE's CLI (codex / claude / opencode / cursor-agent) through an isolated-context subagent. Use when the user says "delegate to <ide>", "have <ide> do <task>", "execute <task> in <ide>", "offload to <ide>". For one-shot relay or side-by-side comparison across IDEs use `flowai-ai-ide-runner` instead — this skill spawns the `flowai-ide-bridge-worker` subagent so the child CLI's transcript does not flood the parent context.
+     description: Delegate a task to another AI IDE's CLI (codex / claude / opencode / cursor-agent) through an isolated-context subagent. Use when the user says "delegate to <ide>", "have <ide> do <task>", "execute <task> in <ide>", "offload to <ide>". For one-shot relay or side-by-side comparison across IDEs use `flowai-ai-ide-runner` instead — this skill spawns the `flowai-worker` subagent so the child CLI's transcript does not flood the parent context.
      ---
      ```
    - Body:
      - Workflow:
        1. Parse the user's intent: `{target_ide}`, optional `{model}`, `{task_prompt}`.
-       2. Invoke the `flowai-ide-bridge-worker` subagent. Per-host invocation syntax:
-          - **Claude Code:** `Agent` / `Task` tool with `subagent_type=flowai-ide-bridge-worker`.
-          - **OpenCode:** `@flowai-ide-bridge-worker <task prompt>` mention syntax.
+       2. Invoke the `flowai-worker` subagent. Per-host invocation syntax:
+          - **Claude Code:** `Agent` / `Task` tool with `subagent_type=flowai-worker`.
+          - **OpenCode:** `@flowai-worker <task prompt>` mention syntax.
           - **Cursor / Codex (no native subagent dispatch):** subagent invocation is unavailable — surface this clearly to the user and route them to `flowai-ai-ide-runner` for one-shot relay. The skill does NOT silently fall back to running the child CLI inline (that would defeat context isolation; the user must opt into the relay path).
           Pass `{target_ide} / {model} / {task_prompt}` in the task prompt.
        3. Relay the worker's reply to the user as-is. Do NOT add commentary inside the worker's quoted block.
@@ -190,7 +190,7 @@ RED first.
 1. `documents/requirements.md`:
    - FR-AI-IDE-RUNNER: change `**Scope:**` path from `framework/engineering/skills/flowai-ai-ide-runner/` to `framework/ide-bridge/skills/flowai-ai-ide-runner/`. Add `**Tasks:**` back-pointer line right after `**Description:**`.
    - Insert new FR sections after FR-AI-IDE-RUNNER (so they sit together):
-     - `### FR-IDE-BRIDGE-WORKER: Cross-IDE Delegation Subagent — flowai-ide-bridge-worker` with `**Description:**`, `**Tasks:**`, `**Scope:**`, `**Constraints:**` (verbatim relay, single-shot, no auth), `**Acceptance verified by acceptance tests:** flowai-ide-bridge-worker-delegate-to-codex`, `**Status:** [x]` after evidence runs.
+     - `### FR-IDE-BRIDGE-WORKER: Cross-IDE Delegation Subagent — flowai-worker` with `**Description:**`, `**Tasks:**`, `**Scope:**`, `**Constraints:**` (verbatim relay, single-shot, no auth), `**Acceptance verified by acceptance tests:** flowai-worker-delegate-to-codex`, `**Status:** [x]` after evidence runs.
      - `### FR-IDE-BRIDGE-DELEGATE: Cross-IDE Delegation Skill Wrapper — flowai-delegate-to-ide` with same shape; `**Acceptance verified by acceptance tests:** flowai-delegate-to-ide-via-subagent, flowai-delegate-to-ide-trigger-pos-1, flowai-delegate-to-ide-trigger-adj-1, flowai-delegate-to-ide-trigger-false-1`.
 2. `documents/design.md`:
    - §3.14: path → `framework/ide-bridge/skills/flowai-ai-ide-runner/SKILL.md`. Add cross-link to §3.17.
@@ -200,7 +200,7 @@ RED first.
    - Remove the `- flowai-ai-ide-runner — …` line from `### engineering` block.
    - Insert a new `### ide-bridge` block (between `### engineering` and `### devtools`, alphabetical not strictly enforced) listing:
      - `**Skills:** flowai-ai-ide-runner …; flowai-delegate-to-ide …`
-     - `**Agents:** flowai-ide-bridge-worker …`
+     - `**Agents:** flowai-worker …`
 4. `documents/index.md` `## FR` section: insert sorted rows for FR-AI-IDE-RUNNER, FR-IDE-BRIDGE-DELEGATE, FR-IDE-BRIDGE-WORKER. Placeholder `-tbd` anchors (used in the plan-step index-update) MUST be replaced with the real GFM auto-slugs at the moment the corresponding SRS sections are written here — otherwise `scripts/check-traceability.ts` flags broken links.
 
 ### Step 6 — Full check

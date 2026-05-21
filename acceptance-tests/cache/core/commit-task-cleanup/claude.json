@@ -1,0 +1,33 @@
+{
+  "schema": 1,
+  "key": "667911803044faac0d182b2fc1c272e438fcffbe194f03e32347f463652fd5d8",
+  "scenarioId": "commit-task-cleanup",
+  "ide": "claude",
+  "agentModel": "claude-sonnet-4-6",
+  "recordedAt": "2026-05-08T01:23:33.872Z",
+  "result": {
+    "success": true,
+    "score": 100,
+    "errorsCount": 0,
+    "warningsCount": 0,
+    "durationMs": 139680.86162500002,
+    "tokensUsed": 0,
+    "totalCost": 0,
+    "toolCallsCount": 0,
+    "model": "claude-sonnet-4-6",
+    "checklistResults": {
+      "code_committed": {
+        "pass": true,
+        "reason": "The git diff and git log confirm that api.ts was added in commit '1e1568106f8adc531030b2d1069dbd1330cb9bb0' (feat(api): add GET /users endpoint). The diff shows 'new file mode 100644' for api.ts with…"
+      },
+      "task_file_deleted": {
+        "pass": true,
+        "reason": "The task file documents/tasks/2026-03-28-add-users-api.md was deleted via 'git rm' (as seen in agent logs) and included in the same commit. The git diff confirms 'deleted file mode 100644' for that f…"
+      },
+      "clean_status": {
+        "pass": true,
+        "reason": "The final git status output explicitly states 'On branch main / nothing to commit, working tree clean', confirming the repository is in a clean state after the commit."
+      }
+    }
+  }
+}

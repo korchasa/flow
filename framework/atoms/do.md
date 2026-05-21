@@ -1,11 +1,11 @@
 ---
-name: flowai-do
+name: do
 description: Use when the user asks to execute an existing task plan's Solution under TDD — RED → GREEN → REFACTOR → CHECK per AGENTS.md. Requires a written plan at documents/tasks/<YYYY>/<MM>/<slug>.md. Do NOT trigger on planning, reviewing committed changes, or fixing pre-existing failing tests outside a plan.
 _params:
   TERMINATION:
     choices: [TOTAL_STOP, HAND_OFF_TO_NEXT]
     default: TOTAL_STOP
-    description: Final-step behaviour — TOTAL_STOP for standalone use; HAND_OFF_TO_NEXT when consumed inside a composite (flowai-ship) so the agent continues into the next phase instead of stopping.
+    description: Final-step behaviour — TOTAL_STOP for standalone use; HAND_OFF_TO_NEXT when consumed inside a composite (ship) so the agent continues into the next phase instead of stopping.
 ---
 
 # Task: Implement Plan Under TDD
@@ -17,7 +17,7 @@ Execute the `## Solution` section of an existing task plan strictly under the TD
 ## Context
 
 <context>
-The user has already produced a plan (typically via `flowai-plan-exp-permanent-tasks` or `flowai-plan`). The plan file is at `documents/tasks/<YYYY>/<MM>/<slug>.md` and contains a `## Solution` section enumerating the concrete steps to implement. This skill is the Implement Phase of the canonical task lifecycle and is consumed by the `flowai-ship` composite as its second phase. The phase BEFORE this one writes the plan; the phase AFTER reviews the diff.
+The user has already produced a plan (typically via `plan-exp-permanent-tasks` or `plan`). The plan file is at `documents/tasks/<YYYY>/<MM>/<slug>.md` and contains a `## Solution` section enumerating the concrete steps to implement. This skill is the Implement Phase of the canonical task lifecycle and is consumed by the `ship` composite as its second phase. The phase BEFORE this one writes the plan; the phase AFTER reviews the diff.
 </context>
 
 ## Rules & Constraints

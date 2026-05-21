@@ -1,0 +1,37 @@
+{
+  "schema": 1,
+  "key": "23095205dd594d52d3288263325eb62ca1ba5d0956cc2fbdc53d60328f484969",
+  "scenarioId": "do-with-plan-empty-implement-stops",
+  "ide": "claude",
+  "agentModel": "claude-sonnet-4-6",
+  "recordedAt": "2026-05-17T10:18:31.148Z",
+  "result": {
+    "success": true,
+    "score": 100,
+    "errorsCount": 0,
+    "warningsCount": 0,
+    "durationMs": 298569.970833,
+    "tokensUsed": 0,
+    "totalCost": 0,
+    "toolCallsCount": 0,
+    "model": "claude-sonnet-4-6",
+    "checklistResults": {
+      "no_implementation_diff": {
+        "pass": true,
+        "reason": "The git diff (init..HEAD) shows no diff at all — no new commits were made. The git status shows only documentation files were modified (documents/requirements.md modified, documents/index.md and docu…"
+      },
+      "no_review_phase_executed": {
+        "pass": true,
+        "reason": "The agent explicitly states 'Фаза ревью и коммита: НЕ ВЫПОЛНЕНА — ворота заблокировали вход из-за ненулевого кода завершения проверки проекта.' No structured review report with '## Review: [Approve|R…"
+      },
+      "no_commit_landed": {
+        "pass": true,
+        "reason": "The git log shows exactly one commit: 'a2b1f42 init' by Benchmark. No additional commits were created by the agent. The git diff (init..HEAD) is empty, confirming no commits beyond the initial runner…"
+      },
+      "explicit_gate_stop_message": {
+        "pass": true,
+        "reason": "The agent surfaced an explicit gate-stop message: '## Ворота Implement → Review-and-Commit: СТОП — deno task check завершился с кодом 1 — ворота пресекают переход в фазу ревью и коммита.' It also exp…"
+      }
+    }
+  }
+}

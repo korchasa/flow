@@ -1,6 +1,6 @@
 ---
-name: flowai-do-with-plan
-description: "Self-contained — execute the inlined steps directly. Three-phase full-cycle workflow: write a committed plan, implement under TDD, then review and commit with a verdict gate. Do NOT invoke other skills via the Skill tool. Deprecated — prefer `flowai-ship` for new work."
+name: do-with-plan
+description: "Self-contained — execute the inlined steps directly. Three-phase full-cycle workflow: write a committed plan, implement under TDD, then review and commit with a verdict gate. Do NOT invoke other skills via the Skill tool. Deprecated — prefer `ship` for new work."
 argument-hint: task description or issue URL
 effort: high
 ---
@@ -66,7 +66,7 @@ Output a combined summary:
 [ ] Changes grouped by logical purpose (default 1 commit).
 [ ] Commits used Conventional Commits format.
 [ ] Task file cleanup: completed task files deleted, partial task files confirmed with user.
-[ ] Session complexity check performed; `/flowai-reflect` auto-invoked if signals detected.
+[ ] Session complexity check performed; `/reflect` auto-invoked if signals detected.
 [ ] Post-reflect cleanup commit created when reflect left uncommitted edits to project instructions; otherwise skipped.
 [ ] Plan / Implement / Review / Commit results all reported to user.
 </verification>
