@@ -100,6 +100,28 @@ Skills are invoked under the `/flowai-<pack>:` namespace, e.g. `/flowai-core:com
 
 Codex receives the same generated `skills/` payload through `.agents/plugins/marketplace.json` and per-pack `.codex-plugin/plugin.json`. Codex hook execution is feature-gated; enable `[features].plugin_hooks = true` in Codex before relying on plugin hooks.
 
+`deno task check` always rebuilds and validates the local plugin marketplace before running the rest of the project checks. If `.env` contains `AUTO_INSTALL_PLUGINS=true`, the check also refreshes already installed user-scope flowai plugins: Claude Code via `claude plugin update`, and Codex via `codex plugin add` when the installed Codex CLI supports that command. Current Codex CLI versions without `plugin add` print a warning and require `/plugins` for the one-time install / refresh.
+
+Local marketplace smoke:
+
+```sh
+# Build the shared local marketplace tree.
+deno task build-plugins
+
+# Claude Code, one-session smoke without installation:
+claude --plugin-dir ./dist/claude-plugins/plugins/flowai-core
+
+# Claude Code, persistent local user install:
+claude plugin validate ./dist/claude-plugins
+claude plugin marketplace add ./dist/claude-plugins
+claude plugin install flowai-core@flowai-plugins --scope user
+
+# Codex, local marketplace registration:
+codex plugin marketplace add ./dist/claude-plugins
+```
+
+After the Codex command, open Codex `/plugins`, choose the `flowai-plugins` marketplace, install `flowai-core` or another needed pack, then start a new Codex thread. `codex plugin` currently exposes marketplace management only (`marketplace add|upgrade|remove`), not `plugin install`; adding `[plugins."flowai-core@flowai-plugins"] enabled = true` to `~/.codex/config.toml` is not a supported substitute until a new Codex release proves that path loads plugin skills.
+
 > **CLI and plugin install are mutually exclusive:** if you install via the plugin marketplace, do NOT also run `flowai sync` for the same IDE in the same project — the CLI detects an installed flowai plugin and aborts to avoid dual installs. Pick one channel.
 
 > **Security:** plugins execute arbitrary code at your user privilege. Only install marketplaces and plugins from sources you trust. The `korchasa/flowai-plugins` repository is a CI-generated mirror of this framework's packs and contains no human-authored content beyond `README.md` and `LICENSE`. See [FR-DIST.MARKETPLACE](documents/requirements.md#fr-dist.marketplace-claude-code-codex-plugin-marketplace) for the build / distribution contract.
@@ -247,11 +269,16 @@ TypeScript-specific setup skills.
 
 ### workflow
 
-flowai-workflow setup and live-run supervision.
+flowai-workflow setup, existing workflow adaptation, policy orchestration, and live-run supervision.
 
 **Skills:**
-- `flowai-scaffold` — scaffold a bundled flowai-workflow DAG into a project and adapt copied workflow files
-- `flowai-supervise` — supervise a live flowai-workflow run, diagnose failures, patch workflow files, and resume the same run
+- `flowai-scaffold` — scaffold a bundled flowai-workflow DAG or adapt an existing `.flowai-workflow/<name>` with project-specific config, prompts, scripts, and dry-run validation
+- `flowai-orchestrate` — run the `.flowai-workflow/ORCHESTRATION.md` policy loop, choose the next workflow from append-only history, and dispatch each selected run to the supervisor
+- `flowai-supervise` — delegate one live flowai-workflow run to the supervisor, diagnose failures from journal/state/log artifacts, patch root causes, and resume the same run
+
+**Agents:**
+- `flowai-workflow-orchestrator` — context-isolated policy loop owner for workflow selection, decision history, and supervisor delegation requests
+- `flowai-workflow-supervisor` — context-isolated one-run recovery owner for diagnose-and-resume supervision
 
 ## CLI Commands
 

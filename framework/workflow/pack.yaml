@@ -1,7 +1,7 @@
 name: workflow
 version: "1.0.0"
 description: >
-  Scaffold and supervise flowai-workflow — DAG-based engine for orchestrating
-  AI agents. Wraps `flowai-workflow init` for setup and supervises live runs
-  with diagnose-and-resume on failure.
+  Scaffold, orchestrate, and supervise flowai-workflow — DAG-based engine for
+  orchestrating AI agents. Wraps setup/adaptation, policy-driven workflow
+  selection, and one-run diagnose-and-resume supervision.
 scaffolds: {}

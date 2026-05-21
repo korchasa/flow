@@ -15,6 +15,37 @@ Deno.test("buildCheckPlan: prerequisites regenerates composite SKILL.md files", 
   );
 });
 
+Deno.test("buildCheckPlan: prerequisites build and validate plugin marketplace", () => {
+  const plan = buildCheckPlan();
+  const prereqLabels = plan.prerequisites.map((c) => c.args.join(" "));
+  assertEquals(
+    prereqLabels.some((l) => l.includes("scripts/build-plugins.ts")),
+    true,
+  );
+  assertEquals(
+    prereqLabels.some((l) => l.includes("scripts/validate-plugins.ts")),
+    true,
+  );
+});
+
+Deno.test("buildCheckPlan: plugin auto-install is gated by env flag", () => {
+  const withoutAutoInstall = buildCheckPlan({ autoInstallPlugins: false });
+  const withAutoInstall = buildCheckPlan({ autoInstallPlugins: true });
+
+  assertEquals(
+    withoutAutoInstall.prerequisites.some((c) =>
+      c.args.includes("scripts/auto-install-plugins.ts")
+    ),
+    false,
+  );
+  assertEquals(
+    withAutoInstall.prerequisites.some((c) =>
+      c.args.includes("scripts/auto-install-plugins.ts")
+    ),
+    true,
+  );
+});
+
 Deno.test("buildCheckPlan: parallel covers fmt + lint + tests + validators", () => {
   const plan = buildCheckPlan();
   assertEquals(plan.parallel.length >= 10, true);

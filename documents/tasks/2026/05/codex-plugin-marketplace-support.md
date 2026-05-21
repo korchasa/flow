@@ -88,15 +88,18 @@ Business value:
 - [x] FR-DIST.MARKETPLACE: SRS and SDS describe the marketplace as shared Claude Code + Codex distribution, including Codex layout, hook feature gate, validation, and out-of-scope official public Codex submission.
   - Test: manual — korchasa
   - Evidence: `grep -n 'Codex' documents/requirements.md documents/design.md | grep 'FR-DIST.MARKETPLACE'` returns non-empty matches
-- [ ] FR-DIST.MARKETPLACE: local smoke instructions exist for Codex marketplace install.
+- [x] FR-DIST.MARKETPLACE: local smoke instructions exist for Codex marketplace install.
   - Test: manual — korchasa
-  - Evidence: transcript or notes show `codex plugin marketplace add ./dist/<marketplace-root>`, `/plugins`, install `flowai-core`, and start a new Codex thread where an installed flowai skill is visible
+  - Evidence: README documents `codex plugin marketplace add ./dist/claude-plugins`, interactive `/plugins` install, and the current lack of `codex plugin install`.
+- [ ] FR-DIST.MARKETPLACE: Codex local smoke proves installed plugin skills load from the plugin cache.
+  - Test: manual — korchasa
+  - Evidence: transcript shows `/plugins` installs `flowai-core`, a new Codex thread sees a skill source under `.codex/plugins/cache/flowai-plugins/.../skills/...`, and no old `~/.codex/skills` or `.agents/skills` source shadows it.
 
 ## Solution
 
 Selected variant: **1 — shared generator, shared downstream repository**.
 
-Implementation status: local build, validation, tests, docs, push, CI, and downstream publication are done. Interactive Codex `/plugins` install smoke remains open.
+Implementation status: local build, validation, tests, docs, push, CI, downstream publication, and local install instructions are done. Interactive Codex `/plugins` install smoke remains open.
 
 Smoke note (2026-05-18): `codex plugin marketplace add /Users/korchasa/www/flowai/flowai/dist/claude-plugins` succeeds against a clean temporary Codex home and writes `[marketplaces.flowai-plugins]`. `codex plugin` currently exposes marketplace management only (`marketplace add|upgrade|remove`), not a non-interactive plugin install command. A full smoke still requires opening Codex `/plugins`, installing `flowai-core`, and starting a new thread. A `codex exec` attempt with temporary `-c` marketplace/plugin overrides reached the model, but the visible `flowai-plan` source was the existing global `r0/flowai-plan/SKILL.md`, so it does not prove plugin-store loading.
 

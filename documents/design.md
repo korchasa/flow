@@ -52,7 +52,7 @@
     scripts/<name>         # utility scripts (optional)
     assets/                # shared templates (optional, e.g. AGENTS.md templates)
   ```
-- **Packs:** `core` (base commands), `devtools` (skill/agent authoring), `engineering` (procedural knowledge), `deno` (Deno-specific), `typescript` (TS-specific), `memex` (long-term knowledge bank for AI agents, see §3.15), `workflow` (flowai-workflow scaffold + live-run supervision), `ide-bridge` (cross-IDE delegation: relay + isolated-context subagent, see §3.17).
+- **Packs:** `core` (base commands), `devtools` (skill/agent authoring), `engineering` (procedural knowledge), `deno` (Deno-specific), `typescript` (TS-specific), `memex` (long-term knowledge bank for AI agents, see §3.15), `workflow` (flowai-workflow scaffold/adaptation + policy orchestration + journal-aware live-run supervision), `ide-bridge` (cross-IDE delegation: relay + isolated-context subagent, see §3.17).
 - **Resource discovery:** Convention over configuration — resources found by scanning subdirectories, not listed in `pack.yaml`.
 - **No inter-pack dependencies:** Each pack is self-contained. Enforced by `check-pack-refs.ts` (core→non-core and non-core-A→non-core-B references are errors; any→core and intra-pack are OK).
 - **Naming:** Directory names inside packs are the full installed names (e.g., `flowai-commit/`, `flowai-write-dep/`). flowai copies them as-is — no name transformation at install time.
@@ -135,12 +135,14 @@ Adoption is optional. IDEs that support `allowed-tools` will auto-approve matchi
     `cursor: {max: slow, smart: slow, fast: fast, cheap: fast}`, `opencode: {}` (user configures).
   - User overrides via `.flowai.yaml` `models:` section.
   - `inherit` or absent → field omitted (IDE uses parent model).
-- **Key Agents (5 canonical files):**
+- **Key Agents (7 canonical files):**
   - `core/agents/flowai-console-expert.md`: Specialist in executing complex console tasks without modifying code.
   - `core/agents/flowai-diff-specialist.md`: Specialist in analyzing git diffs and planning atomic commits.
   - `core/agents/flowai-skill-adapter.md`: Adapts skills to project specifics after upstream updates.
   - `core/agents/flowai-agent-adapter.md`: Adapts agent definitions to project specifics after upstream updates. Mirrors `flowai-skill-adapter` but for agent `.md` files — preserves YAML frontmatter, adapts body (system prompt).
   - `engineering/agents/flowai-deep-research-worker.md`: Research worker for a single direction within a deep research task; spawned by `flowai-deep-research` orchestrator.
+  - `workflow/agents/flowai-workflow-orchestrator.md`: Owns `.flowai-workflow/ORCHESTRATION.md`, workflow discovery, append-only `orchestration.jsonl`, and structured supervisor delegation requests; never reads run artifacts. `flowai-orchestrate` dispatches the supervisor from the parent context when nested subagents are unavailable.
+  - `workflow/agents/flowai-workflow-supervisor.md`: Owns one workflow/run, diagnoses from `workflow.yaml` + run artifacts, patches one root-cause surface, and resumes the same run; never interprets orchestration policy.
 - **Distribution:** `flowai` transforms canonical agents into IDE-specific format at install time.
 - **IDE frontmatter formats** (transformation rules owned by flowai, see also 3.5 Agent transformation rules):
   - **Universal (canonical):** `model` uses abstract tiers (`max`/`smart`/`fast`/`cheap`/`inherit`). Resolved by flowai at install time.
@@ -325,6 +327,8 @@ graph TD
 - **Location:** `scripts/build-plugins.ts` (build), `scripts/validate-plugins.ts` (validator), `scripts/build-plugins_test.ts` + `scripts/validate-plugins_test.ts` (tests), `.github/workflows/ci.yml` step `Build and validate plugin marketplace` + downstream sync (publish). Compatibility wrappers `scripts/build-claude-plugins.ts` and `scripts/validate-claude-plugins.ts` call the new scripts for one transition release. Output tree at `dist/claude-plugins/` is gitignored.
 - **Interfaces:**
   - CLI: `deno task build-plugins [--pack core] [--framework ./framework] [--out ./dist/claude-plugins] [--marketplace-name flowai-plugins]`. Defaults: packs from `DEFAULT_PACKS`, out=`dist/claude-plugins`, marketplace-name from `DEFAULT_MARKETPLACE_NAME` constant in the build script.
+  - Check integration: `scripts/task-check.ts` runs `scripts/build-plugins.ts` and `scripts/validate-plugins.ts` as sequential prerequisites. If `.env` or process env sets `AUTO_INSTALL_PLUGINS=true`, it then runs `scripts/auto-install-plugins.ts` to refresh already-installed user-scope flowai plugins.
+  - Auto-refresh: Claude Code uses `claude plugin list --json` to find enabled user `flowai-*@flowai-plugins` plugins, then `claude plugin update <id> --scope user`. Codex reads enabled `[plugins."flowai-*@flowai-plugins"]` entries from `~/.codex/config.toml`; when the installed Codex CLI exposes public `codex plugin add`, it reruns that command to reinstall from the configured marketplace snapshot. Older Codex CLIs warn and skip refresh rather than mutating config directly.
   - CI: steps inside the existing `release` job, gated on the same `should_release == 'true'` condition that produces `framework-v*` tags. Order: build framework tarball → publish framework release → build plugin tree → checkout downstream → sync + commit + push.
   - Downstream: repository `korchasa/flowai-plugins`. `main` is updated by CI on each framework release; tags `framework-vX.Y.Z` mirror the upstream framework version. CI auth via deploy key secret `FLOWAI_PLUGINS_DEPLOY_KEY` (write-enabled).
 - **Generated layout:**
@@ -356,8 +360,10 @@ graph TD
   7. **Tag union** — `tags:` from each SKILL.md frontmatter is collected, deduped, sorted, capped at 8, and emitted on the marketplace entry only. The tag key is stripped from per-skill frontmatter (Claude's plugin validator rejects `tags` in plugin.json, mirroring `category`).
   8. **Hook transform** — `framework/<pack>/hooks/<name>/{hook.yaml,run.ts}` → `plugins/<plugin>/hooks/hooks.json` keyed by `event`, with `command: "deno run -A ${CLAUDE_PLUGIN_ROOT}/hooks/<name>/run.ts"`; the `run.ts` is co-emitted. Core has zero hooks today; the transformer covers `devtools` / `memex` rollout. `${CLAUDE_PLUGIN_ROOT}` is retained because Claude Code requires it and Codex exposes it as a compatibility variable; Codex users must enable `[features].plugin_hooks = true` before relying on hooks.
 - **Pre-conditions:**
-  - Local smoke test (`/plugin marketplace add ./dist/claude-plugins` → `/plugin install flowai-core@flowai-plugins`) requires Claude Code CLI installed.
-  - Local Codex smoke test (`codex plugin marketplace add ./dist/claude-plugins` → `/plugins` → install `flowai-core`) requires Codex CLI with plugin support installed. Official public Codex Plugin Directory submission is out of scope until self-serve publishing exists.
+  - Local Claude Code one-session smoke uses `claude --plugin-dir ./dist/claude-plugins/plugins/flowai-core` after `deno task build-plugins`; commands load as `/flowai-core:<short>`.
+  - Local Claude Code persistent install uses `claude plugin validate ./dist/claude-plugins` → `claude plugin marketplace add ./dist/claude-plugins` → `claude plugin install flowai-core@flowai-plugins --scope user`.
+  - Local Codex smoke uses `codex plugin marketplace add ./dist/claude-plugins`, then interactive `/plugins` install of `flowai-core`, then a new Codex thread. `codex-cli 0.130.0` exposes only marketplace management under `codex plugin`; no public `codex plugin install` command exists. A manual `[plugins."flowai-core@flowai-plugins"] enabled = true` config entry is not accepted as proof of skill loading.
+  - Official public Codex Plugin Directory submission is out of scope until self-serve publishing exists.
   - Downstream repo bootstrap is manual once: create `korchasa/flowai-plugins`, commit `README.md` + `LICENSE`, register write-enabled deploy key, expose private key as upstream `FLOWAI_PLUGINS_DEPLOY_KEY` secret.
 - **Failure modes:**
   - Build failure on invariant violation → CI step fails before downstream checkout; downstream untouched.

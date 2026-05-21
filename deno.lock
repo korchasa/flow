@@ -10,6 +10,8 @@
     "jsr:@cliffy/table@1.0.0": "1.0.0",
     "jsr:@denosaurs/tty@~0.2.1": "0.2.1",
     "jsr:@denosaurs/wait@~0.2.2": "0.2.2",
+    "jsr:@korchasa/ai-ide-cli@~0.8.4": "0.8.7",
+    "jsr:@korchasa/flowai-workflow@*": "0.7.10",
     "jsr:@korchasa/flowai@*": "0.3.2",
     "jsr:@std/assert@*": "1.0.19",
     "jsr:@std/assert@0.224": "0.224.0",
@@ -25,6 +27,7 @@
     "jsr:@std/fmt@1": "1.0.9",
     "jsr:@std/fmt@^1.0.9": "1.0.9",
     "jsr:@std/fs@*": "1.0.23",
+    "jsr:@std/fs@1": "1.0.23",
     "jsr:@std/fs@^1.0.17": "1.0.23",
     "jsr:@std/internal@^1.0.12": "1.0.12",
     "jsr:@std/io@~0.225.3": "0.225.3",
@@ -105,12 +108,29 @@
         "jsr:@std/fmt@1"
       ]
     },
+    "@korchasa/ai-ide-cli@0.8.7": {
+      "integrity": "19a9551accb9b599654c5758a6518fc3fb4af6c34a8ddcd52947eea7a9adaba7",
+      "dependencies": [
+        "jsr:@std/fs@1",
+        "jsr:@std/path@^1.1.4",
+        "jsr:@std/yaml@^1.0.12"
+      ]
+    },
     "@korchasa/flowai@0.3.2": {
       "integrity": "3b7d938db0861932b340bcf53b53766577567fa9e21fe13e3e6f57a727697afc",
       "dependencies": [
         "jsr:@cliffy/command",
         "jsr:@cliffy/prompt",
         "jsr:@denosaurs/wait",
+        "jsr:@std/path@^1.1.4",
+        "jsr:@std/semver@1",
+        "jsr:@std/yaml@^1.0.12"
+      ]
+    },
+    "@korchasa/flowai-workflow@0.7.10": {
+      "integrity": "882f66e6a716886dbbf8a967151eedaef8c88b4dd3be6e065c9eee0a5f572088",
+      "dependencies": [
+        "jsr:@korchasa/ai-ide-cli",
         "jsr:@std/path@^1.1.4",
         "jsr:@std/semver@1",
         "jsr:@std/yaml@^1.0.12"

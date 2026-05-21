@@ -62,12 +62,30 @@ Note: FR-DIST.MAPPING defines cross-IDE resource mapping; open questions need us
 - **Description:** The system must provide guides (`flowai-*`) for complex or situational tasks (QA, testing, diagrams, prompts, research, etc.).
 - **Acceptance verified by acceptance tests:** See Component Coverage Matrix (section 3.8) — all skills benchmarked.
 
+### FR-WORKFLOW-ORCH: flowai-workflow Orchestration
+
+- **Description:** Workflow pack must provide a public `flowai-orchestrate` skill plus `flowai-workflow-orchestrator` subagent for policy-driven workflow selection. The orchestrator reads `.flowai-workflow/ORCHESTRATION.md`, discovers `.flowai-workflow/<name>/workflow.yaml`, uses append-only `.flowai-workflow/orchestration.jsonl` for decision history, returns a structured supervisor delegation request for each selected workflow (or directly delegates when the host supports nested subagents), and never diagnoses run artifacts directly. The public skill acts as parent dispatcher between orchestrator and supervisor when nested subagent calls are unavailable.
+- **Tasks:** [workflow-orchestration-agents](tasks/2026/05/2026-05-21-workflow-orchestration-agents.md)
+- **Acceptance verified by acceptance tests:** `flowai-orchestrate-maintenance-cadence`, `flowai-orchestrate-primary-before-maintenance`, `flowai-orchestrate-missing-or-ambiguous-policy`, `flowai-orchestrate-delegates-supervisor`, `flowai-workflow-orchestrator-long-cycle-delegation`
+- **Status:** [x]
+
+### FR-WORKFLOW-SUPERVISOR: flowai-workflow Run Supervision
+
+- **Description:** Workflow pack must provide `flowai-workflow-supervisor` subagent for exactly one workflow/run per invocation, and `flowai-supervise` must be a public wrapper that delegates to it. The supervisor starts or resumes a named workflow, reads `workflow.yaml`, `journal.jsonl`, `state.json`, `logs/`, and node artifacts as needed, diagnoses failed/stalled nodes, patches the smallest root-cause surface, resumes the same run with `flowai-workflow run <workflow> --resume <run-id>`, and never interprets `.flowai-workflow/ORCHESTRATION.md`.
+- **Tasks:** [workflow-orchestration-agents](tasks/2026/05/2026-05-21-workflow-orchestration-agents.md)
+- **Acceptance verified by acceptance tests:** `flowai-supervise-delegates-supervisor`, `flowai-workflow-supervisor-failed-run-resume`, `flowai-workflow-supervisor-no-orchestration-policy`
+- **Status:** [x]
+
 ### FR-MAINT: Project Maintenance
 
-- **Description:** The system must provide automated project maintenance via `deno task check` (linting, testing, validation).
+- **Description:** The system must provide automated project maintenance via `deno task check` (composite generation, plugin marketplace build + validation, linting, testing, validation).
 - **Acceptance:**
   - [x] Deno tasks configured in `deno.json`.
   - [x] Task scripts in `./scripts/`.
+  - [x] `deno task check` builds and validates the shared Claude Code + Codex plugin marketplace before parallel checks.
+    Evidence: `scripts/task-check_test.ts::buildCheckPlan: prerequisites build and validate plugin marketplace`.
+  - [x] `AUTO_INSTALL_PLUGINS=true` gates user-scope flowai plugin refresh during `deno task check`.
+    Evidence: `scripts/task-check_test.ts::buildCheckPlan: plugin auto-install is gated by env flag` + `scripts/auto-install-plugins_test.ts`.
 
 ### FR-ONBOARD: Developer Onboarding & Workflow Clarity
 
@@ -334,6 +352,8 @@ All 39 skills have at least one acceptance test scenario. Coverage is the source
 - **Desc:** Additional native-plugin distribution channel for Claude Code and Codex users. The framework publishes a generated marketplace at downstream repo `korchasa/flowai-plugins`. Surface catalogs (`.claude-plugin/marketplace.json`, `.agents/plugins/marketplace.json`) and plugin payloads are generated from `framework/<pack>/` by `scripts/build-plugins.ts` on every framework release (CI step inside the existing `release` job, gated on `framework-v*` tag publication). No plugin artefacts are committed to this repo (`dist/` is gitignored). Seven marketplace packs ship as separate plugins (`flowai-core`, `flowai-deno`, `flowai-devtools`, `flowai-engineering`, `flowai-memex`, `flowai-typescript`, `flowai-workflow`). flowai CLI distribution (FR-DIST.SYNC) remains supported and is the channel for Cursor / OpenCode.
 - **Tasks:** [claude-code-plugin-marketplace-pilot](tasks/2026/05/claude-code-plugin-marketplace-pilot.md), [codex-plugin-marketplace-support](tasks/2026/05/codex-plugin-marketplace-support.md)
 - **Scenario:** A user on Claude Code runs `/plugin marketplace add korchasa/flowai-plugins` once, then `/plugin install flowai-core@flowai-plugins`. A user on Codex runs `codex plugin marketplace add korchasa/flowai-plugins`, then installs `flowai-core` from `/plugins`. Skills become available under the installed plugin namespace. The `flowai-` prefix is stripped from skill / command directory names during build so invocations avoid the `/flowai-core:flowai-commit` double-prefix. Updates flow via each IDE's plugin update path tied to the downstream repo commit SHA, so one framework release maps to exactly one plugin update event.
+- **Local install contract:** `deno task build-plugins` produces a local marketplace root at `./dist/claude-plugins`. Claude Code supports a one-session smoke via `claude --plugin-dir ./dist/claude-plugins/plugins/flowai-core` and persistent user install via `claude plugin marketplace add ./dist/claude-plugins` + `claude plugin install flowai-core@flowai-plugins --scope user`. Codex supports local marketplace registration via `codex plugin marketplace add ./dist/claude-plugins`; installation is interactive through `/plugins` because `codex-cli 0.130.0` exposes marketplace management only, not `codex plugin install`. A manual `[plugins."flowai-core@flowai-plugins"] enabled = true` entry in `~/.codex/config.toml` is not accepted as evidence of skill loading.
+- **Local refresh contract:** `deno task check` always runs `scripts/build-plugins.ts` + `scripts/validate-plugins.ts`. When `.env` or the process environment has `AUTO_INSTALL_PLUGINS=true`, `scripts/auto-install-plugins.ts` refreshes already-installed user-scope flowai plugins after the build. Claude Code refresh uses `claude plugin update <plugin>@flowai-plugins --scope user` for enabled user plugins reported by `claude plugin list --json`. Codex refresh reads enabled `[plugins."flowai-*@flowai-plugins"]` entries from `~/.codex/config.toml` and uses public `codex plugin add <plugin>@flowai-plugins` when available; older Codex CLIs that lack `plugin add` emit a warning and skip Codex refresh rather than editing plugin config by hand.
 - **Build contract:** `scripts/build-plugins.ts` reads `framework/<pack>/{pack.yaml,commands,skills,agents,hooks}` and emits:
   - `<out>/.claude-plugin/marketplace.json` — catalog (top-level `name`, `owner`, `metadata.pluginRoot`, `plugins[]`).
   - `<out>/.agents/plugins/marketplace.json` — Codex catalog (top-level `name`, `interface.displayName`, `plugins[]` with local `source.path: ./plugins/<name>` and install policy).
@@ -371,6 +391,10 @@ All 39 skills have at least one acceptance test scenario. Coverage is the source
     Evidence: manual — korchasa (transcript captured in pilot PR).
   - [ ] Codex smoke install end-to-end on a fresh checkout: `deno task build-plugins` → `codex plugin marketplace add ./dist/claude-plugins` → `/plugins` → install `flowai-core` → new thread shows an installed flowai skill.
     Evidence: manual — korchasa (transcript captured in implementation PR).
+  - [x] Local install docs distinguish Claude Code one-session smoke, Claude Code persistent local install, Codex local marketplace registration, and Codex's current lack of non-interactive plugin install.
+    Evidence: README contains `claude --plugin-dir ./dist/claude-plugins/plugins/flowai-core` and `codex plugin marketplace add ./dist/claude-plugins`.
+  - [x] `deno task check` rebuilds and validates the plugin marketplace, then conditionally refreshes installed user-scope flowai plugins when `AUTO_INSTALL_PLUGINS=true`.
+    Evidence: `scripts/task-check_test.ts::buildCheckPlan: prerequisites build and validate plugin marketplace`, `scripts/task-check_test.ts::buildCheckPlan: plugin auto-install is gated by env flag`, `scripts/auto-install-plugins_test.ts`.
   - [x] Plugin-installable project integration command: `flowai-update` is emitted into the plugin tree and reads local copied assets instead of requiring CLI sync.
     Evidence: `scripts/build-plugins_test.ts::plugin-includes-project-integration-update-command`.
   - [x] Pack-level `assets/*` files referenced by a SKILL.md are copied into the consuming skill's own dir, and `../assets/...` paths in the body are rewritten to `assets/...`.

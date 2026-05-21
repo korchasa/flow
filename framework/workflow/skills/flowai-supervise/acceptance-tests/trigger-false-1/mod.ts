@@ -7,8 +7,10 @@ export const SuperviseTriggerFalse1 = new class extends AcceptanceTestScenario {
   name = "docs question about state.json schema (wrong intent)";
   skill = "flowai-supervise";
   agentsTemplateVars = { PROJECT_NAME: "Sandbox" };
+  maxSteps = 2;
+  stepTimeoutMs = 120_000;
   userQuery =
-    "What fields does flowai-workflow's `state.json` contain, and how does the engine update them between nodes?";
+    "Conceptually, what is a workflow engine state file and how is it usually updated between nodes? Do not inspect local project files.";
   checklist = [{
     id: "skill_not_invoked",
     description:
