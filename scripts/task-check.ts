@@ -1,5 +1,5 @@
 // [FR-MAINT](../documents/requirements.md#fr-maint-project-maintenance) — project maintenance via deno task check
-import { shouldAutoInstall } from "./auto-install-plugins.ts";
+import { shouldAutoInstall } from "./sync-plugins-local.ts";
 import { runCommands, runCommandsInParallelBuffered } from "./utils.ts";
 import type { CommandSpec } from "./utils.ts";
 
@@ -13,7 +13,7 @@ export type CheckPlan = {
 };
 
 type CheckPlanOptions = {
-  autoInstallPlugins?: boolean;
+  syncPluginsLocal?: boolean;
 };
 
 /**
@@ -43,10 +43,15 @@ export function buildCheckPlan(options: CheckPlanOptions = {}): CheckPlan {
     },
   ];
 
-  if (options.autoInstallPlugins === true) {
+  // implements [FR-DIST.MARKETPLACE](../documents/requirements.md#fr-dist.marketplace-claude-code-codex-plugin-marketplace)
+  // Optional dogfood loop: when AUTO_INSTALL_PLUGINS=true is set in env or
+  // .env, install the freshly built local marketplace into Claude Code /
+  // Codex at user scope. Off by default — most consumers of `deno task check`
+  // (CI, contributors) do not want their installed plugins mutated.
+  if (options.syncPluginsLocal === true) {
     prerequisites.push({
       cmd: "deno",
-      args: ["run", "-A", "scripts/auto-install-plugins.ts"],
+      args: ["run", "-A", "scripts/sync-plugins-local.ts", "--no-build"],
     });
   }
 
@@ -144,13 +149,9 @@ export function buildCheckPlan(options: CheckPlanOptions = {}): CheckPlan {
   };
 }
 
-async function readAutoInstallFlag(): Promise<boolean> {
-  return await shouldAutoInstall();
-}
-
 async function main(): Promise<void> {
   const plan = buildCheckPlan({
-    autoInstallPlugins: await readAutoInstallFlag(),
+    syncPluginsLocal: await shouldAutoInstall(),
   });
   await runCommands(plan.prerequisites);
   await runCommandsInParallelBuffered(plan.parallel);

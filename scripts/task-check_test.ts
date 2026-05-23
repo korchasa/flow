@@ -28,19 +28,19 @@ Deno.test("buildCheckPlan: prerequisites build and validate plugin marketplace",
   );
 });
 
-Deno.test("buildCheckPlan: plugin auto-install is gated by env flag", () => {
-  const withoutAutoInstall = buildCheckPlan({ autoInstallPlugins: false });
-  const withAutoInstall = buildCheckPlan({ autoInstallPlugins: true });
+Deno.test("buildCheckPlan: sync-plugins-local is gated by env flag", () => {
+  const withoutFlag = buildCheckPlan({ syncPluginsLocal: false });
+  const withFlag = buildCheckPlan({ syncPluginsLocal: true });
 
   assertEquals(
-    withoutAutoInstall.prerequisites.some((c) =>
-      c.args.includes("scripts/auto-install-plugins.ts")
+    withoutFlag.prerequisites.some((c) =>
+      c.args.includes("scripts/sync-plugins-local.ts")
     ),
     false,
   );
   assertEquals(
-    withAutoInstall.prerequisites.some((c) =>
-      c.args.includes("scripts/auto-install-plugins.ts")
+    withFlag.prerequisites.some((c) =>
+      c.args.includes("scripts/sync-plugins-local.ts")
     ),
     true,
   );

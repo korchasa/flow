@@ -93,19 +93,26 @@ In addition to the `flowai` CLI, Claude Code and Codex users can install any pac
 ```sh
 # From a shell with Codex CLI installed:
 codex plugin marketplace add korchasa/flowai-plugins
-# Then open Codex /plugins and install flowai or any pack you use.
+# Adding the marketplace registers all flowai-* plugins in `~/.codex/config.toml`
+# with `enabled = true` automatically. Start a new Codex thread to load them; no
+# interactive `/plugins` step is required. Edit individual `[plugins."<name>@flowai-plugins"]`
+# tables in `~/.codex/config.toml` if you want to disable specific packs.
 ```
 
 Skills are invoked under the plugin namespace: core uses `/flowai:`, while optional packs use `/flowai-<pack>:`, e.g. `/flowai:commit`, `/flowai:plan`, `/flowai:update`, `/flowai-engineering:deep-research`, `/flowai-memex:save`, `/flowai-workflow:scaffold`. Source primitive names are short kebab-case names; the plugin namespace carries the `flowai` brand. Cross-skill references inside skill bodies are rewritten to the namespaced form during build, and pack-level assets (e.g. `AGENTS.template.md`) ship inside each consuming skill — `/flowai:update` and `/flowai:init` work out of the box without a separate `flowai sync` step. Hooks declared by `devtools` and `memex` are translated to Claude Code's `hooks.json` format automatically.
 
 Codex receives the same generated `skills/` payload through `.agents/plugins/marketplace.json` and per-pack `.codex-plugin/plugin.json`. Codex hook execution is feature-gated; enable `[features].plugin_hooks = true` in Codex before relying on plugin hooks.
 
-`deno task check` always rebuilds and validates the local plugin marketplace before running the rest of the project checks. If `.env` contains `AUTO_INSTALL_PLUGINS=true`, the check also refreshes already installed user-scope flowai plugins: Claude Code via `claude plugin update`, and Codex via `codex plugin add` when the installed Codex CLI supports that command. Current Codex CLI versions without `plugin add` print a warning and require `/plugins` for the one-time install / refresh.
+`deno task check` always rebuilds and validates the local plugin marketplace before running the rest of the project checks. By default it does NOT touch your installed plugins. To dogfood your local framework edits in Claude Code / Codex run `deno task sync-plugins-local`: it rebuilds `./dist/claude-plugins`, re-points the `flowai-plugins` marketplace at that absolute path in each available CLI, and installs / updates every emitted pack at user scope. Re-pointing replaces the downstream-tracking source — return to `korchasa/flowai-plugins` by removing the local marketplace and adding the GitHub source again. Missing `claude` or `codex` CLIs are reported as warnings and skipped, not fatal. Set `AUTO_INSTALL_PLUGINS=true` in env or `.env` to opt `deno task check` into running the sync automatically after every successful build/validate prerequisite.
 
 Local marketplace smoke:
 
 ```sh
-# Build the shared local marketplace tree.
+# One-shot dogfood install of the local build into Claude Code + Codex at
+# user scope (re-points the `flowai-plugins` marketplace at ./dist/claude-plugins):
+deno task sync-plugins-local
+
+# Or run the steps individually for inspection:
 deno task build-plugins
 
 # Claude Code, one-session smoke without installation:
@@ -120,7 +127,7 @@ claude plugin install flowai@flowai-plugins --scope user
 codex plugin marketplace add ./dist/claude-plugins
 ```
 
-After the Codex command, open Codex `/plugins`, choose the `flowai-plugins` marketplace, install `flowai` or another needed pack, then start a new Codex thread. `codex plugin` currently exposes marketplace management only (`marketplace add|upgrade|remove`), not `plugin install`; adding `[plugins."flowai@flowai-plugins"] enabled = true` to `~/.codex/config.toml` is not a supported substitute until a new Codex release proves that path loads plugin skills.
+After `codex plugin marketplace add`, Codex 0.130.0+ auto-registers every plugin from the marketplace as `[plugins."<name>@flowai-plugins"] enabled = true` in `~/.codex/config.toml` and a fresh Codex thread loads them. `codex plugin` exposes marketplace management only (`marketplace add|upgrade|remove`); there is no `codex plugin install` — refresh happens via `codex plugin marketplace upgrade flowai-plugins`. Disable individual packs by setting `enabled = false` (or removing the table) in `~/.codex/config.toml`.
 
 > **CLI and plugin install are mutually exclusive:** if you install via the plugin marketplace, do NOT also run `flowai sync` for the same IDE in the same project — the CLI detects an installed flowai plugin and aborts to avoid dual installs. Pick one channel.
 
