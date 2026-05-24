@@ -1,6 +1,7 @@
 ---
 date: "2026-05-21"
-status: to do
+status: superseded
+superseded_by: 2026/05/remove-flowai-prefix-from-primitives.md
 implements:
   - FR-PACKS
   - FR-HOWTO
@@ -18,6 +19,8 @@ related_tasks:
   - 2026/05/trigger-n1-retry.md
 ---
 # Remove `flowai-` Prefix from Skills and Subagents
+
+> **Status: superseded** by [`remove-flowai-prefix-from-primitives`](remove-flowai-prefix-from-primitives.md) (merged via commit `6da2b0fe feat: shorten flowai primitive names`). The superseding task dropped the `flowai-` prefix from every primitive — skills, agents, AND commands — going beyond the scope this task proposed (which preserved the prefix on commands). The original DoD below no longer maps to current reality; see the superseding task for closed evidence. Filesystem verification on 2026-05-24: `find framework -name 'flowai-*'` returns no matches; `framework/core/skills/`, `framework/core/commands/`, and `framework/core/agents/` all use short names; `deno task check` passes (release `v0.13.0` shipped 2026-05-24).
 
 ## Goal
 

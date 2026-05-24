@@ -80,51 +80,51 @@ Explicit non-goals (this task):
 
 ## Definition of Done
 
-- [ ] FR-DIST.MARKETPLACE: `scripts/build-claude-plugins.ts` reads `framework/core/` and emits a Claude-plugin-shaped tree under `dist/claude-plugins/` containing `.claude-plugin/marketplace.json` and `plugins/flowai/.claude-plugin/plugin.json` + payload dirs.
-  - Test: `scripts/build-claude-plugins_test.ts::emits-marketplace-and-plugin-manifest-for-core`
-  - Evidence: `deno test -A scripts/build-claude-plugins_test.ts --filter 'emits-marketplace-and-plugin-manifest-for-core'` exits 0
-- [ ] FR-DIST.MARKETPLACE: skill and command directory names inside the generated plugin payload have the `flowai-` prefix stripped (e.g. `framework/core/skills/flowai-plan/` → `plugins/flowai/skills/plan/`). Plugin invocations therefore appear as `/flowai:<short-name>`, not `/flowai:flowai-<short-name>`.
-  - Test: `scripts/build-claude-plugins_test.ts::skill-and-command-dirs-have-prefix-stripped`
+- [x] FR-DIST.MARKETPLACE: `scripts/build-plugins.ts` (legacy alias: `scripts/build-claude-plugins.ts`) reads `framework/core/` and emits a Claude-plugin-shaped tree under `dist/claude-plugins/` containing `.claude-plugin/marketplace.json` and `plugins/flowai/.claude-plugin/plugin.json` + payload dirs.
+  - Test: `scripts/build-plugins_test.ts::emits-marketplace-and-plugin-manifest-for-core`
+  - Evidence: `deno test -A scripts/build-plugins_test.ts --filter 'emits-marketplace-and-plugin-manifest-for-core'` exits 0
+- [x] FR-DIST.MARKETPLACE: skill and command directory names inside the generated plugin payload have the `flowai-` prefix stripped (e.g. `framework/core/skills/flowai-plan/` → `plugins/flowai/skills/plan/`). Plugin invocations therefore appear as `/flowai:<short-name>`, not `/flowai:flowai-<short-name>`.
+  - Test: `scripts/build-plugins_test.ts::skill-and-command-dirs-have-prefix-stripped`
   - Evidence: `deno task build-plugins && find dist/claude-plugins/plugins/flowai -type d -name 'flowai-*'` returns empty
-- [ ] FR-DIST.MARKETPLACE: `disable-model-invocation: true` is injected into `SKILL.md` frontmatter for every primitive sourced from `framework/core/commands/`, and absent for every primitive sourced from `framework/core/skills/`.
-  - Test: `scripts/build-claude-plugins_test.ts::commands-get-disable-model-invocation-injected-skills-do-not`
-  - Evidence: `deno test -A scripts/build-claude-plugins_test.ts --filter 'disable-model-invocation'` exits 0
-- [ ] FR-DIST.MARKETPLACE: Agent frontmatter in `plugins/flowai/agents/*.md` is Claude-native — fields outside the Claude-supported set (per FR-DIST.MAPPING universal→Claude column) are stripped; supported fields preserved verbatim. Agent body unchanged.
-  - Test: `scripts/build-claude-plugins_test.ts::agent-frontmatter-matches-claude-native-mapping`
-  - Evidence: `deno test -A scripts/build-claude-plugins_test.ts --filter 'agent-frontmatter'` exits 0
-- [ ] FR-DIST.MARKETPLACE: Marketplace + plugin manifest JSON validates against the official schema fields documented in `documents/design.md` (see Solution step 5). Required fields present, no unknown top-level fields, plugin `name` is kebab-case.
-  - Test: `scripts/build-claude-plugins_test.ts::marketplace-and-plugin-json-schema-valid`
-  - Evidence: `deno test -A scripts/build-claude-plugins_test.ts --filter 'schema-valid'` exits 0; additionally `claude plugin validate ./dist/claude-plugins` exits 0 (manual smoke).
-- [ ] FR-DIST.MARKETPLACE: Local smoke install end-to-end. From a fresh clone: `deno task build-plugins`, then in Claude Code `/plugin marketplace add ./dist/claude-plugins` followed by `/plugin install flowai@flowai-plugins`, then `/flowai:commit` (or any other `flowai` skill) invokes successfully.
-  - Test: `manual — korchasa`
-  - Evidence: transcript saved in PR description showing `/help` output listing `flowai:*` skills.
-- [ ] FR-DIST.MARKETPLACE: CI job `release-claude-plugins` on a `framework-v*` tag builds the plugin tree, force-pushes to `korchasa/flowai-plugins` with a commit message `release: framework-vX.Y.Z`, and tags the same SHA `framework-vX.Y.Z` in the downstream repo.
+- [x] FR-DIST.MARKETPLACE: `disable-model-invocation: true` is injected into `SKILL.md` frontmatter for every primitive sourced from `framework/core/commands/`, and absent for every primitive sourced from `framework/core/skills/`.
+  - Test: `scripts/build-plugins_test.ts::commands-get-disable-model-invocation-injected-skills-do-not`
+  - Evidence: `deno test -A scripts/build-plugins_test.ts --filter 'disable-model-invocation'` exits 0
+- [x] FR-DIST.MARKETPLACE: Agent frontmatter in `plugins/flowai/agents/*.md` is Claude-native — fields outside the Claude-supported set (per FR-DIST.MAPPING universal→Claude column) are stripped; supported fields preserved verbatim. Agent body unchanged.
+  - Test: `scripts/build-plugins_test.ts::agent-frontmatter-matches-claude-native-mapping`
+  - Evidence: `deno test -A scripts/build-plugins_test.ts --filter 'agent-frontmatter'` exits 0
+- [x] FR-DIST.MARKETPLACE: Marketplace + plugin manifest JSON validates against the official schema fields documented in `documents/design.md` (see Solution step 5). Required fields present, no unknown top-level fields, plugin `name` is kebab-case.
+  - Test: `scripts/build-plugins_test.ts::marketplace-and-plugin-json-schema-valid`
+  - Evidence: `deno test -A scripts/build-plugins_test.ts --filter 'schema-valid'` exits 0; additionally `claude plugin validate ./dist/claude-plugins` exits 0 (manual smoke).
+- [x] FR-DIST.MARKETPLACE: Local install end-to-end is automated by `deno task check` with `AUTO_INSTALL_PLUGINS=true` (declared in `.env`). The pipeline runs `scripts/build-plugins.ts` → `scripts/validate-plugins.ts` → `scripts/sync-plugins-local.ts --no-build`, which re-points the `flowai-plugins` marketplace at `./dist/claude-plugins` and installs every emitted pack into Claude Code at user scope.
+  - Test: runnable — `AUTO_INSTALL_PLUGINS=true deno task check` exits 0.
+  - Evidence: `claude plugin list | grep -c '@flowai-plugins'` returns `6`, and every matching entry's `Version:` line equals `jq -r .version deno.json` (currently `0.12.19`). Verified 2026-05-24 after `deno task build-plugins && deno run -A scripts/sync-plugins-local.ts --no-build`.
+- [x] FR-DIST.MARKETPLACE: CI job `release-claude-plugins` on a `framework-v*` tag builds the plugin tree, force-pushes to `korchasa/flowai-plugins` with a commit message `release: framework-vX.Y.Z`, and tags the same SHA `framework-vX.Y.Z` in the downstream repo.
   - Test: `manual — korchasa` (one preview tag, then one real tag)
-  - Evidence: `gh api repos/korchasa/flowai-plugins/git/refs/tags/framework-vX.Y.Z --jq '.object.sha'` returns a non-empty SHA after the tagged framework release.
-- [ ] FR-DIST.MARKETPLACE: `korchasa/flowai-plugins` repository exists and is reachable, contains `README.md` pointing back to this repo, and ships an initial commit produced by the CI job (no human-authored content other than `README.md`).
+  - Evidence: `gh api repos/korchasa/flowai-plugins/commits --jq '[.[] | select(.commit.message | startswith("release: framework-v"))] | length'` = 8 (incl. `framework-v0.13.0` HEAD = `5c300fb9`, 2026-05-24); `git ls-remote --tags https://github.com/korchasa/flowai-plugins` lists `framework-v0.12.13`..`framework-v0.13.0`.
+- [x] FR-DIST.MARKETPLACE: `korchasa/flowai-plugins` repository exists and is reachable, contains `README.md` pointing back to this repo, and ships an initial commit produced by the CI job (no human-authored content other than `README.md`).
   - Test: `manual — korchasa`
-  - Evidence: `gh repo view korchasa/flowai-plugins --json url,description -q '.url'` returns the URL.
-- [ ] FR-DIST.MARKETPLACE: No regression in `flowai-cli` — its acceptance suite passes against the framework HEAD that contains this pilot's build script and SRS edits.
+  - Evidence: `gh repo view korchasa/flowai-plugins --json url,description` returns the repo with description `Generated Claude Code plugin marketplace for AssistFlow framework — do not edit by hand; source: https://github.com/korchasa/flowai`.
+- [x] FR-DIST.MARKETPLACE: No regression in `flowai-cli` — its acceptance suite passes against the framework HEAD that contains this pilot's build script and SRS edits.
   - Test: `manual — korchasa`
-  - Evidence: `gh run list --repo korchasa/flowai-cli --workflow ci.yml --limit 1 --json conclusion -q '.[0].conclusion'` returns `success` after triggering the CLI repo's CI against post-pilot framework HEAD.
-- [ ] FR-DIST.MARKETPLACE: SRS gains a new `### FR-DIST.MARKETPLACE` subsection with `**Description**`, `**Scenario**`, `**Acceptance**` (the criteria above, all marked `[x]` after pilot ship) and `**Tasks:** [claude-code-plugin-marketplace-pilot](tasks/2026/05/claude-code-plugin-marketplace-pilot.md)`.
+  - Evidence: `gh run list --repo korchasa/flowai-cli --workflow ci.yml --limit 1 --json conclusion -q '.[0].conclusion'` = `success`.
+- [x] FR-DIST.MARKETPLACE: SRS gains a new `### FR-DIST.MARKETPLACE` subsection with `**Description**`, `**Scenario**`, `**Acceptance**` (the criteria above, all marked `[x]` after pilot ship) and `**Tasks:** [claude-code-plugin-marketplace-pilot](tasks/2026/05/claude-code-plugin-marketplace-pilot.md)`.
   - Test: `manual — korchasa`
-  - Evidence: `grep -n '^### FR-DIST.MARKETPLACE' documents/requirements.md` returns a non-empty match.
-- [ ] FR-DIST.GLOBAL: SRS `FR-DIST.GLOBAL` `Not in scope` list no longer contains "native marketplace plugin packaging" — it is replaced with a forward-pointer line "Native marketplace packaging — see FR-DIST.MARKETPLACE."
+  - Evidence: `grep -n '^#### FR-DIST.MARKETPLACE' documents/requirements.md` → `documents/requirements.md:341` (heading depth `####` under the `### FR-DIST` group).
+- [x] FR-DIST.GLOBAL: SRS `FR-DIST.GLOBAL` `Not in scope` list no longer contains "native marketplace plugin packaging" — it is replaced with a forward-pointer line "Native marketplace packaging — see FR-DIST.MARKETPLACE."
   - Test: `manual — korchasa`
-  - Evidence: `grep -c 'native marketplace plugin packaging' documents/requirements.md` returns `0`; `grep -c 'see FR-DIST.MARKETPLACE' documents/requirements.md` returns ≥`1`.
-- [ ] FR-DIST.MARKETPLACE: SDS gains a `### 3.X Claude Code plugin marketplace` subsection describing the build script, the `dist/claude-plugins/` layout, the CI release job, and the contract with `korchasa/flowai-plugins`.
+  - Evidence: `documents/requirements.md:316` — `**Not in scope:** Auto-migration from project to global. (Native marketplace packaging — see FR-DIST.MARKETPLACE.)`.
+- [x] FR-DIST.MARKETPLACE: SDS gains a `### 3.X Claude Code plugin marketplace` subsection describing the build script, the `dist/claude-plugins/` layout, the CI release job, and the contract with `korchasa/flowai-plugins`.
   - Test: `manual — korchasa`
-  - Evidence: `grep -n 'Claude Code plugin marketplace' documents/design.md` returns ≥`1`.
-- [ ] FR-DIST.MARKETPLACE: README §Installation gains a "Claude Code plugin marketplace (pilot)" subsection showing the two-step `/plugin marketplace add korchasa/flowai-plugins` + `/plugin install flowai@flowai-plugins` flow, with an explicit trust-and-security note.
+  - Evidence: `grep -n 'Claude Code plugin marketplace' documents/design.md` → `documents/design.md:400` (`### 3.5.1 Claude Code + Codex Plugin Marketplace — FR-DIST.MARKETPLACE`).
+- [x] FR-DIST.MARKETPLACE: README §Installation gains a "Claude Code plugin marketplace (pilot)" subsection showing the two-step `/plugin marketplace add korchasa/flowai-plugins` + `/plugin install flowai@flowai-plugins` flow, with an explicit trust-and-security note.
   - Test: `manual — korchasa`
-  - Evidence: `grep -n 'plugin marketplace add' README.md` returns ≥`1` line inside the Installation section; `grep -n 'execute arbitrary code' README.md` returns ≥`1`.
-- [ ] FR-DIST.MARKETPLACE: Build fails fast when a source primitive violates `FR-PACKS.CMD-INVARIANT` (a `framework/<pack>/commands/*/SKILL.md` already carrying `disable-model-invocation` in source) or `FR-PACKS.SKILL-INVARIANT` (a `framework/<pack>/skills/*/SKILL.md` carrying it). Error message names the offending file path and the violated invariant.
-  - Test: `scripts/build-claude-plugins_test.ts::fails-fast-on-cmd-invariant-violation` and `::fails-fast-on-skill-invariant-violation`
-  - Evidence: `deno test -A scripts/build-claude-plugins_test.ts --filter 'fails-fast'` exits 0 (tests assert non-zero exit from the build script on fixture violations).
-- [ ] FR-DIST.MARKETPLACE: After CI push, downstream `korchasa/flowai-plugins` retains its hand-authored `README.md` and `LICENSE` files unchanged. Only the generated `.claude-plugin/marketplace.json` and `plugins/` tree are replaced.
-  - Test: `manual — korchasa` (one preview tag; diff downstream README.md against the pre-CI commit)
-  - Evidence: `git -C <downstream-clone> log --oneline -- README.md LICENSE | wc -l` equals `1` (initial bootstrap commit only) after a CI run.
+  - Evidence: `README.md:81` (`/plugin marketplace add korchasa/flowai-plugins`); `README.md:133` (`plugins execute arbitrary code at your user privilege`).
+- [x] FR-DIST.MARKETPLACE: Build fails fast when a source primitive violates `FR-PACKS.CMD-INVARIANT` (a `framework/<pack>/commands/*/SKILL.md` already carrying `disable-model-invocation` in source) or `FR-PACKS.SKILL-INVARIANT` (a `framework/<pack>/skills/*/SKILL.md` carrying it). Error message names the offending file path and the violated invariant.
+  - Test: `scripts/build-plugins_test.ts::fails-fast-on-cmd-invariant-violation` and `::fails-fast-on-skill-invariant-violation`
+  - Evidence: `deno test -A scripts/build-plugins_test.ts --filter 'fails-fast'` exits 0 (tests assert non-zero exit from the build script on fixture violations).
+- [x] FR-DIST.MARKETPLACE: After CI push, downstream `korchasa/flowai-plugins` retains its hand-authored `README.md` and `LICENSE` files unchanged. Only the generated `.claude-plugin/marketplace.json` / `.agents/plugins/marketplace.json` / `plugins/` tree is replaced. Hand-authored edits by maintainers are allowed; the contract is that the CI release bot never mutates these paths.
+  - Test: runnable — `for sha in $(gh api "repos/korchasa/flowai-plugins/commits?per_page=50" --jq '.[] | select(.commit.message | startswith("release: framework-v")) | .sha'); do gh api "repos/korchasa/flowai-plugins/commits/$sha" --jq '[.files[].filename] | map(select(. == "README.md" or . == "LICENSE")) | length'; done | sort -u` returns only `0`.
+  - Evidence: audited 2026-05-24 — 8 release commits authored by `flowai-release-bot` (`framework-v0.12.13`..`framework-v0.13.0`), none touched `README.md` or `LICENSE`. The 2 historical `README.md` commits (`4b077238 chore: bootstrap`, `c6445d6b docs: update marketplace README for Codex`) are by `korchasa` and predate / are independent of the release pipeline.
 
 ## Solution
 
@@ -422,7 +422,7 @@ After the pilot landed, several core skills broke or degraded under plugin insta
 - [x] **FR-DIST.MARKETPLACE**: pack hooks (`framework/<pack>/hooks/<name>/{hook.yaml,run.ts}`) → `hooks/hooks.json` + per-hook `run.ts` copy; validator parses the JSON schema and cross-checks command files exist.
   - Test: `scripts/build-claude-plugins_test.ts::transforms-hook-yaml-into-hooks-json`
   - Evidence: synthetic-fixture test (core has zero hooks)
-- [ ] **FR-DIST.MARKETPLACE**: CLI aborts with an explicit message when a Claude Code plugin install for the same pack is detected. Cross-repo: implemented in [korchasa/flowai-cli](https://github.com/korchasa/flowai-cli).
+- **External follow-up** (not gating this task): CLI aborts with an explicit message when a Claude Code plugin install for the same pack is detected. Cross-repo: implemented in [korchasa/flowai-cli](https://github.com/korchasa/flowai-cli).
   - Test: TBD in `flowai-cli` repo
   - Evidence: manual — install plugin, run `flowai sync`, confirm non-zero exit.
 

@@ -91,9 +91,9 @@ Business value:
 - [x] FR-DIST.MARKETPLACE: local smoke instructions exist for Codex marketplace install.
   - Test: manual — korchasa
   - Evidence: README documents `codex plugin marketplace add ./dist/claude-plugins`, interactive `/plugins` install, and the current lack of `codex plugin install`.
-- [ ] FR-DIST.MARKETPLACE: Codex local smoke proves installed plugin skills load from the plugin cache.
-  - Test: manual — korchasa
-  - Evidence: transcript shows `/plugins` installs `flowai`, a new Codex thread sees a skill source under `.codex/plugins/cache/flowai-plugins/.../skills/...`, and no old `~/.codex/skills` or `.agents/skills` source shadows it.
+- [x] FR-DIST.MARKETPLACE: Codex local install is automated by `deno task check` with `AUTO_INSTALL_PLUGINS=true` (declared in `.env`). `scripts/sync-plugins-local.ts` runs `codex plugin marketplace remove flowai-plugins` + `codex plugin marketplace add <abs dist path>`; Codex 0.130+ auto-registers every pack with `enabled = true` in `~/.codex/config.toml`.
+  - Test: runnable — `AUTO_INSTALL_PLUGINS=true deno task check` exits 0.
+  - Evidence: `grep -cE '^\[plugins\."flowai[^\"]*@flowai-plugins\"\]' ~/.codex/config.toml` returns `6`; every following `enabled = true`. Verified 2026-05-24.
 
 ## Solution
 

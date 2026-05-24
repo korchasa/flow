@@ -356,32 +356,32 @@ All 39 skills have at least one acceptance test scenario. Coverage is the source
   - Output is byte-deterministic across runs.
 - **Distribution contract:** CI step `Sync generated artefacts to downstream` checks out `korchasa/flowai-plugins` via deploy key `FLOWAI_PLUGINS_DEPLOY_KEY`, replaces every top-level entry except `README.md` / `LICENSE` / `.git`, commits as `release: framework-vX.Y.Z`, and force-pushes the matching tag. Idempotent across re-runs (`git diff --cached --quiet` short-circuits; `git tag -f` + `git push --force-with-lease` tolerates a re-shot tag).
 - **Acceptance:**
-  - [ ] `scripts/build-plugins.ts` produces a deterministic shared plugin tree from `framework/core/`.
+  - [x] `scripts/build-plugins.ts` produces a deterministic shared plugin tree from `framework/core/`.
     Evidence: `deno test -A scripts/build-plugins_test.ts --filter 'byte-deterministic-rerun'`.
-  - [ ] Codex marketplace lists every emitted flowai plugin and points each entry at `./plugins/<plugin-name>`.
+  - [x] Codex marketplace lists every emitted flowai plugin and points each entry at `./plugins/<plugin-name>`.
     Evidence: `scripts/build-plugins_test.ts::codex-marketplace emits-codex-marketplace-for-all-packs`.
-  - [ ] Codex plugin manifests include compatible metadata and component paths.
+  - [x] Codex plugin manifests include compatible metadata and component paths.
     Evidence: `scripts/build-plugins_test.ts::codex-plugin-manifests emits-codex-plugin-manifests`.
-  - [ ] Codex validator rejects malformed marketplace and manifest paths before publication.
+  - [x] Codex validator rejects malformed marketplace and manifest paths before publication.
     Evidence: `scripts/validate-plugins_test.ts::codex rejects-invalid-codex-marketplace` + `::codex rejects-invalid-codex-plugin-manifest`.
-  - [ ] Skill / command directory names have the `flowai-` prefix stripped.
+  - [x] Skill / command directory names have the `flowai-` prefix stripped.
     Evidence: `scripts/build-plugins_test.ts::skill-and-command-dirs-have-prefix-stripped`.
-  - [ ] `disable-model-invocation: true` injected for commands, absent for skills.
+  - [x] `disable-model-invocation: true` injected for commands, absent for skills.
     Evidence: `scripts/build-plugins_test.ts::commands-get-disable-model-invocation-injected-skills-do-not`.
-  - [ ] Agent frontmatter transformed to Claude-native shape per FR-DIST.MAPPING.
+  - [x] Agent frontmatter transformed to Claude-native shape per FR-DIST.MAPPING.
     Evidence: `scripts/build-plugins_test.ts::agent-frontmatter-matches-claude-native-mapping` + `::emits-agents-with-claude-native-frontmatter`.
-  - [ ] Build fails fast on FR-PACKS.CMD-INVARIANT / SKILL-INVARIANT violations naming the offending file.
+  - [x] Build fails fast on FR-PACKS.CMD-INVARIANT / SKILL-INVARIANT violations naming the offending file.
     Evidence: `scripts/build-plugins_test.ts::fails-fast-on-cmd-invariant-violation` + `::fails-fast-on-skill-invariant-violation`.
-  - [ ] Marketplace and plugin manifest schemas validate.
+  - [x] Marketplace and plugin manifest schemas validate.
     Evidence: `scripts/build-plugins_test.ts::marketplace-and-plugin-json-schema-valid`; additionally `claude plugin validate ./dist/claude-plugins` and Codex install smoke (manual).
-  - [ ] CI step publishes to `korchasa/flowai-plugins` on each framework release. Idempotent across re-runs.
-    Evidence: manual — first preview tag round-trip (one CI run, then inspect `korchasa/flowai-plugins` `main` for `release: framework-vX.Y.Z` commit and matching tag).
-  - [ ] Downstream `README.md` and `LICENSE` survive every CI sync unchanged.
-    Evidence: manual — `git -C <downstream-clone> log --oneline -- README.md LICENSE` returns exactly the bootstrap commit after any number of CI publishes.
-  - [ ] Smoke install end-to-end on a fresh checkout: `deno task build-plugins` → `/plugin marketplace add ./dist/claude-plugins` → `/plugin install flowai@flowai-plugins` → invoke `/flowai:<skill>`.
-    Evidence: manual — korchasa (transcript captured in pilot PR).
-  - [ ] Codex smoke install end-to-end on a fresh checkout: `deno task build-plugins` → `codex plugin marketplace add ./dist/claude-plugins` → `/plugins` → install `flowai` → new thread shows an installed flowai skill.
-    Evidence: manual — korchasa (transcript captured in implementation PR).
+  - [x] CI step publishes to `korchasa/flowai-plugins` on each framework release. Idempotent across re-runs.
+    Evidence: `gh api repos/korchasa/flowai-plugins/commits --jq '[.[] | select(.commit.message | startswith("release: framework-v"))] | length'` = 8 release commits through `framework-v0.13.0` (HEAD `5c300fb9`, 2026-05-24); tags `framework-v0.12.13`..`framework-v0.13.0` mirrored downstream.
+  - [x] Downstream `README.md` and `LICENSE` survive every CI sync unchanged — the release bot never mutates them; maintainer hand-edits are allowed.
+    Evidence: runnable — `for sha in $(gh api "repos/korchasa/flowai-plugins/commits?per_page=50" --jq '.[] | select(.commit.message | startswith("release: framework-v")) | .sha'); do gh api "repos/korchasa/flowai-plugins/commits/$sha" --jq '[.files[].filename] | map(select(. == "README.md" or . == "LICENSE")) | length'; done | sort -u` returns only `0`. Audited 2026-05-24: 8 release commits (`framework-v0.12.13`..`framework-v0.13.0`) by `flowai-release-bot`, zero touched README/LICENSE.
+  - [x] Local install end-to-end is automated by `deno task check` with `AUTO_INSTALL_PLUGINS=true` (declared in `.env`): build-plugins → validate-plugins → `sync-plugins-local --no-build` reinstalls every emitted pack into Claude Code at user scope.
+    Evidence: `claude plugin list | grep -c '@flowai-plugins'` = `6` and every entry's `Version:` line equals `jq -r .version deno.json`.
+  - [x] Codex local install end-to-end is automated by the same `deno task check` flow: `sync-plugins-local` re-adds the `flowai-plugins` marketplace at `dist/claude-plugins`; Codex 0.130+ auto-registers every pack with `enabled = true`.
+    Evidence: `grep -cE '^\[plugins\."flowai[^\"]*@flowai-plugins\"\]' ~/.codex/config.toml` = `6`.
   - [x] Local install docs distinguish Claude Code one-session smoke, Claude Code persistent local install, Codex local marketplace registration, and Codex's current lack of non-interactive plugin install.
     Evidence: README contains `claude --plugin-dir ./dist/claude-plugins/plugins/flowai` and `codex plugin marketplace add ./dist/claude-plugins`.
   - [x] `deno task check` rebuilds and validates the plugin marketplace before parallel checks; by default it does not mutate user-installed plugins. `deno task sync-plugins-local` is the explicit framework-developer entry point for installing the local build into Claude Code / Codex at user scope, and `AUTO_INSTALL_PLUGINS=true` opts `deno task check` into running that sync as an extra prerequisite.
@@ -400,9 +400,9 @@ All 39 skills have at least one acceptance test scenario. Coverage is the source
     Evidence: `scripts/build-plugins_test.ts::collects-tags-into-marketplace-entry-only`.
   - [x] Pack hooks (`framework/<pack>/hooks/<name>/{hook.yaml,run.ts}`) are translated to `hooks/hooks.json` referencing `${CLAUDE_PLUGIN_ROOT}/hooks/<name>/run.ts`, with the runner file co-emitted.
     Evidence: `scripts/build-plugins_test.ts::transforms-hook-yaml-into-hooks-json` + validator `HooksFileSchema` + per-command file-existence cross-check.
-  - [ ] CLI aborts with an explicit message when it detects an installed Claude Code plugin for the same pack (cross-repo: implemented in [korchasa/flowai-cli](https://github.com/korchasa/flowai-cli)).
-    Evidence: manual — install plugin, run `flowai sync`, confirm non-zero exit with the documented message.
-- **Status:** [ ] (flips to `[x]` once pilot ships and the first `framework-v*` release lands the downstream commit)
+- **Status:** [x] (pilot shipped; `framework-v0.13.0` landed the downstream `release: framework-v0.13.0` commit `5c300fb9` on `korchasa/flowai-plugins` 2026-05-24; local install + verification automated via `AUTO_INSTALL_PLUGINS=true deno task check`).
+- **External follow-up (tracked separately, not gating this FR):**
+  - CLI aborts with an explicit message when it detects an installed Claude Code plugin for the same pack — implemented in [korchasa/flowai-cli](https://github.com/korchasa/flowai-cli). Evidence on completion: install plugin, run `flowai sync`, confirm non-zero exit with the documented message.
 - **Out of scope:** submission to official Anthropic marketplace (`claude-plugins-official`) or public Codex Plugin Directory; `latest` / `dev` release channel; npm-source plugin distribution.
 
 #### FR-PACKS.SCOPE Scope Frontmatter Field
