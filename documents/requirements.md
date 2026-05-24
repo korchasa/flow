@@ -64,20 +64,6 @@ Note: FR-DIST.MAPPING defines cross-IDE resource mapping; open questions need us
 - **Tasks:** [remove-flowai-prefix-from-primitives](tasks/2026/05/remove-flowai-prefix-from-primitives.md)
 - **Acceptance verified by acceptance tests:** See Component Coverage Matrix (section 3.8) — all skills benchmarked.
 
-### FR-WORKFLOW-ORCH: flowai-workflow Orchestration
-
-- **Description:** Workflow pack must provide a public `orchestrate` skill plus `orchestrator` subagent for policy-driven workflow selection. The orchestrator reads `.flowai-workflow/ORCHESTRATION.md`, discovers `.flowai-workflow/<name>/workflow.yaml`, uses append-only `.flowai-workflow/orchestration.jsonl` for decision history, returns a structured supervisor delegation request for each selected workflow (or directly delegates when the host supports nested subagents), and never diagnoses run artifacts directly. The public skill acts as parent dispatcher between orchestrator and supervisor when nested subagent calls are unavailable.
-- **Tasks:** [workflow-orchestration-agents](tasks/2026/05/2026-05-21-workflow-orchestration-agents.md)
-- **Acceptance verified by acceptance tests:** `orchestrate-maintenance-cadence`, `orchestrate-primary-before-maintenance`, `orchestrate-missing-or-ambiguous-policy`, `orchestrate-delegates-supervisor`, `orchestrator-long-cycle-delegation`
-- **Status:** [x]
-
-### FR-WORKFLOW-SUPERVISOR: flowai-workflow Run Supervision
-
-- **Description:** Workflow pack must provide `supervisor` subagent for exactly one workflow/run per invocation, and `supervise` must be a public wrapper that delegates to it. The supervisor starts or resumes a named workflow, reads `workflow.yaml`, `journal.jsonl`, `state.json`, `logs/`, and node artifacts as needed, diagnoses failed/stalled nodes, patches the smallest root-cause surface, resumes the same run with `flowai-workflow run <workflow> --resume <run-id>`, and never interprets `.flowai-workflow/ORCHESTRATION.md`.
-- **Tasks:** [workflow-orchestration-agents](tasks/2026/05/2026-05-21-workflow-orchestration-agents.md)
-- **Acceptance verified by acceptance tests:** `supervise-delegates-supervisor`, `supervisor-failed-run-resume`, `supervisor-no-orchestration-policy`
-- **Status:** [x]
-
 ### FR-MAINT: Project Maintenance
 
 - **Description:** The system must provide automated project maintenance via `deno task check` (composite generation, plugin marketplace build + validation, linting, testing, validation).
@@ -354,7 +340,7 @@ All 39 skills have at least one acceptance test scenario. Coverage is the source
 
 #### FR-DIST.MARKETPLACE Claude Code + Codex Plugin Marketplace
 
-- **Desc:** Additional native-plugin distribution channel for Claude Code and Codex users. The framework publishes a generated marketplace at downstream repo `korchasa/flowai-plugins`. Surface catalogs (`.claude-plugin/marketplace.json`, `.agents/plugins/marketplace.json`) and plugin payloads are generated from `framework/<pack>/` by `scripts/build-plugins.ts` on every framework release (CI step inside the existing `release` job, gated on `framework-v*` tag publication). No plugin artefacts are committed to this repo (`dist/` is gitignored). Seven marketplace packs ship as separate plugins (`flowai`, `flowai-deno`, `flowai-devtools`, `flowai-engineering`, `flowai-memex`, `flowai-typescript`, `flowai-workflow`). flowai CLI distribution (FR-DIST.SYNC) remains supported and is the channel for Cursor / OpenCode.
+- **Desc:** Additional native-plugin distribution channel for Claude Code and Codex users. The framework publishes a generated marketplace at downstream repo `korchasa/flowai-plugins`. Surface catalogs (`.claude-plugin/marketplace.json`, `.agents/plugins/marketplace.json`) and plugin payloads are generated from `framework/<pack>/` by `scripts/build-plugins.ts` on every framework release (CI step inside the existing `release` job, gated on `framework-v*` tag publication). No plugin artefacts are committed to this repo (`dist/` is gitignored). Six marketplace packs ship as separate plugins (`flowai`, `flowai-deno`, `flowai-devtools`, `flowai-engineering`, `flowai-memex`, `flowai-typescript`). flowai CLI distribution (FR-DIST.SYNC) remains supported and is the channel for Cursor / OpenCode.
 - **Tasks:** [claude-code-plugin-marketplace-pilot](tasks/2026/05/claude-code-plugin-marketplace-pilot.md), [codex-plugin-marketplace-support](tasks/2026/05/codex-plugin-marketplace-support.md), [remove-flowai-prefix-from-primitives](tasks/2026/05/remove-flowai-prefix-from-primitives.md)
 - **Scenario:** A user on Claude Code runs `/plugin marketplace add korchasa/flowai-plugins` once, then `/plugin install flowai@flowai-plugins`. A user on Codex runs `codex plugin marketplace add korchasa/flowai-plugins`; Codex 0.130.0+ registers every flowai pack as `[plugins."<name>@flowai-plugins"] enabled = true` in `~/.codex/config.toml` automatically and the next Codex thread loads them. Skills become available under the installed plugin namespace. Short primitive names avoid duplicate branding (`/flowai:commit`, not `/flowai:flowai-commit`). Updates flow via each IDE's plugin update path tied to the downstream repo commit SHA, so one framework release maps to exactly one plugin update event.
 - **Local install contract:** `deno task build-plugins` produces a local marketplace root at `./dist/claude-plugins`. Claude Code supports a one-session smoke via `claude --plugin-dir ./dist/claude-plugins/plugins/flowai` and persistent user install via `claude plugin marketplace add ./dist/claude-plugins` + `claude plugin install flowai@flowai-plugins --scope user`. Codex supports local marketplace registration via `codex plugin marketplace add ./dist/claude-plugins`; Codex 0.130.0+ auto-enables every pack from the marketplace in `~/.codex/config.toml`. Disabling a specific pack requires editing `[plugins."<name>@flowai-plugins"] enabled = false`.

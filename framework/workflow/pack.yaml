@@ -1,7 +1,0 @@
-name: workflow
-version: "1.0.0"
-description: >
-  Scaffold, orchestrate, and supervise flowai-workflow — DAG-based engine for
-  orchestrating AI agents. Wraps setup/adaptation, policy-driven workflow
-  selection, and one-run diagnose-and-resume supervision.
-scaffolds: {}

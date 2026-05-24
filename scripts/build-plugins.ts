@@ -43,7 +43,6 @@ export const DEFAULT_PACKS = [
   "engineering",
   "memex",
   "typescript",
-  "workflow",
 ] as const;
 const DEFAULT_OWNER_NAME = "korchasa";
 const DEFAULT_REPO = "https://github.com/korchasa/flowai";

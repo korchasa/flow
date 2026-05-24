@@ -106,9 +106,9 @@ Deno.test("validateNamingPrefix: skill with owning pack alias segment is error (
 
 Deno.test("validateNamingPrefix: agent with owning pack prefix is error (NP-5)", () => {
   const errors = validateNamingPrefix(
-    "workflow-" + "supervisor",
+    "devtools-" + "subagent",
     "agent",
-    "workflow",
+    "devtools",
   );
   assertEquals(errors.length, 1);
   assertEquals(errors[0].criterion, "NP-5");

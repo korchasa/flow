@@ -74,7 +74,7 @@ Framework primitives MAY declare `scope: project-only` or `scope: global-only` i
 
 ### Claude Code + Codex plugin marketplace
 
-In addition to the `flowai` CLI, Claude Code and Codex users can install any pack as a native plugin from the [korchasa/flowai-plugins](https://github.com/korchasa/flowai-plugins) marketplace. All seven marketplace packs (`core`, `deno`, `devtools`, `engineering`, `memex`, `typescript`, `workflow`) are published as separate plugins on every framework release:
+In addition to the `flowai` CLI, Claude Code and Codex users can install any pack as a native plugin from the [korchasa/flowai-plugins](https://github.com/korchasa/flowai-plugins) marketplace. All six marketplace packs (`core`, `deno`, `devtools`, `engineering`, `memex`, `typescript`) are published as separate plugins on every framework release:
 
 ```sh
 # Inside a Claude Code session:
@@ -86,7 +86,6 @@ In addition to the `flowai` CLI, Claude Code and Codex users can install any pac
 /plugin install flowai-engineering@flowai-plugins
 /plugin install flowai-devtools@flowai-plugins
 /plugin install flowai-memex@flowai-plugins
-/plugin install flowai-workflow@flowai-plugins
 /reload-plugins
 ```
 
@@ -99,7 +98,7 @@ codex plugin marketplace add korchasa/flowai-plugins
 # tables in `~/.codex/config.toml` if you want to disable specific packs.
 ```
 
-Skills are invoked under the plugin namespace: core uses `/flowai:`, while optional packs use `/flowai-<pack>:`, e.g. `/flowai:commit`, `/flowai:plan`, `/flowai:update`, `/flowai-engineering:deep-research`, `/flowai-memex:save`, `/flowai-workflow:scaffold`. Source primitive names are short kebab-case names; the plugin namespace carries the `flowai` brand. Cross-skill references inside skill bodies are rewritten to the namespaced form during build, and pack-level assets (e.g. `AGENTS.template.md`) ship inside each consuming skill — `/flowai:update` and `/flowai:init` work out of the box without a separate `flowai sync` step. Hooks declared by `devtools` and `memex` are translated to Claude Code's `hooks.json` format automatically.
+Skills are invoked under the plugin namespace: core uses `/flowai:`, while optional packs use `/flowai-<pack>:`, e.g. `/flowai:commit`, `/flowai:plan`, `/flowai:update`, `/flowai-engineering:deep-research`, `/flowai-memex:save`, `/flowai-devtools:engineer-skill`. Source primitive names are short kebab-case names; the plugin namespace carries the `flowai` brand. Cross-skill references inside skill bodies are rewritten to the namespaced form during build, and pack-level assets (e.g. `AGENTS.template.md`) ship inside each consuming skill — `/flowai:update` and `/flowai:init` work out of the box without a separate `flowai sync` step. Hooks declared by `devtools` and `memex` are translated to Claude Code's `hooks.json` format automatically.
 
 Codex receives the same generated `skills/` payload through `.agents/plugins/marketplace.json` and per-pack `.codex-plugin/plugin.json`. Codex hook execution is feature-gated; enable `[features].plugin_hooks = true` in Codex before relying on plugin hooks.
 
@@ -273,19 +272,6 @@ TypeScript-specific setup skills.
 **Skills:**
 - `setup-agent-code-style-deno` — Deno/TS code style
 - `setup-agent-code-style-strict` — strict TypeScript
-
-### workflow
-
-flowai-workflow setup, existing workflow adaptation, policy orchestration, and live-run supervision.
-
-**Skills:**
-- `scaffold` — scaffold a bundled flowai-workflow DAG or adapt an existing `.flowai-workflow/<name>` with project-specific config, prompts, scripts, and dry-run validation
-- `orchestrate` — run the `.flowai-workflow/ORCHESTRATION.md` policy loop, choose the next workflow from append-only history, and dispatch each selected run to the supervisor
-- `supervise` — delegate one live flowai-workflow run to the supervisor, diagnose failures from journal/state/log artifacts, patch root causes, and resume the same run
-
-**Agents:**
-- `orchestrator` — context-isolated policy loop owner for workflow selection, decision history, and supervisor delegation requests
-- `supervisor` — context-isolated one-run recovery owner for diagnose-and-resume supervision
 
 ## CLI Commands
 

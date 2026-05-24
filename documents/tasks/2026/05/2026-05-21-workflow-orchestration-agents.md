@@ -1,9 +1,8 @@
 ---
 date: 2026-05-21
 status: done
-implements:
-  - FR-WORKFLOW-ORCH
-  - FR-WORKFLOW-SUPERVISOR
+implements: []
+notes: "Historical record only. The flowai-workflow pack moved to the standalone repo korchasa/flowai-workflow; FR-WORKFLOW-ORCH and FR-WORKFLOW-SUPERVISOR were removed from this project's SRS."
 ---
 # Workflow Orchestration Agents
 

@@ -52,7 +52,7 @@
     scripts/<name>         # utility scripts (optional)
     assets/                # shared templates (optional, e.g. AGENTS.md templates)
   ```
-- **Packs:** `core` (base commands), `devtools` (skill/agent authoring), `engineering` (procedural knowledge), `deno` (Deno-specific), `typescript` (TS-specific), `memex` (long-term knowledge bank for AI agents, see §3.15), `workflow` (flowai-workflow scaffold/adaptation + policy orchestration + journal-aware live-run supervision), `ide-bridge` (cross-IDE delegation: relay + isolated-context subagent, see §3.17).
+- **Packs:** `core` (base commands), `devtools` (skill/agent authoring), `engineering` (procedural knowledge), `deno` (Deno-specific), `typescript` (TS-specific), `memex` (long-term knowledge bank for AI agents, see §3.15), `ide-bridge` (cross-IDE delegation: relay + isolated-context subagent, see §3.17).
 - **Resource discovery:** Convention over configuration — resources found by scanning subdirectories, not listed in `pack.yaml`.
 - **No inter-pack dependencies:** Each pack is self-contained. Enforced by `check-pack-refs.ts` (core→non-core and non-core-A→non-core-B references are errors; any→core and intra-pack are OK).
 - **Naming:** Directory names inside packs are the full installed names (e.g., `commit/`, `write-dep/`). flowai copies them as-is — no name transformation at install time.
@@ -141,8 +141,6 @@ Adoption is optional. IDEs that support `allowed-tools` will auto-approve matchi
   - `core/agents/skill-adapter.md`: Adapts skills to project specifics after upstream updates.
   - `core/agents/agent-adapter.md`: Adapts agent definitions to project specifics after upstream updates. Mirrors `skill-adapter` but for agent `.md` files — preserves YAML frontmatter, adapts body (system prompt).
   - `engineering/agents/deep-research-worker.md`: Research worker for a single direction within a deep research task; spawned by `deep-research` orchestrator.
-  - `workflow/agents/orchestrator.md`: Owns `.flowai-workflow/ORCHESTRATION.md`, workflow discovery, append-only `orchestration.jsonl`, and structured supervisor delegation requests; never reads run artifacts. `orchestrate` dispatches the supervisor from the parent context when nested subagents are unavailable.
-  - `workflow/agents/supervisor.md`: Owns one workflow/run, diagnoses from `workflow.yaml` + run artifacts, patches one root-cause surface, and resumes the same run; never interprets orchestration policy.
 - **Distribution:** `flowai` transforms canonical agents into IDE-specific format at install time.
 - **IDE frontmatter formats** (transformation rules owned by flowai, see also 3.5 Agent transformation rules):
   - **Universal (canonical):** `model` uses abstract tiers (`max`/`smart`/`fast`/`cheap`/`inherit`). Resolved by flowai at install time.
@@ -339,7 +337,7 @@ graph TD
   - `<out>/plugins/<plugin>/skills/<stripped>/SKILL.md` (+ supporting subdirs) — commands and skills merged into one dir; commands carry injected `disable-model-invocation: true`.
   - `<out>/plugins/<plugin>/agents/<name>.md` — agents with Claude-native frontmatter. Codex manifest does not declare an `agents` component because current Codex plugin docs do not define one.
   - `<out>/plugins/<plugin>/hooks/hooks.json` — generated only when the pack has hooks (no hooks in `core`).
-- **Internal model:** `DEFAULT_PACKS` currently publishes `core`, `deno`, `devtools`, `engineering`, `memex`, `typescript`, and `workflow`. `PluginPackArtifact` records plugin name, pack name, description, version, tags, hook presence, and license. Build flow: emit shared payload once per pack → emit Claude manifest → emit Codex manifest → emit Claude marketplace → emit Codex marketplace. Surface-specific emitters never re-read framework source.
+- **Internal model:** `DEFAULT_PACKS` currently publishes `core`, `deno`, `devtools`, `engineering`, `memex`, and `typescript`. `PluginPackArtifact` records plugin name, pack name, description, version, tags, hook presence, and license. Build flow: emit shared payload once per pack → emit Claude manifest → emit Codex manifest → emit Claude marketplace → emit Codex marketplace. Surface-specific emitters never re-read framework source.
 - **Short names:** source directories under `commands/` and `skills/`, and source agent stems under `agents/`, use unprefixed kebab-case names. Plugin names are `flowai` for core and `flowai-<pack>` for optional packs, so source `core/commands/commit` emits `/flowai:commit`. Legacy `flowai-<short>` source names are rejected by `scripts/check-naming-prefix.ts`; plugin build still strips the legacy prefix defensively for compatibility fixtures.
 - **Frontmatter transforms:**
   - SKILL.md: command source → inject `disable-model-invocation: true`; skill source → no injection. Resolve `model` tier (`max|smart|fast|cheap|inherit`) → `opus|sonnet|haiku|haiku|(drop)`.
