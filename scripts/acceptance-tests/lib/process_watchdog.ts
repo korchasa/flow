@@ -204,7 +204,7 @@ export function startWatchdog(
   let trip: WatchdogTrip | null = null;
   let forkOvershoots = 0;
   let rssOvershoots = 0;
-  let pendingTimer: number | undefined;
+  let pendingTimer: ReturnType<typeof setTimeout> | undefined;
   /** PGID of the agent process group; resolved lazily on the first tick. */
   let agentPgid: number | null = null;
   const rssGuardEnabled = cfg.maxRssBytes > 0;

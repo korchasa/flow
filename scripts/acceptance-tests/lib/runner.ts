@@ -287,7 +287,7 @@ async function runAgentWithTimeout(
   // Global scenario timeout (default 15 min)
   const totalTimeout = scenario.totalTimeoutMs ?? 900_000;
   let agentResult: { code: number; logs: string };
-  let globalTimeoutId: number | undefined;
+  let globalTimeoutId: ReturnType<typeof setTimeout> | undefined;
   const timeoutPromise = new Promise<never>((_, reject) => {
     globalTimeoutId = setTimeout(
       () =>
