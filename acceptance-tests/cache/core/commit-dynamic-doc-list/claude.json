@@ -1,16 +1,16 @@
 {
   "schema": 1,
-  "key": "b49bd3c4c58bc317b948496826ee2d2b180ba3fedc76a5004880e2170b00a2d1",
+  "key": "b2a6cecba840a55d27880bb109610c9eefbf8abe557dfc0112d05493740ff94f",
   "scenarioId": "commit-dynamic-doc-list",
   "ide": "claude",
   "agentModel": "claude-sonnet-4-6",
-  "recordedAt": "2026-05-08T01:20:51.951Z",
+  "recordedAt": "2026-05-24T17:07:59.805Z",
   "result": {
     "success": true,
     "score": 100,
     "errorsCount": 0,
     "warningsCount": 0,
-    "durationMs": 102383.331792,
+    "durationMs": 88192.83899999999,
     "tokensUsed": 0,
     "totalCost": 0,
     "toolCallsCount": 0,
@@ -18,15 +18,15 @@
     "checklistResults": {
       "custom_doc_discovered": {
         "pass": true,
-        "reason": "The agent explicitly read AGENTS.md (shown in logs: Read tool call for sandbox/AGENTS.md), and the AGENTS.md content confirms a Documentation Hierarchy section listing '4. **API Reference** (`documen…"
+        "reason": "The agent read AGENTS.md (visible in tool logs: 'Tool: Read' on AGENTS.md), which contains the Documentation Hierarchy section listing 'API Reference (`documents/api-reference.md`)'. The agent then e…"
       },
       "custom_doc_updated": {
         "pass": true,
-        "reason": "The git diff clearly shows documents/api-reference.md was updated: the original 'No endpoints defined yet.' was replaced with a full User API section documenting both `getUsers(): { id: number; name:…"
+        "reason": "The diff clearly shows documents/api-reference.md was updated: the placeholder 'No endpoints defined yet.' was replaced with a '## User API (`api.ts`)' section documenting both `getUsers(): { id: num…"
       },
       "code_committed": {
         "pass": true,
-        "reason": "The git log shows commit 11d80887 includes 'api.ts | 7 +++++++' as one of 4 changed files. The diff confirms api.ts was added with the getUsers and getUserById functions. The working tree is clean (n…"
+        "reason": "The git log confirms commit 7c6d9b12928b0eb42261b9d594992469fd91bba8 includes api.ts (shown as '7 insertions' in the commit summary). The final git status shows 'nothing to commit, working tree clean…"
       }
     }
   }

@@ -1,16 +1,16 @@
 {
   "schema": 1,
-  "key": "6da9bab99b56ed7c961177d4e7d8541eecc0faddc35c6945ba9059ff23559fe5",
+  "key": "a695acd2b777da384944303d3ac0cc4318c49acbbfe9cff59ec0c9e1ebea3d04",
   "scenarioId": "commit-sync-docs",
   "ide": "claude",
   "agentModel": "claude-sonnet-4-6",
-  "recordedAt": "2026-05-08T01:18:17.579Z",
+  "recordedAt": "2026-05-24T16:18:04.667Z",
   "result": {
     "success": true,
     "score": 100,
     "errorsCount": 0,
     "warningsCount": 0,
-    "durationMs": 98699.21075,
+    "durationMs": 38525.36933299992,
     "tokensUsed": 0,
     "totalCost": 0,
     "toolCallsCount": 0,
@@ -18,11 +18,11 @@
     "checklistResults": {
       "docs_updated": {
         "pass": true,
-        "reason": "The agent updated 'documents/README.md' via the Edit tool, replacing the old 'Old content' with a new '## Features' section containing '- **New feature**: `src.ts` outputs `'new feature'` to stdout.'…"
+        "reason": "The agent explicitly updated 'documents/README.md' via the Edit tool, replacing 'Old content' with a new '## src.ts' section describing the new feature. The diff confirms this change: '-Old content' …"
       },
       "docs_committed": {
         "pass": true,
-        "reason": "The documentation change is included in commit 722f759. The git log shows 'documents/README.md | 4 +++-' as part of the commit 'feat: add new feature output in src.ts with docs update', and the final…"
+        "reason": "The git log shows commit 'dea7609' includes both 'documents/README.md' and 'src.ts' (2 files changed). The commit message explicitly mentions updating documents/README.md. The final git status shows …"
       }
     }
   }

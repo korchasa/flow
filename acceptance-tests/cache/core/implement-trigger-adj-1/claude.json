@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "key": "c47de1d7ad7ae59064242d2cbc63d76b0050a2e240e376a0a81e022d5c8bab4a",
+  "scenarioId": "implement-trigger-adj-1",
+  "ide": "claude",
+  "agentModel": "claude-sonnet-4-6",
+  "recordedAt": "2026-05-24T15:59:58.530Z",
+  "result": {
+    "success": true,
+    "score": 100,
+    "errorsCount": 0,
+    "warningsCount": 0,
+    "durationMs": 127625.742,
+    "tokensUsed": 0,
+    "totalCost": 0,
+    "toolCallsCount": 0,
+    "model": "claude-sonnet-4-6",
+    "checklistResults": {
+      "skill_not_invoked": {
+        "pass": true,
+        "reason": "The agent never invoked the `implement` skill or read `implement/SKILL.md`. Instead, it correctly used the `investigate` skill (Tool: Skill with {\"skill\": \"investigate\"}), which is appropriate for ro…"
+      }
+    }
+  }
+}
