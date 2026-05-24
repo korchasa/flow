@@ -212,8 +212,18 @@ type ClaudePluginListEntry = {
 };
 
 export type ClaudeActionPlan = {
+  /**
+   * Plugins to (re)install at user scope. After `marketplace remove`,
+   * `claude plugin update` reports the plugin as "not installed" — we
+   * therefore route every plugin the user had enabled (plus brand-new
+   * ones) through `claude plugin install`, which is idempotent.
+   */
   install: string[];
-  update: string[];
+  /**
+   * Plugins the user previously installed at user scope but explicitly
+   * disabled (`enabled = false`). We do NOT re-enable them — leave the
+   * mute choice intact by not installing.
+   */
   skipped: string[];
 };
 
@@ -330,34 +340,38 @@ export function readMarketplacePluginNames(marketplaceJson: string): string[] {
 }
 
 /**
- * Given the set of plugins the local marketplace emits and the list of
- * plugins Claude Code reports for the current user, returns which plugin IDs
- * need `claude plugin install` (no user-scope entry yet) vs `claude plugin
- * update` (already enabled at user scope) vs `skipped` (installed at user
- * scope but disabled — leave alone to preserve the user's mute choice).
+ * Plans `claude plugin install` calls for a fresh marketplace registration.
+ *
+ * Why install-only, no update bucket: `claude plugin marketplace remove`
+ * detaches every plugin from that marketplace, so a subsequent
+ * `claude plugin update <id>` reports "Plugin not installed" and aborts.
+ * After re-adding the marketplace we therefore call `plugin install` for
+ * every plugin the user wants — which is idempotent. The only exception
+ * is plugins the user previously DISABLED at user scope: we leave them
+ * alone to preserve the mute choice.
+ *
+ * `installedBeforeRemove` must be captured BEFORE `marketplace remove` —
+ * after the remove, the listing has no flowai-plugins entries and the
+ * disabled set would be lost.
  */
 export function planClaudeActions(
   emittedNames: string[],
-  installed: ClaudePluginListEntry[],
+  installedBeforeRemove: ClaudePluginListEntry[],
   marketplace: string = MARKETPLACE_NAME,
 ): ClaudeActionPlan {
-  const enabledIds = new Set<string>();
   const disabledIds = new Set<string>();
-  for (const entry of installed) {
+  for (const entry of installedBeforeRemove) {
     if (typeof entry.id !== "string" || entry.scope !== "user") continue;
-    if (entry.enabled === true) enabledIds.add(entry.id);
-    else disabledIds.add(entry.id);
+    if (entry.enabled === false) disabledIds.add(entry.id);
   }
   const install: string[] = [];
-  const update: string[] = [];
   const skipped: string[] = [];
   for (const name of emittedNames) {
     const id = `${name}@${marketplace}`;
-    if (enabledIds.has(id)) update.push(id);
-    else if (disabledIds.has(id)) skipped.push(id);
+    if (disabledIds.has(id)) skipped.push(id);
     else install.push(id);
   }
-  return { install, update, skipped };
+  return { install, skipped };
 }
 
 async function readClaudePluginList(): Promise<ClaudePluginListEntry[]> {
@@ -435,16 +449,6 @@ async function syncClaude(absoluteOutDir: string): Promise<void> {
     await runInherited("claude", [
       "plugin",
       "install",
-      id,
-      "--scope",
-      "user",
-    ]);
-  }
-  for (const id of plan.update) {
-    console.log(`[sync-plugins-local] Updating Claude Code ${id}`);
-    await runInherited("claude", [
-      "plugin",
-      "update",
       id,
       "--scope",
       "user",

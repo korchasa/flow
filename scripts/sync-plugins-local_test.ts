@@ -42,33 +42,33 @@ Deno.test("readMarketplacePluginNames: throws when marketplace declares zero plu
   );
 });
 
-Deno.test("planClaudeActions: routes new plugins to install, enabled to update, disabled to skipped", () => {
+Deno.test("planClaudeActions: every emitted plugin goes to install, disabled stays skipped", () => {
   const plan = planClaudeActions(
-    ["flowai", "flowai-deno", "flowai-memex", "flowai-workflow"],
+    ["flowai", "flowai-deno", "flowai-memex", "flowai-typescript"],
     [
       { id: "flowai@flowai-plugins", scope: "user", enabled: true },
       { id: "flowai-deno@flowai-plugins", scope: "user", enabled: false },
       { id: "flowai-memex@flowai-plugins", scope: "user", enabled: true },
     ],
   );
-  assertEquals(plan.install, ["flowai-workflow@flowai-plugins"]);
-  assertEquals(plan.update, [
+  assertEquals(plan.install, [
     "flowai@flowai-plugins",
     "flowai-memex@flowai-plugins",
+    "flowai-typescript@flowai-plugins",
   ]);
   assertEquals(plan.skipped, ["flowai-deno@flowai-plugins"]);
 });
 
-Deno.test("planClaudeActions: ignores project-scope and other-marketplace installs", () => {
+Deno.test("planClaudeActions: ignores project-scope and other-marketplace disabled entries", () => {
   const plan = planClaudeActions(
     ["flowai"],
     [
-      { id: "flowai@flowai-plugins", scope: "project", enabled: true },
-      { id: "flowai@other-marketplace", scope: "user", enabled: true },
+      { id: "flowai@flowai-plugins", scope: "project", enabled: false },
+      { id: "flowai@other-marketplace", scope: "user", enabled: false },
     ],
   );
+  // Neither entry matches `<x>@flowai-plugins` at user scope → no skip.
   assertEquals(plan.install, ["flowai@flowai-plugins"]);
-  assertEquals(plan.update, []);
   assertEquals(plan.skipped, []);
 });
 
@@ -161,7 +161,7 @@ enabled = true
   const next = reconcileCodexFlowaiPluginEntries(original, [
     "flowai",
     "flowai-memex",
-    "flowai-workflow",
+    "flowai-typescript",
   ]);
   assertEquals(
     next.includes('[plugins."flowai-memex@flowai-plugins"]\nenabled = false'),
@@ -174,7 +174,7 @@ enabled = true
   );
   assertEquals(
     next.includes(
-      '[plugins."flowai-workflow@flowai-plugins"]\nenabled = true',
+      '[plugins."flowai-typescript@flowai-plugins"]\nenabled = true',
     ),
     true,
     "newly-emitted plugin defaults to enabled=true",
