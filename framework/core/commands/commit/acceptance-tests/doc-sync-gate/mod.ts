@@ -2,7 +2,7 @@ import { join } from "@std/path";
 import { AcceptanceTestScenario } from "@acceptance-tests/types.ts";
 
 /**
- * Tests that commit-beta detects a public-surface change (CLI flag
+ * Tests that commit detects a public-surface change (CLI flag
  * rename) and updates affected documentation (SRS FR-CLI-VERBOSE, README) —
  * not just commits the code.
  *
@@ -13,9 +13,9 @@ import { AcceptanceTestScenario } from "@acceptance-tests/types.ts";
  */
 export const CommitBetaDocSyncGateBench = new class
   extends AcceptanceTestScenario {
-  id = "commit-beta-doc-sync-gate";
+  id = "commit-doc-sync-gate";
   name = "Public-Surface Change Forces Doc Sync";
-  skill = "commit-beta";
+  skill = "commit";
   stepTimeoutMs = 420_000;
   maxSteps = 30;
   agentsTemplateVars = {
@@ -47,7 +47,7 @@ export const CommitBetaDocSyncGateBench = new class
   }
 
   userQuery =
-    "/commit-beta I renamed the --verbose CLI flag to --debug in src/cli.ts. Commit the change.";
+    "/commit I renamed the --verbose CLI flag to --debug in src/cli.ts. Commit the change.";
 
   checklist = [
     {

@@ -107,7 +107,7 @@ export function selectScenarios(
     : allScenarios;
 
   // Apply skill override: repoint filtered scenarios to a different skill.
-  // Useful for A/B testing (e.g., run commit acceptance tests against commit-beta).
+  // Useful for A/B testing (e.g., run review-and-commit acceptance tests against ship).
   if (skillOverride) {
     scenariosToRun = scenariosToRun
       .filter((s) => s.skill) // only skill-based scenarios

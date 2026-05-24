@@ -7,7 +7,7 @@ _params:
   TERMINATION:
     choices: [TOTAL_STOP, HAND_OFF_TO_NEXT]
     default: TOTAL_STOP
-    description: Final-step behaviour — TOTAL_STOP for standalone use; HAND_OFF_TO_NEXT when consumed inside a composite (do-with-plan, ship) so the agent continues into the next phase instead of stopping.
+    description: Final-step behaviour — TOTAL_STOP for standalone use; HAND_OFF_TO_NEXT when consumed inside a composite (e.g. ship) so the agent continues into the next phase instead of stopping.
 ---
 
 # Task Planning (committed-tasks variant)

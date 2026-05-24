@@ -1,5 +1,5 @@
 ---
-name: commit-beta
+name: commit
 description: Streamlined commit workflow — fewer tool calls, targeted doc sync
 _params:
   DIFF_SOURCE:
@@ -117,7 +117,7 @@ The project follows Conventional Commits 1.0.0 and uses a structured documentati
      d. Do NOT ask the user for confirmation before invoking; proceed autonomously (the context question in step b is not a confirmation request — it gathers missing information).
    - If none detected, skip silently.
 7. **Post-Reflect Cleanup Commit** _(skip if reflect produced no edits)_
-   - Run `git status`. If reflect left working-tree edits (typically `AGENTS.md`, `**/CLAUDE.md`, `framework/**`, `.claude/**`, `documents/**`): stage them and commit as `agent: apply reflect-suggested improvements` (or narrower scope, e.g. `agent(commit-beta): tighten doc-audit gate`). Do NOT amend earlier commits — keep reflect-driven edits as a separate commit. If `git status` is clean, skip.
+   - Run `git status`. If reflect left working-tree edits (typically `AGENTS.md`, `**/CLAUDE.md`, `framework/**`, `.claude/**`, `documents/**`): stage them and commit as `agent: apply reflect-suggested improvements` (or narrower scope, e.g. `agent(commit): tighten doc-audit gate`). Do NOT amend earlier commits — keep reflect-driven edits as a separate commit. If `git status` is clean, skip.
 8. **Verify Clean State**
    - Run `git status` to confirm all changes are committed.
    - If uncommitted changes remain, investigate and report to the user.

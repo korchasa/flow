@@ -212,9 +212,9 @@ Deno.test("FR-UNIVERSAL.DISCLOSURE: file exceeding 5000 tokens is error", () => 
 
 Deno.test("FR-UNIVERSAL.DISCLOSURE: composite skills are exempt from 5000-token cap", () => {
   const content = "x".repeat(40000); // 10000 tokens — would fail for non-composite
-  const fm = { name: "do-with-plan", description: "y" };
+  const fm = { name: "ship", description: "y" };
   const errors = validateProgressiveDisclosure(
-    "do-with-plan",
+    "ship",
     content,
     fm,
   );
@@ -227,9 +227,9 @@ Deno.test("FR-UNIVERSAL.DISCLOSURE: composite skills are exempt from 5000-token 
 
 Deno.test("FR-UNIVERSAL.DISCLOSURE: composite skills still hit the SKILL_MAX_LINES cap", () => {
   const content = "x\n".repeat(SKILL_MAX_LINES); // line cap exactly
-  const fm = { name: "do-with-plan", description: "y" };
+  const fm = { name: "ship", description: "y" };
   const errors = validateProgressiveDisclosure(
-    "do-with-plan",
+    "ship",
     content,
     fm,
   );
@@ -243,11 +243,11 @@ Deno.test("FR-UNIVERSAL.DISCLOSURE: composite skills still hit the SKILL_MAX_LIN
 Deno.test("FR-UNIVERSAL.DISCLOSURE: composite skills still hit the catalog (frontmatter) cap", () => {
   const content = "short";
   const fm = {
-    name: "do-with-plan",
+    name: "ship",
     description: "x".repeat(500), // > 100 tokens
   };
   const errors = validateProgressiveDisclosure(
-    "do-with-plan",
+    "ship",
     content,
     fm,
   );

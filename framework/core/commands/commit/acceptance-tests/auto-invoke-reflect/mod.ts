@@ -3,9 +3,9 @@ import { AcceptanceTestScenario } from "@acceptance-tests/types.ts";
 
 export const CommitBetaAutoInvokeReflectBench = new class
   extends AcceptanceTestScenario {
-  id = "commit-beta-auto-invoke-reflect";
+  id = "commit-auto-invoke-reflect";
   name = "Auto-invoke /reflect after error-prone session";
-  skill = "commit-beta";
+  skill = "commit";
   stepTimeoutMs = 420_000;
   maxSteps = 30;
   agentsTemplateVars = {
@@ -35,7 +35,7 @@ export const CommitBetaAutoInvokeReflectBench = new class
   }
 
   userQuery =
-    "/commit-beta I had to fix the parse function after several failed attempts — parseInt was silently returning NaN, tests kept failing, and you suggested the wrong approach twice before I corrected you. The new version throws on invalid input. Commit this fix.";
+    "/commit I had to fix the parse function after several failed attempts — parseInt was silently returning NaN, tests kept failing, and you suggested the wrong approach twice before I corrected you. The new version throws on invalid input. Commit this fix.";
 
   checklist = [
     {

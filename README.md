@@ -183,10 +183,8 @@ Base commands for development workflows (commit, plan, review, init, etc.).
 
 **Commands:**
 - `init` — project initialization (AGENTS.md, docs scaffolding, dev commands)
-- `commit` — atomic commits with QA and self-reflection
-- `commit-beta` — streamlined commit (targeted doc sync, inline grouping)
+- `commit` — streamlined atomic commits (targeted doc sync, inline grouping, auto-invoked reflect)
 - `review-and-commit` — streamlined review + commit (reuses diff across phases)
-- `do-with-plan` — full plan → implement → review-and-commit cycle (user-only composite, **deprecated** — prefer `ship`)
 - `push` — safe git push (no `--force`, explicit upstream confirmation, post-push `@{u}==HEAD` verification)
 - `ship` — terminal full-cycle composite: plan → implement → review → commit → push (4 explicit gates)
 - `update` — reconcile project AGENTS.md/CLAUDE.md/scaffolded artifacts with framework templates

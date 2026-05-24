@@ -2,15 +2,15 @@ import { join } from "@std/path";
 import { AcceptanceTestScenario } from "@acceptance-tests/types.ts";
 
 /**
- * Tests that commit-beta skips documentation sync for infra-only changes
+ * Tests that commit skips documentation sync for infra-only changes
  * (test files, CI, benchmarks). The agent should commit without reading/updating
  * any documents/ files and output "Documentation sync: skipped".
  */
 export const CommitBetaInfraOnlySkipBench = new class
   extends AcceptanceTestScenario {
-  id = "commit-beta-infra-only-skip";
+  id = "commit-infra-only-skip";
   name = "Infra-Only Changes Skip Doc Sync";
-  skill = "commit-beta";
+  skill = "commit";
   stepTimeoutMs = 300_000;
   agentsTemplateVars = {
     PROJECT_NAME: "TestProject",
@@ -41,7 +41,7 @@ Deno.test("subtract returns difference", () => {
   }
 
   userQuery =
-    "/commit-beta Added a subtract test in math_test.ts. Commit the changes.";
+    "/commit Added a subtract test in math_test.ts. Commit the changes.";
 
   checklist = [
     {

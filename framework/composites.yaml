@@ -14,9 +14,9 @@ atoms:
   review:
     source: framework/atoms/review.md
     target: framework/core/skills/review/SKILL.md
-  commit-beta:
-    source: framework/atoms/commit-beta.md
-    target: framework/core/commands/commit-beta/SKILL.md
+  commit:
+    source: framework/atoms/commit.md
+    target: framework/core/commands/commit/SKILL.md
     default_params:
       DIFF_SOURCE: FRESH_READ
   do:
@@ -37,23 +37,7 @@ composites:
       - title: Phase 1 — Review
         atom: review
       - title: Phase 2 — Commit
-        atom: commit-beta
-        params:
-          DIFF_SOURCE: REUSE_PRIOR_PHASE
-  do-with-plan:
-    target: framework/core/commands/do-with-plan/SKILL.md
-    wrapper: framework/composites/do-with-plan.md
-    phases:
-      - title: Plan Phase
-        atom: plan-exp-permanent-tasks
-        params:
-          TERMINATION: HAND_OFF_TO_NEXT
-      - title: Implement Phase
-        inline: true
-      - title: Review-and-Commit Phase (review)
-        atom: review
-      - title: Commit Steps (continuation of Review-and-Commit Phase)
-        atom: commit-beta
+        atom: commit
         params:
           DIFF_SOURCE: REUSE_PRIOR_PHASE
   ship:
@@ -71,7 +55,7 @@ composites:
       - title: Review Phase
         atom: review
       - title: Commit Phase
-        atom: commit-beta
+        atom: commit
         params:
           DIFF_SOURCE: REUSE_PRIOR_PHASE
       - title: Push Phase

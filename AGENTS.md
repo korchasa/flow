@@ -93,7 +93,7 @@ All workflows are implemented as **Skills** according to the [agentskills.io](ht
 ## Documentation Map
 
 Maps source-code paths to documentation sections that describe them. Used by
-`commit-beta` / `review-and-commit` to find the section to compare-and-update
+`commit` / `review-and-commit` to find the section to compare-and-update
 when each file changes. If a change touches a path below and the mapped section
 contradicts new code → update the section.
 

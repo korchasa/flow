@@ -34,8 +34,7 @@ dist/
 # Every consumer regenerates via `deno run -A scripts/generate-skill-composites.ts --write`
 # before reading. Keep this list in lock-step with `--list-targets` output;
 # scripts/check-skills.ts enforces parity.
-framework/core/commands/commit-beta/SKILL.md
-framework/core/commands/do-with-plan/SKILL.md
+framework/core/commands/commit/SKILL.md
 framework/core/commands/plan-exp-permanent-tasks/SKILL.md
 framework/core/commands/push/SKILL.md
 framework/core/commands/review-and-commit/SKILL.md
