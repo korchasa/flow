@@ -2,6 +2,112 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.13.0](https://github.com/korchasa/flowai/compare/v0.12.19...v0.13.0) (2026-05-24)
+
+
+### ⚠ BREAKING CHANGES
+
+* model-invocable skill /do is renamed to /implement.
+Same TDD-cycle behaviour, clearer verb.
+
+- Atom: framework/atoms/do.md → framework/atoms/implement.md;
+  frontmatter `name: do` → `name: implement`.
+- Manifest: atoms.do → atoms.implement (source/target paths);
+  ship composite phase `atom: do` → `atom: implement`.
+- Target dir: framework/core/skills/do/ → framework/core/skills/implement/;
+  .gitignore entry updated.
+- Acceptance scenarios moved under skills/implement/acceptance-tests/;
+  ids `do-*` → `implement-*`, skill="implement", userQuery "/implement ...",
+  class names `Do*` → `Implement*`. Primitive-name refs in comments
+  updated (`do executes` → ``implement` executes`, etc.); natural-English
+  occurrences ("do NOT tell it", "what should we do") preserved.
+- SRS: FR-ATOM-DO → FR-ATOM-IMPLEMENT (heading, ID, description body,
+  acceptance scenario IDs); FR-SHIP five-atom list updated.
+- SDS: §3.0 generation pipeline + commands/skills lists refreshed;
+  §3.1.1 ship composite description renamed.
+- README skill catalog: `do` row → `implement`.
+- Documentation index: FR-ATOM-DO row → FR-ATOM-IMPLEMENT (alphabetical
+  position preserved).
+- framework/AGENTS.md: fixture template path repointed to
+  framework/core/skills/implement/acceptance-tests/tdd-cycle-completes/.
+- Task frontmatter: generate-skills-from-atoms.md `implements:`
+  FR-ATOM-DO → FR-ATOM-IMPLEMENT (body narrative kept as historical).
+- Cache cleanup: stale do-* and do-with-plan-* cache dirs git-rm'd.
+- Smoke acceptance: `implement-tdd-cycle-completes` PASS under the
+  renamed canon.
+
+Full sweep deferred to user:
+  deno task acceptance-tests -f implement
+  deno task acceptance-tests -f ship
+* removes /commit-beta and /do-with-plan slash commands.
+Functionality preserved under /commit (renamed canon) and /ship respectively.
+
+- Delete legacy `commit` standalone primitive (17 acceptance scenarios);
+  migrate 16 universal-commit scenarios under the renamed canon (drop
+  `suggest-reflect` — auto-invoke already covered by commit-beta scenario).
+- Delete deprecated `do-with-plan` composite end-to-end: wrapper, 6
+  acceptance scenarios, manifest entry, generator target.
+- Rename atom `commit-beta` → `commit` (frontmatter `name`, manifest
+  `atoms.commit`, source path, target path, .gitignore entry, example
+  scope in `agent(commit): …`). Move 3 existing commit-beta acceptance
+  scenarios under `commit/`; rebuild ids and userQuery slashes.
+- Refresh docs: SRS FR-DO-WITH-PLAN marked [x] Removed; FR-REVIEW-COMMIT,
+  FR-SHIP, FR-SKILL-COMPOSE, FR-JIT-REVIEW descriptions rewritten;
+  SDS §3.0 Primitive Inventory + §3.1.1 composite descriptions
+  refreshed (8→7 generated targets, 10→8 commands); README skill
+  catalog and Documentation Map updated; `framework/AGENTS.md` template
+  path repointed to a live fixture; `plan-exp-permanent-tasks` atom
+  composite-example note updated.
+- Fixture data: `scripts/check-skills_test.ts` composite-exemption
+  tests swap `do-with-plan` → `ship`; `acceptance_discovery.ts`
+  A/B comment refreshed.
+- Cache cleanup: remove stale `commit-beta-*` cache dirs; smoke
+  acceptance scenarios `commit-auto-invoke-reflect`, `commit-basic`,
+  `review-and-commit-approve` all PASS under the renamed canon.
+
+Full sweep deferred to user via:
+  deno task acceptance-tests -f commit
+  deno task acceptance-tests -f review-and-commit
+  deno task acceptance-tests -f ship
+
+### Features
+
+* add workflow orchestration and plugin refresh checks ([c169b29](https://github.com/korchasa/flowai/commit/c169b29368d4f79e913f4eb84719607ca93ea33c))
+* **plugins:** remove flowai-workflow pack ([dc0434f](https://github.com/korchasa/flowai/commit/dc0434f8c336b9e1ca19f404690166033d1b8892))
+* **plugins:** replace auto-install with sync-plugins-local dogfood loop ([d2fc0ec](https://github.com/korchasa/flowai/commit/d2fc0ec5ac516b6d9e4a9c9b5ac7d492c88a0b18))
+* retire legacy commit and do-with-plan; rename commit-beta atom to commit ([2276e43](https://github.com/korchasa/flowai/commit/2276e4307e3c3c22ef74bcf9b369c720d648f877))
+* **review:** merge jit-review into review atom ([72b6e05](https://github.com/korchasa/flowai/commit/72b6e0594345fb29dd5e80a56e6ee3b88557926d))
+* shorten flowai primitive names ([6da2b0f](https://github.com/korchasa/flowai/commit/6da2b0feb1b7d80d0b92a66f21313f189f3a24d4))
+
+
+### Bug Fixes
+
+* **acceptance-tests:** type timer ids as ReturnType<typeof setTimeout> ([15d0426](https://github.com/korchasa/flowai/commit/15d0426c9a96c5e8d23f1869a0c22bff99155427))
+
+
+### Code Refactoring
+
+* **sync-plugins-local:** harden TOML parsing and Claude install plan ([4bda7ae](https://github.com/korchasa/flowai/commit/4bda7ae6b32cb007a939b96a2ba93cc0c75b9b5f))
+
+
+### Documentation
+
+* add SDS §3.0 Primitive Inventory and wire into Documentation Map ([0291b96](https://github.com/korchasa/flowai/commit/0291b96518f82961e4a5aabb9f4aa6b5f6277365))
+* add skill-agent rename task ([2622ee0](https://github.com/korchasa/flowai/commit/2622ee0d5a02f1dac22f4b440b92e6eaeea6312e))
+* format prompt extraction skill ([2e097c4](https://github.com/korchasa/flowai/commit/2e097c4a67eb3f06f228cade45e0920288051bc6))
+* **framework:** drop stale workflow pack entry ([083b7f0](https://github.com/korchasa/flowai/commit/083b7f0ec44248aace9450936437e9c360d61b6e))
+
+
+### Agent Changes
+
+* apply reflect-suggested improvements ([11e966b](https://github.com/korchasa/flowai/commit/11e966b1e8424d0360f04b7fa332aceeab9b52d2))
+* rename atom do → implement (skill + FR + manifest) ([66637e1](https://github.com/korchasa/flowai/commit/66637e144370ff0f630c0eb2ee2546d24453117d))
+
+
+### Tests
+
+* **acceptance:** refresh cache after commit + implement rename ([9000a3c](https://github.com/korchasa/flowai/commit/9000a3c1d88322033272c29b94d9acf0f5dae905))
+
 ### [0.12.19](https://github.com/korchasa/flowai/compare/v0.12.18...v0.12.19) (2026-05-20)
 
 
