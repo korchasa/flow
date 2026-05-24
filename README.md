@@ -191,7 +191,7 @@ Base commands for development workflows (commit, plan, review, init, etc.).
 - `adapt` — adapt project-local skills/agents/hooks/assets to project specifics (standalone)
 
 **Skills:**
-- `do` — TDD implement skill (RED → GREEN → REFACTOR → CHECK over a written plan)
+- `implement` — TDD implement skill (RED → GREEN → REFACTOR → CHECK over a written plan)
 - `plan` — task planning (GODS format, gitignored task file)
 - `/plan-exp-permanent-tasks` (command) — experimental committed-tasks variant; writes a persistent task at `documents/tasks/<YYYY>/<MM>/<slug>.md` with new-shape frontmatter (`date`, `status: to do | in progress | done`, `implements`, `tags`, `related_tasks`); status auto-derives from DoD by commit skills
 - `epic` — structured feature specification for multi-session features

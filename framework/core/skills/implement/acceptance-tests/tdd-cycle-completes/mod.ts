@@ -1,16 +1,17 @@
 import { AcceptanceTestScenario } from "@acceptance-tests/types.ts";
 
 /**
- * do executes a one-step plan under TDD. The fixture contains a plan
+ * `implement` executes a one-step plan under TDD. The fixture contains a plan
  * file (`documents/tasks/2026/05/add-trim.md`) whose Solution asks for a
  * `trim` function in `strings.ts`. The agent must follow RED → GREEN →
  * REFACTOR → CHECK observable in the trace, not jump straight to writing the
  * implementation.
  */
-export const DoTddCycleCompletes = new class extends AcceptanceTestScenario {
-  id = "do-tdd-cycle-completes";
+export const ImplementTddCycleCompletes = new class
+  extends AcceptanceTestScenario {
+  id = "implement-tdd-cycle-completes";
   name = "TDD cycle observable in trace";
-  skill = "do";
+  skill = "implement";
   maxSteps = 25;
   stepTimeoutMs = 420_000;
   agentsTemplateVars = {
@@ -20,7 +21,7 @@ export const DoTddCycleCompletes = new class extends AcceptanceTestScenario {
   interactive = true;
 
   userQuery =
-    "/do Execute the Solution in documents/tasks/2026/05/add-trim.md under TDD.";
+    "/implement Execute the Solution in documents/tasks/2026/05/add-trim.md under TDD.";
 
   userPersona =
     `You are a developer who has already written a plan and now wants the agent to implement it under TDD.

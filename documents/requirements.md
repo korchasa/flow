@@ -675,11 +675,11 @@ All 39 skills have at least one acceptance test scenario. Coverage is the source
 - **Evidence:** `deno test -A scripts/generate-skill-composites_test.ts && deno test -A scripts/check-pack-refs_test.ts && deno run -A scripts/generate-skill-composites.ts --check && deno run -A scripts/check-pack-refs.ts --leakage`
 - **Status:** [x]
 
-### FR-ATOM-DO: TDD Implement Atom — `do`
+### FR-ATOM-IMPLEMENT: TDD Implement Atom — `implement`
 
-- **Description:** Model-invocable skill that drives the canonical TDD cycle (RED → GREEN → REFACTOR → CHECK, per [AGENTS.md § TDD Flow](../framework/AGENTS.md)) against a written plan's Solution section. Triggers on "implement under TDD per task plan" prompts without overlapping `plan` (planning), `review` (post-implement review), or `fix-tests` (existing-test repair). Source: `framework/atoms/do.md`. Generated SKILL.md materialized by [scripts/generate-skill-composites.ts](../scripts/generate-skill-composites.ts) per FR-SKILL-COMPOSE.
+- **Description:** Model-invocable skill that drives the canonical TDD cycle (RED → GREEN → REFACTOR → CHECK, per [AGENTS.md § TDD Flow](../framework/AGENTS.md)) against a written plan's Solution section. Triggers on "implement under TDD per task plan" prompts without overlapping `plan` (planning), `review` (post-implement review), or `fix-tests` (existing-test repair). Source: `framework/atoms/implement.md`. Generated SKILL.md materialized by [scripts/generate-skill-composites.ts](../scripts/generate-skill-composites.ts) per FR-SKILL-COMPOSE.
 - **Tasks:** [generate-skills-from-atoms](tasks/2026/05/generate-skills-from-atoms.md)
-- **Acceptance verified by acceptance tests:** `do-tdd-cycle-completes`, `do-returns-to-red-on-check-failure`, `do-trigger-pos-1`, `do-trigger-adj-1`, `do-trigger-false-1`. (Implementation deviates from the task's "consolidated mixed-1" plan to keep `check-trigger-coverage.ts` happy without an exemption.)
+- **Acceptance verified by acceptance tests:** `implement-tdd-cycle-completes`, `implement-returns-to-red-on-check-failure`, `implement-trigger-pos-1`, `implement-trigger-adj-1`, `implement-trigger-false-1`. (Implementation deviates from the task's "consolidated mixed-1" plan to keep `check-trigger-coverage.ts` happy without an exemption.)
 - **Status:** [x]
 
 ### FR-ATOM-PUSH: Git Push Atom — `push`
@@ -691,7 +691,7 @@ All 39 skills have at least one acceptance test scenario. Coverage is the source
 
 ### FR-SHIP: Terminal Full-Cycle Workflow — `ship`
 
-- **Description:** User-invoked composite command: plan → implement → review → commit → push. Five phases, four explicit gates (variant-selection after Plan, green-check before Review, verdict gate before Commit, clean-tree + branch-protection check before Push). Generated from `framework/composites/ship.md` + the five atoms (`plan-exp-permanent-tasks`, `do`, `review`, `commit`, `push`) per FR-SKILL-COMPOSE. Composite canon (no delegation, "Self-contained — execute the inlined steps directly" marker, explicit verdict-gate branches, 500-line cap) is machine-enforced by the generator.
+- **Description:** User-invoked composite command: plan → implement → review → commit → push. Five phases, four explicit gates (variant-selection after Plan, green-check before Review, verdict gate before Commit, clean-tree + branch-protection check before Push). Generated from `framework/composites/ship.md` + the five atoms (`plan-exp-permanent-tasks`, `implement`, `review`, `commit`, `push`) per FR-SKILL-COMPOSE. Composite canon (no delegation, "Self-contained — execute the inlined steps directly" marker, explicit verdict-gate branches, 500-line cap) is machine-enforced by the generator.
 - **Tasks:** [generate-skills-from-atoms](tasks/2026/05/generate-skills-from-atoms.md)
 - **Acceptance verified by acceptance tests:** `ship-full-cycle-success`, `ship-pauses-for-variant-selection`, `ship-rejects-on-changes-requested`, `ship-refuses-push-on-dirty-tree`. No trigger scenario (command convention).
 - **Status:** [x]

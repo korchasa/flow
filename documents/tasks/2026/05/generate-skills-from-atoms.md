@@ -3,7 +3,7 @@ date: "2026-05-17"
 status: done
 implements:
   - FR-SKILL-COMPOSE
-  - FR-ATOM-DO
+  - FR-ATOM-IMPLEMENT
   - FR-ATOM-PUSH
   - FR-SHIP
   - FR-REVIEW-COMMIT

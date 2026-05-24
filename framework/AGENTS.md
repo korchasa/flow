@@ -69,4 +69,4 @@ When an acceptance test scenario invokes `deno task check` (or any project-check
 "test": { "exclude": [".claude/", "acceptance-tests/"] }
 ```
 
-Without these, the sandbox's `deno fmt --check` and `deno lint` apply to the copied `framework/`-as-`.claude/` tree, which has formatting/lint drift relative to the sandbox project. Symptoms: a happy-path checklist item like `check_gate_enforced` fails with the agent surfacing an fmt diff against files it never touched. Fix-it-once template lives in `framework/core/skills/do/acceptance-tests/tdd-cycle-completes/fixture/deno.json`.
+Without these, the sandbox's `deno fmt --check` and `deno lint` apply to the copied `framework/`-as-`.claude/` tree, which has formatting/lint drift relative to the sandbox project. Symptoms: a happy-path checklist item like `check_gate_enforced` fails with the agent surfacing an fmt diff against files it never touched. Fix-it-once template lives in `framework/core/skills/implement/acceptance-tests/tdd-cycle-completes/fixture/deno.json`.

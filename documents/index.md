@@ -7,7 +7,7 @@ Agent-maintained navigation aggregator across all linkable artifacts (FR / SDS /
 - [FR-ACCEPT.TRIGGER](requirements.md#fr-accept-trigger-skill-description-matching-verification) — Skill description-matching verified by 3 trigger scenarios per skill — [x]
 - [FR-ADAPT](requirements.md#fr-adapt-standalone-primitive-adaptation-adapt) — On-demand adaptation of installed framework primitives to project specifics — [ ]
 - [FR-AI-IDE-RUNNER](requirements.md#fr-ai-ide-runner-ai-ide-runner-skill-ai-ide-runner) — Run prompts in another IDE's CLI; verbatim relay; fan-out comparisons — [x]
-- [FR-ATOM-DO](requirements.md#fr-atom-do-tdd-implement-atom-do) — TDD implement atom — do (RED→GREEN→REFACTOR→CHECK over a written plan) — [x]
+- [FR-ATOM-IMPLEMENT](requirements.md#fr-atom-implement-tdd-implement-atom-implement) — TDD implement atom — implement (RED→GREEN→REFACTOR→CHECK over a written plan) — [x]
 - [FR-ATOM-PUSH](requirements.md#fr-atom-push-git-push-atom-push) — Git push atom — push (non-force, upstream-safe, no-auto-PR) — [x]
 - [FR-CICD](requirements.md#fr-cicd-cicd-pipeline-security) — CI/CD pipeline follows supply-chain security and least-privilege practices — [x]
 - [FR-CMD-EXEC](requirements.md#fr-cmd-exec-command-execution) — Executable workflows for common development tasks via chat commands — [ ]

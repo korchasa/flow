@@ -19,9 +19,9 @@ atoms:
     target: framework/core/commands/commit/SKILL.md
     default_params:
       DIFF_SOURCE: FRESH_READ
-  do:
-    source: framework/atoms/do.md
-    target: framework/core/skills/do/SKILL.md
+  implement:
+    source: framework/atoms/implement.md
+    target: framework/core/skills/implement/SKILL.md
     default_params:
       TERMINATION: TOTAL_STOP
   push:
@@ -49,7 +49,7 @@ composites:
         params:
           TERMINATION: HAND_OFF_TO_NEXT
       - title: Implement Phase
-        atom: do
+        atom: implement
         params:
           TERMINATION: HAND_OFF_TO_NEXT
       - title: Review Phase

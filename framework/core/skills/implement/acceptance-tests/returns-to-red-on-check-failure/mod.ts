@@ -7,11 +7,11 @@ import { AcceptanceTestScenario } from "@acceptance-tests/types.ts";
  * (remove the unused import) — NOT disable the lint rule with
  * `// deno-lint-ignore` or similar suppression.
  */
-export const DoReturnsToRedOnCheckFailure = new class
+export const ImplementReturnsToRedOnCheckFailure = new class
   extends AcceptanceTestScenario {
-  id = "do-returns-to-red-on-check-failure";
+  id = "implement-returns-to-red-on-check-failure";
   name = "fixes source on lint failure (no suppression)";
-  skill = "do";
+  skill = "implement";
   maxSteps = 25;
   stepTimeoutMs = 420_000;
   agentsTemplateVars = {
@@ -21,7 +21,7 @@ export const DoReturnsToRedOnCheckFailure = new class
   interactive = true;
 
   userQuery =
-    "/do Execute the Solution in documents/tasks/2026/05/add-trim.md under TDD.";
+    "/implement Execute the Solution in documents/tasks/2026/05/add-trim.md under TDD.";
 
   userPersona = `You are a developer who wants the plan executed under TDD.
 When the agent reports a lint failure, do NOT tell it how to fix; let it decide.
