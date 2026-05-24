@@ -10,6 +10,7 @@ import {
   validateStructure,
 } from "./check-skills.ts";
 import { parseFrontmatter } from "./resource-types.ts";
+import { SKILL_MAX_LINES } from "./lib/skill-limits.ts";
 
 // --- parseFrontmatter ---
 
@@ -195,8 +196,8 @@ Deno.test("FR-UNIVERSAL.DISCLOSURE: small file passes", () => {
   assertEquals(validateProgressiveDisclosure("s", content, fm), []);
 });
 
-Deno.test("FR-UNIVERSAL.DISCLOSURE: file at 700+ lines is error", () => {
-  const content = "x\n".repeat(700);
+Deno.test("FR-UNIVERSAL.DISCLOSURE: file at SKILL_MAX_LINES is error", () => {
+  const content = "x\n".repeat(SKILL_MAX_LINES);
   const fm = { name: "x", description: "y" };
   const errors = validateProgressiveDisclosure("s", content, fm);
   assertEquals(errors.some((e) => e.message.includes("lines")), true);
@@ -224,8 +225,8 @@ Deno.test("FR-UNIVERSAL.DISCLOSURE: composite skills are exempt from 5000-token 
   );
 });
 
-Deno.test("FR-UNIVERSAL.DISCLOSURE: composite skills still hit the 700-line cap", () => {
-  const content = "x\n".repeat(700); // 700 lines exactly
+Deno.test("FR-UNIVERSAL.DISCLOSURE: composite skills still hit the SKILL_MAX_LINES cap", () => {
+  const content = "x\n".repeat(SKILL_MAX_LINES); // line cap exactly
   const fm = { name: "do-with-plan", description: "y" };
   const errors = validateProgressiveDisclosure(
     "do-with-plan",

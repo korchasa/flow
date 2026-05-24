@@ -17,6 +17,7 @@
  * See documents/tasks/2026/05/generate-skills-from-atoms.md for the design.
  */
 import { parse as parseYaml } from "@std/yaml";
+import { ATOM_MAX_LINES, SKILL_MAX_LINES } from "./lib/skill-limits.ts";
 
 export const MANIFEST_PATH = "framework/composites.yaml";
 
@@ -378,7 +379,7 @@ export async function renderAtomTarget(
   return { target: entry.target, sources: [entry.source], body };
 }
 
-/** Atom canon: exactly one `<step_by_step>` block, ≤ 500 lines. */
+/** Atom canon: exactly one `<step_by_step>` block, ≤ ATOM_MAX_LINES lines. */
 export function validateAtomCanon(
   id: string,
   body: string,
@@ -391,9 +392,9 @@ export function validateAtomCanon(
     );
   }
   const lineCount = body.split("\n").length;
-  if (lineCount > 500) {
+  if (lineCount > ATOM_MAX_LINES) {
     throw new Error(
-      `[generate-skill-composites] atom '${id}' (${target}): ${lineCount} lines exceeds 500-line cap`,
+      `[generate-skill-composites] atom '${id}' (${target}): ${lineCount} lines exceeds ${ATOM_MAX_LINES}-line cap`,
     );
   }
 }
@@ -554,7 +555,7 @@ function extractStepByStepBlock(body: string, source: string): string {
  *   3. Description does NOT name source skills as explicit invocations.
  *   4. Every verdict gate has both Approve and Reject branches (heuristic:
  *      "Approve" + ("Request Changes" OR "Reject") in the same gate body).
- *   5. 700-line cap on the emitted file.
+ *   5. SKILL_MAX_LINES cap on the emitted file (see scripts/lib/skill-limits.ts).
  */
 export function validateCompositeCanon(
   id: string,
@@ -597,9 +598,9 @@ export function validateCompositeCanon(
     }
   }
   const lineCount = body.split("\n").length;
-  if (lineCount > 700) {
+  if (lineCount > SKILL_MAX_LINES) {
     throw new Error(
-      `[generate-skill-composites] composite '${id}' (${target}): ${lineCount} lines exceeds 700-line cap`,
+      `[generate-skill-composites] composite '${id}' (${target}): ${lineCount} lines exceeds ${SKILL_MAX_LINES}-line cap`,
     );
   }
 }

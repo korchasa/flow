@@ -18,6 +18,11 @@
 import { join } from "@std/path";
 import { isComposite } from "./lib/composite-list.ts";
 import {
+  FRONTMATTER_MAX_TOKENS,
+  SKILL_MAX_LINES,
+  SKILL_MAX_TOKENS,
+} from "./lib/skill-limits.ts";
+import {
   parseFrontmatter,
   type ResourceError,
   SkillFrontmatterSchema,
@@ -106,10 +111,9 @@ export function validateKindInvariants(
   return errors;
 }
 
-const SKILL_MAX_LINES = 700;
-/** Token budget approximation: chars/4. Documented as adequate guardrail. */
-const SKILL_MAX_TOKENS = 5000;
-const FRONTMATTER_MAX_TOKENS = 100;
+// SKILL_MAX_LINES, SKILL_MAX_TOKENS, FRONTMATTER_MAX_TOKENS imported from
+// ./lib/skill-limits.ts — single source of truth for skill size limits.
+// Token budget approximation: chars/4. Documented as adequate guardrail.
 
 /**
  * FR-UNIVERSAL.STRUCT: Validates directory structure.
